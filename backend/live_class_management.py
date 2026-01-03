@@ -4,8 +4,16 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta, time
 from bson import ObjectId
 import logging
+import pytz
 
 logger = logging.getLogger(__name__)
+
+# Bangladesh timezone for live class time comparison
+BD_TIMEZONE = pytz.timezone("Asia/Dhaka")
+
+def get_bd_now():
+    """Get current time in Bangladesh timezone"""
+    return datetime.now(BD_TIMEZONE)
 
 router = APIRouter()
 
@@ -430,8 +438,10 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             logger.info(f"After filtering: {len(raw_classes)} classes (from {len(all_classes)} total)")
             
             # Process and normalize response - return only primitive fields
-            now = datetime.utcnow()
+            # Use Bangladesh timezone for accurate time comparison
+            now = get_bd_now()
             current_time = now.strftime("%H:%M")
+            logger.info(f"Bangladesh time: {now.strftime('%Y-%m-%d %H:%M:%S %Z')}, current_time for comparison: {current_time}")
             
             normalized_classes = []
             for cls in raw_classes:
@@ -503,10 +513,12 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             if not live_class:
                 raise HTTPException(status_code=404, detail="Live class not found")
             
-            now = datetime.utcnow()
+            # Use Bangladesh timezone for accurate time comparison
+            now = get_bd_now()
             current_time = now.strftime("%H:%M")
             start = live_class.get("start_time", "00:00")
             end = live_class.get("end_time", "23:59")
+            logger.info(f"Join class - BD time: {current_time}, class start: {start}, end: {end}")
             
             if current_time >= start and current_time <= end:
                 today = now.strftime("%Y-%m-%d")
