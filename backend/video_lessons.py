@@ -1059,7 +1059,7 @@ async def get_lesson_results(lesson_id: str, user = Depends(require_staff)):
         
         if student:
             resp["student_name"] = student.get("full_name_bn") or student.get("full_name") or student.get("name")
-            resp["roll_number"] = student.get("roll_number") or student.get("roll")
+            resp["roll_number"] = student.get("roll_no") or student.get("roll_number") or student.get("roll")
         else:
             # Fallback: try to get user info
             user_doc = await db.users.find_one({"id": student_id, "tenant_id": user.tenant_id})
