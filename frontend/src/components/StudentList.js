@@ -450,9 +450,15 @@ const StudentList = () => {
       }
       
       if (studentId && selectedSemesterIds.length > 0) {
-        for (const semId of selectedSemesterIds) {
-          axios.post(`${API}/admin/semesters/${semId}/enroll`, [studentId])
-            .catch(err => console.error('Failed to enroll in semester:', err));
+        try {
+          await Promise.all(
+            selectedSemesterIds.map(semId => 
+              axios.post(`${API}/admin/semesters/${semId}/enroll`, [studentId])
+            )
+          );
+        } catch (err) {
+          console.error('Failed to enroll in semester:', err);
+          toast.error('সেমিস্টারে ভর্তি করতে সমস্যা হয়েছে');
         }
       }
       
@@ -543,6 +549,7 @@ const StudentList = () => {
   };
 
   const resetForm = () => {
+    setSelectedSemesterIds([]);
     setFormData({
       admission_no: '',
       roll_no: '',

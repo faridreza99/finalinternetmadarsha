@@ -280,7 +280,7 @@ async def delete_semester(semester_id: str, user = Depends(require_admin)):
 # ============== Student Enrollment Endpoints ==============
 
 @router.post("/admin/semesters/{semester_id}/enroll")
-async def enroll_students(semester_id: str, student_ids: List[str], user = Depends(require_admin)):
+async def enroll_students(semester_id: str, student_ids: List[str], user = Depends(require_staff)):
     """Enroll students in a semester"""
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
