@@ -82,7 +82,7 @@ const MonthlyPayments = () => {
     setSelectedStudent(student);
     setFormData({
       ...formData,
-      student_id: student.student_id,
+      student_id: student.id,
       amount: ""
     });
     setShowModal(true);
@@ -204,11 +204,11 @@ const MonthlyPayments = () => {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredStudents.map((student) => {
-                const payment = getStudentPaymentStatus(student.student_id);
+                const payment = getStudentPaymentStatus(student.id);
                 return (
-                  <tr key={student.student_id}>
+                  <tr key={student.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {student.student_id}
+                      {student.admission_no || student.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {student.name_bn || student.name}

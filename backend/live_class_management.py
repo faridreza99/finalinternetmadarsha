@@ -696,15 +696,35 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
         current_user = Depends(get_current_user)
     ):
         try:
+            logger.info(f"Creating monthly payment: student_id={data.student_id}, month={data.month}, year={data.year}")
+            
             if current_user.role not in ["admin", "super_admin", "accountant"]:
                 raise HTTPException(status_code=403, detail="Not authorized")
             
             tenant_id = current_user.tenant_id
             
+            # Validate student exists
+            student = await db.students.find_one({
+                "tenant_id": tenant_id,
+                "id": data.student_id
+            })
+            if not student:
+                logger.error(f"Student not found: {data.student_id}")
+                raise HTTPException(status_code=404, detail=f"Student not found: {data.student_id}")
+            
+            # Normalize month (accept both English and Bengali)
+            month_mapping = {
+                "জানুয়ারি": "January", "ফেব্রুয়ারি": "February", "মার্চ": "March",
+                "এপ্রিল": "April", "মে": "May", "জুন": "June",
+                "জুলাই": "July", "আগস্ট": "August", "সেপ্টেম্বর": "September",
+                "অক্টোবর": "October", "নভেম্বর": "November", "ডিসেম্বর": "December"
+            }
+            normalized_month = month_mapping.get(data.month, data.month)
+            
             existing = await db.monthly_payments.find_one({
                 "tenant_id": tenant_id,
                 "student_id": data.student_id,
-                "month": data.month,
+                "month": normalized_month,
                 "year": data.year
             })
             
@@ -714,7 +734,7 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             payment = {
                 "tenant_id": tenant_id,
                 "student_id": data.student_id,
-                "month": data.month,
+                "month": normalized_month,
                 "year": data.year,
                 "amount": data.amount,
                 "fee_type": data.fee_type,
