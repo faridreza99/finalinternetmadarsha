@@ -283,19 +283,18 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
     ):
         try:
             tenant_id = current_user.tenant_id
+            user_id = current_user.id
             
-            # Get student_id from User object or fetch from user document
-            student_id = getattr(current_user, 'student_id', None)
+            logger.info(f"Looking for student record for user: username={current_user.username}, user_id={user_id}")
             
-            # If not on User object, try to get from database
-            if not student_id:
-                user_doc = await db.users.find_one({"id": current_user.id, "tenant_id": tenant_id})
-                if user_doc:
-                    student_id = user_doc.get("student_id")
+            # Strategy 1: Find student by user_id field (primary linking method)
+            student = await db.students.find_one({
+                "tenant_id": tenant_id,
+                "user_id": user_id
+            })
             
-            # If still no student_id but role is student, find matching student by username pattern
-            if not student_id and current_user.role == "student":
-                # Try to find student linked by username pattern (tenant_studentid)
+            # Strategy 2: If not found, try username pattern matching
+            if not student and current_user.role == "student":
                 username = current_user.username
                 if username and "_" in username:
                     possible_student_id = username.split("_")[-1] if len(username.split("_")) > 1 else None
@@ -308,27 +307,15 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                                 {"admission_no": possible_student_id}
                             ]
                         })
-                        if student:
-                            student_id = student.get("student_id") or student.get("id") or student.get("admission_no")
             
-            if not student_id:
-                # Return empty list gracefully instead of error
-                logger.warning(f"No student_id found for user {current_user.username}")
-                return {
-                    "classes": [],
-                    "payment_required": False,
-                    "message": "Student account not properly linked"
-                }
-            
-            # Find the student record
-            student = await db.students.find_one({
-                "tenant_id": tenant_id,
-                "$or": [
-                    {"student_id": student_id},
-                    {"id": student_id},
-                    {"admission_no": student_id}
-                ]
-            })
+            # Strategy 3: Try email matching
+            if not student:
+                user_doc = await db.users.find_one({"id": user_id, "tenant_id": tenant_id})
+                if user_doc and user_doc.get("email"):
+                    student = await db.students.find_one({
+                        "tenant_id": tenant_id,
+                        "email": user_doc.get("email")
+                    })
             
             if not student:
                 return {
@@ -337,7 +324,11 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                     "message": "Student record not found"
                 }
             
-            student_gender = (student.get("gender") or "").lower()
+            # Normalize gender to lowercase for comparison
+            student_gender = (student.get("gender") or "").lower().strip()
+            student_id_from_record = student.get("student_id") or student.get("id") or student.get("admission_no")
+            
+            logger.info(f"Student record found: _id={student.get('_id')}, gender={student.get('gender')}, normalized_gender={student_gender}")
             
             # Normalize student class_id to string
             raw_student_class_id = student.get("class_id") or student.get("class_standard") or student.get("class_name")
@@ -351,7 +342,7 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 else:
                     student_class_id = str(raw_student_class_id).strip()
             
-            logger.info(f"Student class_id raw={raw_student_class_id}, normalized={student_class_id}")
+            logger.info(f"Student class_id: raw={raw_student_class_id}, normalized={student_class_id}")
             
             current_date = datetime.utcnow()
             current_month_english = current_date.strftime("%B")
@@ -360,7 +351,7 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             
             # Check payment status (graceful failure)
             try:
-                has_paid = await check_student_payment_status(db, tenant_id, student_id, current_month_bengali, current_year)
+                has_paid = await check_student_payment_status(db, tenant_id, student_id_from_record, current_month_bengali, current_year)
             except Exception as e:
                 logger.warning(f"Payment check failed: {e}")
                 has_paid = True  # Default to allow access if payment check fails
@@ -382,9 +373,8 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 "year": current_year
             }
             
-            # Filter by gender if student has gender set
-            if student_gender in ["male", "female"]:
-                query["gender"] = student_gender
+            # NOTE: Gender filter is handled in Python to support case-insensitive matching and "all"
+            # query["gender"] is NOT set here - we filter in Python below
             
             logger.info(f"Student live classes query: month={current_month_bengali}, year={current_year}, gender={student_gender}, class_id={student_class_id}")
             
@@ -394,9 +384,25 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             all_classes = await db.live_classes.find(query).to_list(100)
             logger.info(f"Found {len(all_classes)} classes before class_id filtering")
             
-            # Filter by class_id in Python to handle type mismatches
+            # Filter by gender and class_id in Python to handle type/case mismatches
             raw_classes = []
             for cls in all_classes:
+                # === GENDER FILTER (case-insensitive + "all" support) ===
+                live_class_gender = (cls.get("gender") or "").lower().strip()
+                
+                # Include if: gender is "all", or gender matches student's gender
+                gender_match = (
+                    live_class_gender == "all" or 
+                    live_class_gender == "" or 
+                    not live_class_gender or
+                    live_class_gender == student_gender
+                )
+                
+                if not gender_match:
+                    logger.info(f"Live class '{cls.get('class_name')}' EXCLUDED: gender mismatch (class={live_class_gender}, student={student_gender})")
+                    continue
+                
+                # === CLASS_ID FILTER ===
                 # Normalize live class class_id to string
                 raw_live_class_id = cls.get("class_id")
                 live_class_id = None
@@ -416,12 +422,12 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 student_has_no_class = not student_class_id or student_class_id == ""
                 class_ids_match = student_class_id and live_class_id and student_class_id == live_class_id
                 
-                logger.info(f"Live class '{cls.get('class_name')}': raw_class_id={raw_live_class_id}, normalized={live_class_id}, broadcast={is_broadcast_class}, match={class_ids_match}")
+                logger.info(f"Live class '{cls.get('class_name')}': gender={live_class_gender}, class_id raw={raw_live_class_id}, normalized={live_class_id}, broadcast={is_broadcast_class}, match={class_ids_match}")
                 
                 if is_broadcast_class or student_has_no_class or class_ids_match:
                     raw_classes.append(cls)
             
-            logger.info(f"After class_id filtering: {len(raw_classes)} classes")
+            logger.info(f"After filtering: {len(raw_classes)} classes (from {len(all_classes)} total)")
             
             # Process and normalize response - return only primitive fields
             now = datetime.utcnow()
