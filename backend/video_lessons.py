@@ -754,6 +754,15 @@ async def submit_lesson_answers(lesson_id: str, submission: LessonSubmission, us
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
     student_id = student["id"] if student else user.id
     
+    # Check if already submitted - prevent re-submission
+    existing_response = await db.student_lesson_responses.find_one({
+        "student_id": student_id,
+        "lesson_id": lesson_id,
+        "tenant_id": user.tenant_id
+    })
+    if existing_response:
+        raise HTTPException(status_code=400, detail="এই পাঠ আপনি ইতিমধ্যে জমা দিয়েছেন। পুনরায় জমা দেওয়া যাবে না।")
+    
     lesson = await db.video_lessons.find_one({"id": lesson_id, "tenant_id": user.tenant_id})
     if not lesson:
         raise HTTPException(status_code=404, detail="পাঠ খুঁজে পাওয়া যায়নি")
@@ -867,6 +876,102 @@ async def get_lesson_result(lesson_id: str, user = Depends(get_current_user)):
     return response
 
 
+@router.get("/student/my-progress")
+async def get_my_progress(user = Depends(get_current_user)):
+    """Get student's overall progress across all semesters"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
+    student_id = student["id"] if student else user.id
+    
+    # Get all enrollments
+    enrollments = await db.student_semester_enrollments.find({
+        "student_id": student_id,
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }).to_list(50)
+    
+    semester_progress = []
+    total_completed = 0
+    total_lessons = 0
+    overall_score = 0
+    overall_total = 0
+    
+    for enrollment in enrollments:
+        semester = await db.semesters.find_one({
+            "id": enrollment["semester_id"],
+            "tenant_id": user.tenant_id
+        })
+        if not semester:
+            continue
+        
+        class_doc = await db.classes.find_one({"id": semester["class_id"], "tenant_id": user.tenant_id})
+        class_name = class_doc.get("display_name") or class_doc.get("name") if class_doc else ""
+        
+        lessons = await db.video_lessons.find({
+            "semester_id": semester["id"],
+            "tenant_id": user.tenant_id,
+            "is_published": True
+        }).to_list(500)
+        
+        lesson_ids = [l["id"] for l in lessons]
+        responses = await db.student_lesson_responses.find({
+            "student_id": student_id,
+            "lesson_id": {"$in": lesson_ids},
+            "tenant_id": user.tenant_id
+        }).to_list(500)
+        
+        completed = len(responses)
+        sem_score = sum(r.get("score", 0) for r in responses)
+        sem_total = sum(r.get("total_points", 0) for r in responses)
+        
+        total_completed += completed
+        total_lessons += len(lessons)
+        overall_score += sem_score
+        overall_total += sem_total
+        
+        # Build lesson results list
+        lesson_results = []
+        for lesson in lessons:
+            resp = next((r for r in responses if r["lesson_id"] == lesson["id"]), None)
+            lesson_results.append({
+                "lesson_id": lesson["id"],
+                "title_bn": lesson.get("title_bn"),
+                "is_completed": resp is not None,
+                "score": resp.get("score") if resp else None,
+                "total_points": resp.get("total_points") if resp else None,
+                "percentage": resp.get("percentage") if resp else None,
+                "submitted_at": resp.get("submitted_at") if resp else None
+            })
+        
+        semester_progress.append({
+            "semester_id": semester["id"],
+            "semester_title": semester.get("title_bn"),
+            "class_name": class_name,
+            "total_lessons": len(lessons),
+            "completed_lessons": completed,
+            "progress_percent": round((completed / len(lessons)) * 100, 1) if lessons else 0,
+            "total_score": sem_score,
+            "total_possible": sem_total,
+            "average_percent": round((sem_score / sem_total) * 100, 1) if sem_total > 0 else 0,
+            "lessons": lesson_results
+        })
+    
+    return {
+        "semesters": semester_progress,
+        "summary": {
+            "total_semesters": len(semester_progress),
+            "total_lessons": total_lessons,
+            "completed_lessons": total_completed,
+            "overall_progress": round((total_completed / total_lessons) * 100, 1) if total_lessons > 0 else 0,
+            "overall_score": overall_score,
+            "overall_total": overall_total,
+            "overall_average": round((overall_score / overall_total) * 100, 1) if overall_total > 0 else 0
+        }
+    }
+
+
 # ============== Progress & Reports ==============
 
 @router.get("/admin/semesters/{semester_id}/progress")
@@ -921,3 +1026,151 @@ async def get_semester_progress(semester_id: str, user = Depends(require_staff))
         })
     
     return {"progress": progress_data, "total_students": len(progress_data), "total_lessons": total_lessons}
+
+
+@router.get("/admin/lessons/{lesson_id}/results")
+async def get_lesson_results(lesson_id: str, user = Depends(require_staff)):
+    """Get all student results for a specific lesson"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    lesson = await db.video_lessons.find_one({"id": lesson_id, "tenant_id": user.tenant_id})
+    if not lesson:
+        raise HTTPException(status_code=404, detail="পাঠ খুঁজে পাওয়া যায়নি")
+    
+    responses = await db.student_lesson_responses.find({
+        "lesson_id": lesson_id,
+        "tenant_id": user.tenant_id
+    }).to_list(1000)
+    
+    results = []
+    for resp in responses:
+        resp.pop("_id", None)
+        student = await db.students.find_one({"id": resp["student_id"], "tenant_id": user.tenant_id})
+        if student:
+            resp["student_name"] = student.get("full_name_bn") or student.get("full_name")
+            resp["roll_number"] = student.get("roll_number")
+        results.append(resp)
+    
+    # Sort by submission date descending
+    results.sort(key=lambda x: x.get("submitted_at", ""), reverse=True)
+    
+    return {
+        "lesson_id": lesson_id,
+        "lesson_title": lesson.get("title_bn"),
+        "results": results,
+        "total_submissions": len(results)
+    }
+
+
+@router.get("/admin/students/{student_id}/video-progress")
+async def get_student_video_progress(student_id: str, user = Depends(require_staff)):
+    """Get video lesson progress for a specific student (admin view)"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    student = await db.students.find_one({"id": student_id, "tenant_id": user.tenant_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="ছাত্র খুঁজে পাওয়া যায়নি")
+    
+    enrollments = await db.student_semester_enrollments.find({
+        "student_id": student_id,
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }).to_list(50)
+    
+    semester_progress = []
+    total_completed = 0
+    total_lessons = 0
+    overall_score = 0
+    overall_total = 0
+    
+    for enrollment in enrollments:
+        semester = await db.semesters.find_one({
+            "id": enrollment["semester_id"],
+            "tenant_id": user.tenant_id
+        })
+        if not semester:
+            continue
+        
+        class_doc = await db.classes.find_one({"id": semester["class_id"], "tenant_id": user.tenant_id})
+        class_name = class_doc.get("display_name") or class_doc.get("name") if class_doc else ""
+        
+        lessons = await db.video_lessons.find({
+            "semester_id": semester["id"],
+            "tenant_id": user.tenant_id,
+            "is_published": True
+        }).to_list(500)
+        
+        lesson_ids = [l["id"] for l in lessons]
+        responses = await db.student_lesson_responses.find({
+            "student_id": student_id,
+            "lesson_id": {"$in": lesson_ids},
+            "tenant_id": user.tenant_id
+        }).to_list(500)
+        
+        completed = len(responses)
+        sem_score = sum(r.get("score", 0) for r in responses)
+        sem_total = sum(r.get("total_points", 0) for r in responses)
+        
+        total_completed += completed
+        total_lessons += len(lessons)
+        overall_score += sem_score
+        overall_total += sem_total
+        
+        lesson_results = []
+        for lesson in lessons:
+            resp = next((r for r in responses if r["lesson_id"] == lesson["id"]), None)
+            lesson_results.append({
+                "lesson_id": lesson["id"],
+                "title_bn": lesson.get("title_bn"),
+                "is_completed": resp is not None,
+                "score": resp.get("score") if resp else None,
+                "total_points": resp.get("total_points") if resp else None,
+                "percentage": resp.get("percentage") if resp else None,
+                "submitted_at": resp.get("submitted_at") if resp else None
+            })
+        
+        semester_progress.append({
+            "semester_id": semester["id"],
+            "semester_title": semester.get("title_bn"),
+            "class_name": class_name,
+            "total_lessons": len(lessons),
+            "completed_lessons": completed,
+            "progress_percent": round((completed / len(lessons)) * 100, 1) if lessons else 0,
+            "average_percent": round((sem_score / sem_total) * 100, 1) if sem_total > 0 else 0,
+            "lessons": lesson_results
+        })
+    
+    return {
+        "student_id": student_id,
+        "student_name": student.get("full_name_bn") or student.get("full_name"),
+        "roll_number": student.get("roll_number"),
+        "semesters": semester_progress,
+        "summary": {
+            "total_semesters": len(semester_progress),
+            "total_lessons": total_lessons,
+            "completed_lessons": total_completed,
+            "overall_progress": round((total_completed / total_lessons) * 100, 1) if total_lessons > 0 else 0,
+            "overall_average": round((overall_score / overall_total) * 100, 1) if overall_total > 0 else 0
+        }
+    }
+
+
+@router.delete("/admin/students/{student_id}/lessons/{lesson_id}/reset")
+async def reset_student_lesson(student_id: str, lesson_id: str, user = Depends(require_admin)):
+    """Admin: Reset a student's submission for a lesson (allow re-attempt)"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    result = await db.student_lesson_responses.delete_one({
+        "student_id": student_id,
+        "lesson_id": lesson_id,
+        "tenant_id": user.tenant_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="কোনো জমা পাওয়া যায়নি")
+    
+    logging.info(f"Admin {user.id} reset lesson {lesson_id} for student {student_id}")
+    return {"message": "ছাত্রের জমা রিসেট করা হয়েছে। এখন পুনরায় চেষ্টা করতে পারবে।"}

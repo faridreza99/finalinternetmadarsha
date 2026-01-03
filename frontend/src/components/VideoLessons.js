@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   Video, BookOpen, Plus, Edit, Trash2, Users, ChevronRight,
   Play, CheckCircle, Circle, Clock, Award, FileQuestion,
-  ArrowLeft, Save, Eye, EyeOff, GripVertical
+  ArrowLeft, Save, Eye, EyeOff, GripVertical, BarChart3, RefreshCw
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL || '/api';
@@ -31,6 +31,8 @@ const VideoLessons = () => {
   const [showSemesterModal, setShowSemesterModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [lessonResults, setLessonResults] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   
   // Form states
@@ -111,6 +113,41 @@ const VideoLessons = () => {
       console.error('Error fetching questions:', err);
     }
   }, []);
+
+  // Fetch lesson results (student submissions)
+  const fetchLessonResults = async (lessonId) => {
+    try {
+      const res = await axios.get(`${API_URL}/admin/lessons/${lessonId}/results`, { headers });
+      setLessonResults(res.data);
+      setShowResultsModal(true);
+    } catch (err) {
+      console.error('Error fetching results:', err);
+      toast.error('ফলাফল লোড করতে সমস্যা হয়েছে');
+    }
+  };
+
+  // Reset student submission (allow re-attempt)
+  const handleResetSubmission = async (studentId, lessonId) => {
+    if (!window.confirm('এই ছাত্রের জমা রিসেট করতে চান? এরপর সে পুনরায় চেষ্টা করতে পারবে।')) return;
+    try {
+      await axios.delete(`${API_URL}/admin/students/${studentId}/lessons/${lessonId}/reset`, { headers });
+      toast.success('জমা রিসেট হয়েছে');
+      fetchLessonResults(lessonId);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'রিসেট করতে সমস্যা হয়েছে');
+    }
+  };
+
+  // Format Bangla date
+  const formatBanglaDate = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const day = toBengaliNumeral(date.getDate());
+    const months = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    const month = months[date.getMonth()];
+    const year = toBengaliNumeral(date.getFullYear());
+    return `${day} ${month}, ${year}`;
+  };
 
   useEffect(() => {
     fetchClasses();
@@ -555,6 +592,13 @@ const VideoLessons = () => {
                     </div>
                   </button>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchLessonResults(lesson.id)}
+                      className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                      title="ফলাফল দেখুন"
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </button>
                     <button
                       onClick={() => toggleLessonPublish(lesson)}
                       className={`p-2 rounded-lg ${lesson.is_published ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
@@ -1030,6 +1074,82 @@ const VideoLessons = () => {
               >
                 সংরক্ষণ
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Results Modal */}
+      {showResultsModal && lessonResults && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  ফলাফল - {lessonResults.lesson_title}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  মোট জমা: {toBengaliNumeral(lessonResults.total_submissions)}
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowResultsModal(false); setLessonResults(null); }}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {lessonResults.results.length > 0 ? (
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                    <tr>
+                      <th className="text-left px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">ছাত্রের নাম</th>
+                      <th className="text-left px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">রোল</th>
+                      <th className="text-center px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">স্কোর</th>
+                      <th className="text-center px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">শতাংশ</th>
+                      <th className="text-left px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">তারিখ</th>
+                      <th className="text-center px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">অ্যাকশন</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {lessonResults.results.map(result => (
+                      <tr key={result.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-4 py-3 text-sm text-gray-800 dark:text-white">{result.student_name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{result.roll_number || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <span className="font-medium text-gray-800 dark:text-white">
+                            {toBengaliNumeral(result.score)}/{toBengaliNumeral(result.total_points)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            result.percentage >= 60 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {toBengaliNumeral(Math.round(result.percentage))}%
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{formatBanglaDate(result.submitted_at)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleResetSubmission(result.student_id, lessonResults.lesson_id)}
+                            className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
+                            title="রিসেট করুন (পুনরায় চেষ্টা করতে দিন)"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  এই পাঠে কোনো জমা নেই
+                </div>
+              )}
             </div>
           </div>
         </div>
