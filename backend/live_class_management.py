@@ -556,9 +556,10 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 })
                 
                 if not existing_attendance:
-                    # Get student name for display
+                    # Get student name and class for display
                     student_name = student.get("name") or student.get("full_name") or "Unknown"
                     student_class_name = student.get("class_name") or student.get("class") or ""
+                    student_class_id = student.get("class_id") or ""
                     
                     # Record in live_class_attendance collection (detailed tracking)
                     attendance_record = {
@@ -577,11 +578,12 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                     logger.info(f"Live class attendance recorded: student={student_name}, class={live_class.get('class_name')}, date={today}")
                     
                     # Also upsert to main attendance collection for admin visibility
-                    # Include all required fields: type, name, subject for admin panel filtering
+                    # CRITICAL: Use person_id (not student_id) - this is what admin/student dashboards query
+                    # Include all required fields: type, person_id, person_name for dashboard filtering
                     await db.attendance.update_one(
                         {
                             "tenant_id": tenant_id,
-                            "student_id": student_id,
+                            "person_id": student_id,  # Use person_id for dashboard compatibility
                             "date": today,
                             "type": "student"
                         },
@@ -591,22 +593,24 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                                 "marked_via": "live_class",
                                 "live_class_id": class_id,
                                 "live_class_name": live_class.get("class_name"),
-                                "updated_at": now
+                                "updated_at": datetime.utcnow()  # Use UTC for consistency with other records
                             },
                             "$setOnInsert": {
                                 "tenant_id": tenant_id,
-                                "student_id": student_id,
-                                "name": student_name,
+                                "person_id": student_id,  # Use person_id for dashboard compatibility
+                                "person_name": student_name,  # person_name is what admin view displays
+                                "name": student_name,  # Also include name as fallback
                                 "type": "student",
+                                "class_id": student_class_id,  # Student's enrolled class ID for filtering
                                 "class_name": student_class_name,
                                 "subject": live_class.get("class_name", ""),
                                 "date": today,
-                                "created_at": now
+                                "created_at": datetime.utcnow()  # Use UTC for consistency
                             }
                         },
                         upsert=True
                     )
-                    logger.info(f"Main attendance upserted: student_id={student_id}, type=student, date={today}")
+                    logger.info(f"Main attendance upserted: person_id={student_id}, type=student, date={today}")
             
             return {
                 "message": "Joined successfully",
