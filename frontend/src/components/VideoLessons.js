@@ -51,10 +51,10 @@ const VideoLessons = () => {
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
-  // Fetch classes
+  // Fetch classes with semester count
   const fetchClasses = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/classes`, { headers });
+      const res = await axios.get(`${API_URL}/admin/video-lessons/classes`, { headers });
       setClasses(res.data.classes || res.data || []);
     } catch (err) {
       console.error('Error fetching classes:', err);
@@ -423,7 +423,7 @@ const VideoLessons = () => {
                 <div>
                   <h3 className="font-semibold text-gray-800 dark:text-white">{cls.display_name || cls.name}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {cls.level_display_name_bn || cls.level || 'N/A'}
+                    {cls.semester_count !== undefined ? `${toBengaliNumeral(cls.semester_count)}টি সেমিস্টার` : 'সেমিস্টার নেই'}
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-gray-400" />

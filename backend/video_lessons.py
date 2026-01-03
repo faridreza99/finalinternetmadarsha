@@ -171,6 +171,31 @@ async def create_semester(semester: SemesterCreate, user = Depends(require_admin
     return {"message": "সেমিস্টার সফলভাবে তৈরি হয়েছে", "semester_id": semester_id, "semester": semester_doc}
 
 
+@router.get("/admin/video-lessons/classes")
+async def get_classes_with_semester_count(user = Depends(require_staff)):
+    """Get all classes with their semester counts for video lessons overview"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    classes = await db.classes.find({
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }).sort("order_index", 1).to_list(500)
+    
+    result = []
+    for cls in classes:
+        cls.pop("_id", None)
+        semester_count = await db.semesters.count_documents({
+            "class_id": cls["id"],
+            "tenant_id": user.tenant_id,
+            "is_active": True
+        })
+        cls["semester_count"] = semester_count
+        result.append(cls)
+    
+    return {"classes": result}
+
+
 @router.get("/admin/semesters")
 async def get_all_semesters(user = Depends(require_staff)):
     """Get all semesters for the tenant (for dropdowns)"""
