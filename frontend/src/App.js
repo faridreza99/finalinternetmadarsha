@@ -159,11 +159,16 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
+  console.log("🔐 AuthProvider render:", { hasToken: !!token, hasUser: !!user, loading });
+
   useEffect(() => {
+    console.log("🔐 AuthProvider useEffect triggered, token:", token ? "EXISTS" : "MISSING");
+    
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       fetchCurrentUser();
     } else {
+      console.log("🔐 No token, setting loading to false");
       setLoading(false);
     }
 
@@ -171,8 +176,10 @@ const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
+        console.log("🔐 Axios interceptor caught error:", error.response?.status, error.config?.url);
         if (error.response?.status === 401) {
           // Clear auth state and redirect to login
+          console.log("❌ 401 error detected - clearing auth and redirecting");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           setToken(null);
@@ -275,6 +282,15 @@ const AuthProvider = ({ children }) => {
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
+  console.log("🔒 ProtectedRoute check:", {
+    loading,
+    hasUser: !!user,
+    userRole: user?.role,
+    path: location.pathname,
+    hasToken: !!localStorage.getItem("token")
+  });
 
   if (loading) {
     return (
@@ -282,6 +298,10 @@ const ProtectedRoute = ({ children }) => {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
       </div>
     );
+  }
+
+  if (!user) {
+    console.log("❌ ProtectedRoute: No user, redirecting to login. Token in localStorage:", localStorage.getItem("token") ? "EXISTS" : "MISSING");
   }
 
   return user ? children : <Navigate to="/login" replace />;
