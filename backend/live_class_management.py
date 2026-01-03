@@ -9,6 +9,29 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Month mapping: English to Bengali and vice versa
+ENGLISH_TO_BENGALI_MONTHS = {
+    "January": "জানুয়ারি",
+    "February": "ফেব্রুয়ারি",
+    "March": "মার্চ",
+    "April": "এপ্রিল",
+    "May": "মে",
+    "June": "জুন",
+    "July": "জুলাই",
+    "August": "আগস্ট",
+    "September": "সেপ্টেম্বর",
+    "October": "অক্টোবর",
+    "November": "নভেম্বর",
+    "December": "ডিসেম্বর"
+}
+
+BENGALI_TO_ENGLISH_MONTHS = {v: k for k, v in ENGLISH_TO_BENGALI_MONTHS.items()}
+
+def get_current_month_bengali():
+    """Get current month in Bengali"""
+    english_month = datetime.utcnow().strftime("%B")
+    return ENGLISH_TO_BENGALI_MONTHS.get(english_month, english_month)
+
 class LiveClassCreate(BaseModel):
     class_name: str
     gender: str = Field(..., pattern="^(male|female)$")
@@ -256,10 +279,11 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             student_class = student.get("class_standard") or student.get("class_name")
             
             current_date = datetime.utcnow()
-            current_month = current_date.strftime("%B")
+            current_month_english = current_date.strftime("%B")
+            current_month_bengali = get_current_month_bengali()
             current_year = current_date.year
             
-            has_paid = await check_student_payment_status(db, tenant_id, student_id, current_month, current_year)
+            has_paid = await check_student_payment_status(db, tenant_id, student_id, current_month_bengali, current_year)
             
             if not has_paid:
                 return {
@@ -268,13 +292,16 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                     "message": "Payment required to access live classes"
                 }
             
+            # Query for both English and Bengali month names for compatibility
             query = {
                 "tenant_id": tenant_id,
                 "is_deleted": {"$ne": True},
                 "is_active": True,
-                "month": current_month,
+                "month": {"$in": [current_month_english, current_month_bengali]},
                 "year": current_year
             }
+            
+            logger.info(f"Student live classes query: month={current_month_bengali}, year={current_year}, gender={student_gender}")
             
             if student_gender in ["male", "female"]:
                 query["gender"] = student_gender
@@ -981,10 +1008,16 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             raise HTTPException(status_code=500, detail=str(e))
 
 async def check_student_payment_status(db, tenant_id: str, student_id: str, month: str, year: int) -> bool:
+    """Check if student has paid for the given month (supports both English and Bengali month names)"""
+    # Convert month to Bengali if it's in English
+    month_bengali = ENGLISH_TO_BENGALI_MONTHS.get(month, month)
+    month_english = BENGALI_TO_ENGLISH_MONTHS.get(month, month)
+    
+    # Search for payment with either month format
     payment = await db.monthly_payments.find_one({
         "tenant_id": tenant_id,
         "student_id": student_id,
-        "month": month,
+        "month": {"$in": [month, month_bengali, month_english]},
         "year": year,
         "status": "completed"
     })
