@@ -2058,8 +2058,8 @@ async def create_user_direct(
     # Generate password: {FirstName}{RandomDigits}@{Year}
     import random
     first_name = full_name.split()[0] if full_name else "User"
-    # Remove non-ASCII characters for password
-    clean_name = ''.join(c for c in first_name if c.isalnum())
+    # Use first name directly (allow Bengali/Unicode)
+    clean_name = first_name.strip()
     if not clean_name:
         clean_name = "User"
     random_digits = random.randint(100, 999)
