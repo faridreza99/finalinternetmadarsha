@@ -647,6 +647,18 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
     if not enrollment:
         raise HTTPException(status_code=403, detail="এই সেমিস্টারে আপনি ভর্তি নন")
     
+    # Debug: Check total lessons vs published lessons
+    total_lessons = await db.video_lessons.count_documents({
+        "semester_id": semester_id,
+        "tenant_id": user.tenant_id
+    })
+    published_lessons = await db.video_lessons.count_documents({
+        "semester_id": semester_id,
+        "tenant_id": user.tenant_id,
+        "is_published": True
+    })
+    logging.info(f"STUDENT LESSONS DEBUG: semester={semester_id}, total={total_lessons}, published={published_lessons}")
+    
     lessons = await db.video_lessons.find({
         "semester_id": semester_id,
         "tenant_id": user.tenant_id,
