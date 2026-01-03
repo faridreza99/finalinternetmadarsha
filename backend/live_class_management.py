@@ -218,10 +218,19 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             update_data["updated_at"] = datetime.utcnow()
             update_data["updated_by"] = current_user.username
             
-            result = await db.live_classes.update_one(
-                {"_id": ObjectId(class_id), "tenant_id": tenant_id},
-                {"$set": update_data}
-            )
+            # Try ObjectId first, then fallback to string id field
+            result = None
+            try:
+                result = await db.live_classes.update_one(
+                    {"_id": ObjectId(class_id), "tenant_id": tenant_id},
+                    {"$set": update_data}
+                )
+            except Exception:
+                # Fallback: try matching by string id field
+                result = await db.live_classes.update_one(
+                    {"id": class_id, "tenant_id": tenant_id},
+                    {"$set": update_data}
+                )
             
             if result.matched_count == 0:
                 raise HTTPException(status_code=404, detail="Live class not found")
@@ -244,10 +253,19 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             
             tenant_id = current_user.tenant_id
             
-            result = await db.live_classes.update_one(
-                {"_id": ObjectId(class_id), "tenant_id": tenant_id},
-                {"$set": {"is_deleted": True, "deleted_at": datetime.utcnow()}}
-            )
+            # Try ObjectId first, then fallback to string id field
+            result = None
+            try:
+                result = await db.live_classes.update_one(
+                    {"_id": ObjectId(class_id), "tenant_id": tenant_id},
+                    {"$set": {"is_deleted": True, "deleted_at": datetime.utcnow()}}
+                )
+            except Exception:
+                # Fallback: try matching by string id field
+                result = await db.live_classes.update_one(
+                    {"id": class_id, "tenant_id": tenant_id},
+                    {"$set": {"is_deleted": True, "deleted_at": datetime.utcnow()}}
+                )
             
             if result.matched_count == 0:
                 raise HTTPException(status_code=404, detail="Live class not found")
