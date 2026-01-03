@@ -1,0 +1,226 @@
+✅ FINAL CORRECTED API ROUTES
+
+(Replace your existing ID-card routes file with this)
+
+📄 routes/id_cards.py (FULL FILE)
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse, FileResponse
+from typing import Optional
+from urllib.parse import quote
+import asyncio
+import os
+import logging
+
+from models.user import User
+from core.auth import get_current_user
+from core.job_queue import job_queue, JobStatus
+from db import db
+
+# 🔥 IMPORTANT: use unified generators ONLY
+from id_card_pdf import (
+    generate_student_id_card_pdf,
+    generate_staff_id_card_pdf
+)
+
+api_router = APIRouter()
+
+✅ SINGLE STUDENT ID CARD (SAFE)
+@api_router.get("/id-cards/student/{student_id}")
+async def generate_student_id_card(
+    student_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["super_admin", "admin", "teacher"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    student = await db.students.find_one({
+        "id": student_id,
+        "tenant_id": current_user.tenant_id
+    })
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    institution = await db.institutions.find_one({
+        "tenant_id": current_user.tenant_id
+    })
+
+    class_name = ""
+    if student.get("class_id"):
+        class_doc = await db.classes.find_one({
+            "id": student["class_id"],
+            "tenant_id": current_user.tenant_id
+        })
+        if class_doc:
+            class_name = class_doc.get("display_name") or class_doc.get("name", "")
+
+    pdf_buffer = generate_student_id_card_pdf(
+        student,
+        institution or {},
+        class_name
+    )
+
+    roll = student.get("roll_number") or student_id[:8]
+    encoded_name = quote(student.get("name", "student"))
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=id_card_{roll}.pdf; "
+                f"filename*=UTF-8''{encoded_name}.pdf"
+            )
+        }
+    )
+
+✅ SINGLE STAFF ID CARD (SAFE)
+@api_router.get("/id-cards/staff/{staff_id}")
+async def generate_staff_id_card(
+    staff_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    staff = await db.staff.find_one({
+        "id": staff_id,
+        "tenant_id": current_user.tenant_id
+    })
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+
+    institution = await db.institutions.find_one({
+        "tenant_id": current_user.tenant_id
+    })
+
+    pdf_buffer = generate_staff_id_card_pdf(
+        staff,
+        institution or {}
+    )
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=StaffID-{staff_id}.pdf"
+            )
+        }
+    )
+
+✅ BULK GENERATE (FIXED – NO CUSTOM PDF LOGIC)
+@api_router.post("/id-cards/bulk-generate")
+async def start_bulk_id_card_generation(
+    class_id: Optional[str] = None,
+    section_id: Optional[str] = None,
+    student_ids: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    query = {
+        "tenant_id": current_user.tenant_id,
+        "is_active": True
+    }
+
+    if student_ids:
+        query["id"] = {"$in": [s.strip() for s in student_ids.split(",")]}
+    elif class_id:
+        query["class_id"] = class_id
+        if section_id:
+            query["section_id"] = section_id
+
+    students = await db.students.find(query).to_list(100)
+    if not students:
+        raise HTTPException(status_code=404, detail="No students found")
+
+    job = job_queue.create_job(
+        job_type="bulk_id_cards",
+        tenant_id=current_user.tenant_id,
+        total=len(students)
+    )
+
+    institution = await db.institutions.find_one({
+        "tenant_id": current_user.tenant_id
+    })
+
+    async def bulk_task(job_id: str, student_list: list):
+        import zipfile
+        from io import BytesIO
+        import tempfile
+
+        output_dir = tempfile.mkdtemp(prefix="bulk_idcards_")
+        zip_path = os.path.join(output_dir, f"id_cards_{job_id[:8]}.zip")
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for idx, student in enumerate(student_list):
+                job_queue.update_progress(job_id, idx + 1)
+
+                pdf_buffer = generate_student_id_card_pdf(
+                    student,
+                    institution or {},
+                    ""
+                )
+
+                safe_name = "".join(
+                    c for c in student.get("name", "")
+                    if c.isalnum() or c in (" ", "-", "_")
+                )[:30]
+
+                filename = f"{safe_name}_{student.get('id')[:8]}.pdf"
+                zipf.writestr(filename, pdf_buffer.getvalue())
+
+                if idx % 10 == 0:
+                    await asyncio.sleep(0)
+
+        return {
+            "zip_path": zip_path,
+            "filename": f"id_cards_{job_id[:8]}.zip",
+            "count": len(student_list)
+        }
+
+    asyncio.create_task(
+        job_queue.run_job(
+            job.id,
+            bulk_task,
+            students
+        )
+    )
+
+    return {
+        "job_id": job.id,
+        "total": len(students),
+        "status_url": f"/api/jobs/{job.id}"
+    }
+
+✅ BULK DOWNLOAD (NO CHANGE NEEDED)
+@api_router.get("/id-cards/bulk-download")
+async def download_bulk_id_cards(
+    job_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    job = job_queue.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if job.status != JobStatus.COMPLETED:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job not completed (status: {job.status})"
+        )
+
+    zip_path = job.result.get("zip_path")
+    filename = job.result.get("filename", "id_cards.zip")
+
+    if not zip_path or not os.path.exists(zip_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(
+        path=zip_path,
+        filename=filename,
+        media_type="application/zip"
+    )

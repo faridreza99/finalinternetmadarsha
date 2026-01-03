@@ -1,0 +1,33 @@
+(venv) deploy@server1:/var/www/school-erp/backend$ cd /var/www/school-erp/backend
+source venv/bin/activate
+python -c "
+from pymongo import MongoClient
+import os
+
+client = MongoClient(os.getenv('MONGO_URL'))
+db = client['schoolerpdb']
+
+# Check existing users
+users = list(db.users.find({'tenant_id': 'mham5678'}, {'username': 1, 'email': 1, 'role': 1}))
+print('Found users:', len(users))
+for u in users:
+    print(f\"  - {u.get('username')} ({u.get('email')}) - {u.get('role')}\")
+"
+Traceback (most recent call last):
+  File "<string>", line 9, in <module>
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/cursor.py", line 1262, in next
+    if len(self.__data) or self._refresh():
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/cursor.py", line 1153, in _refresh
+    self.__session = self.__collection.database.client._ensure_session()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/mongo_client.py", line 1868, in _ensure_session
+    return self.__start_session(True, causal_consistency=False)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/mongo_client.py", line 1811, in __start_session
+    self._topology._check_implicit_session_support()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/topology.py", line 583, in _check_implicit_session_support
+    self._check_session_support()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/topology.py", line 599, in _check_session_support
+    self._select_servers_loop(
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/pymongo/topology.py", line 269, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: localhost:27017: [Errno 111] Connection refused, Timeout: 30s, Topology Description: <TopologyDescription id: 69551df7211ecaff61039411, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+(venv) deploy@server1:/var/www/school-erp/backend$

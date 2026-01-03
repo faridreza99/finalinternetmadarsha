@@ -1,0 +1,258 @@
+AI-Powered Bangladeshi Academic Question Builder
+(Class-Wise | Rule-Based | Board-Compliant | ERP-Ready)
+1. SYSTEM ROLE & IDENTITY
+
+You are building an enterprise-grade Bangladeshi Academic Question Builder for schools and madrasas.
+
+This system will be used by teachers, not students.
+
+The system must strictly follow:
+
+Bangladesh NCTB standards
+
+Bangladesh Madrasa Board standards
+
+Traditional Bangladeshi exam paper formats
+
+This is NOT a generic AI question generator.
+This is a rule-driven, class-aware, exam-safe system.
+
+2. CORE OBJECTIVE
+
+Build a system where:
+
+Teachers can design exam question papers
+
+AI assists only within strict academic rules
+
+Each class has different question patterns
+
+MCQ may or may not exist depending on class
+
+Total marks must always equal 100
+
+AI language is pure Bangladeshi academic Bangla
+
+3. NON-NEGOTIABLE RULES (VERY IMPORTANT)
+❌ AI MUST NEVER:
+
+Force MCQ where class rules disallow it
+
+Mix Bangla and English
+
+Use informal or modern conversational Bangla
+
+Repeat same question across different classes
+
+Generate questions without syllabus context
+
+Change total marks from 100
+
+✅ AI MUST ALWAYS:
+
+Obey class-wise exam rules
+
+Use formal academic Bangla
+
+Adjust language complexity per class
+
+Respect teacher customization
+
+Produce print-ready output
+
+4. CLASS-WISE EXAM RULE ENGINE (MANDATORY)
+
+Create a Rule Engine that controls question types per class.
+
+Example Rule Configuration:
+{
+  "class_1_3": {
+    "mcq_allowed": false,
+    "allowed_question_types": [
+      "one_word",
+      "fill_blank",
+      "matching",
+      "short"
+    ],
+    "language_level": "very_simple",
+    "total_marks": 100
+  },
+  "class_4_5": {
+    "mcq_allowed": true,
+    "max_mcq_marks": 10,
+    "allowed_question_types": [
+      "mcq",
+      "short",
+      "creative"
+    ],
+    "language_level": "simple_academic",
+    "total_marks": 100
+  },
+  "class_6_8": {
+    "mcq_allowed": true,
+    "max_mcq_marks": 20,
+    "allowed_question_types": [
+      "mcq",
+      "short",
+      "creative",
+      "essay"
+    ],
+    "language_level": "standard_academic",
+    "total_marks": 100
+  }
+}
+
+
+🔒 Teachers cannot override these rules.
+
+5. TEACHER CUSTOMIZATION LOGIC
+
+Teacher can:
+
+Select Class
+
+Select Subject
+
+Select Chapter(s)
+
+Select Exam Type
+
+Select Total Questions (e.g. 10)
+
+Select Difficulty
+
+Enable/Disable allowed question types
+
+Set marks per section
+
+System must:
+
+Validate total marks = 100
+
+Block invalid configurations
+
+Warn if structure violates board norms
+
+6. TOTAL QUESTIONS VS TOTAL MARKS VALIDATION
+
+If teacher sets:
+
+Total Marks = 100
+
+Total Questions = 10
+
+System must:
+
+Auto-calculate marks
+
+OR allow teacher-defined distribution
+
+Reject mismatched totals
+
+Example Valid Structure:
+Section A: 5 × 4 = 20
+Section B: 3 × 10 = 30
+Section C: 2 × 25 = 50
+Total = 100
+
+7. AI QUESTION GENERATION ENGINE
+AI INPUT FORMAT (STRICT)
+{
+  "class": "৫ম",
+  "subject": "বাংলা",
+  "chapters": ["আমার দেশ", "বৃষ্টি"],
+  "exam_type": "বার্ষিক",
+  "total_marks": 100,
+  "total_questions": 10,
+  "mcq_allowed": true,
+  "difficulty": "Medium",
+  "language_style": "Bangladeshi academic Bangla"
+}
+
+8. AI LANGUAGE CONTROL (CRITICAL)
+SYSTEM PROMPT (MUST BE USED)
+You are a Bangladeshi school and madrasa question paper setter.
+You write only pure Bangla.
+You follow NCTB and Madrasa Board language.
+You use formal academic examination language.
+You adjust vocabulary and sentence length based on class.
+You never use English words or mixed language.
+
+9. CLASS-WISE LANGUAGE BEHAVIOR
+Class	Language Style
+১–৩	খুব সহজ ও ছোট বাক্য
+৪–৫	সহজ একাডেমিক ভাষা
+৬–৮	প্রমিত একাডেমিক ভাষা
+৯–১০	বোর্ড-পর্যায়ের ভাষা
+10. QUESTION PAPER FORMAT (PRINT READY)
+
+AI output must match Bangladeshi exam paper style:
+
+Bengali numbering (১, ২, ৩ / ক, খ, গ)
+
+Clear section titles
+
+Marks shown per question
+
+Instructions in Bangla
+
+No emojis, no markdown noise
+
+11. QUESTION BANK & ANTI-REPETITION SYSTEM
+
+Save every generated question
+
+Tag by:
+
+Class
+
+Subject
+
+Chapter
+
+Difficulty
+
+AI must check database before generating
+
+Prevent same question reuse
+
+12. EXPORT & DELIVERY
+
+PDF (A4, Bangla font)
+
+DOCX
+
+Clean margins
+
+Print-safe formatting
+
+13. USER ROLES
+
+Admin:
+
+Define class rules
+
+Monitor AI usage
+
+Teacher:
+
+Build & edit papers
+
+Viewer:
+
+Download approved papers
+
+14. SUCCESS CRITERIA
+
+✅ Matches real Bangladeshi exam papers
+✅ Teachers trust the system
+✅ AI never breaks academic rules
+✅ Class-wise uniqueness guaranteed
+✅ ERP-ready architecture
+
+🔥 FINAL NOTE FOR REPLIT
+
+This system must behave like a Senior Bangladeshi Question Setter,
+not like a chatbot.
+
+Rules > AI Creativity

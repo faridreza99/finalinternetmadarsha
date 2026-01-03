@@ -1,0 +1,191 @@
+You are a senior full-stack software engineer and ERP system architect.
+
+I already have an existing School ERP system in my Replit project.
+Your task is to DESIGN and IMPLEMENT a complete Payroll Management Module
+that integrates with the existing system.
+
+Context:
+- This ERP is for a School in Bangladesh
+- Users include: Muhatamim (Super Admin), Office Admin, Accountant, Teacher/Staff
+- Payroll must be linked with Attendance and Leave modules
+- The system must be production-ready, scalable, and secure
+
+------------------------------------------------
+MODULE NAME: Payroll Management
+------------------------------------------------
+
+### 1. EMPLOYEE / STAFF MANAGEMENT
+Create a payroll-linked employee system with the following fields:
+- employee_id (unique)
+- full_name
+- designation 
+- department
+- joining_date
+- salary_type (Monthly / Daily)
+- basic_salary
+- bank_name
+- bank_account_number
+- mobile_banking_type (bKash / Nagad / Rocket)
+- mobile_banking_number
+- status (Active / Inactive)
+
+Employee data must be reusable across attendance, leave, and payroll.
+
+------------------------------------------------
+### 2. ATTENDANCE → PAYROLL INTEGRATION
+Payroll calculation MUST automatically fetch data from attendance.
+
+Attendance data needed:
+- total_working_days
+- present_days
+- absent_days
+- late_days
+- early_leave_days
+
+Rules:
+- Absent day = salary deduction
+- Late days can optionally deduct salary (configurable)
+- Attendance calculation must be monthly
+
+------------------------------------------------
+### 3. LEAVE MANAGEMENT INTEGRATION
+Integrate leave system with payroll.
+
+Leave types:
+- Casual Leave
+- Sick Leave
+- Religious Leave
+- Paid / Unpaid Leave
+
+Rules:
+- Paid leave does NOT deduct salary
+- Unpaid leave deducts salary
+- Leave must be approved before affecting payroll
+
+------------------------------------------------
+### 4. SALARY STRUCTURE
+Allow flexible salary components:
+
+Earnings:
+- Basic Salary
+- House Rent Allowance
+- Food Allowance
+- Transport Allowance
+- Other Allowance (custom)
+
+Deductions:
+- Absent Deduction
+- Late Penalty
+- Advance / Loan Deduction
+- Other Deduction
+
+Gross Salary = Total Earnings
+Net Salary = Gross Salary - Total Deductions
+
+------------------------------------------------
+### 5. BONUS & EXTRA PAYMENTS
+Support one-time and recurring bonuses:
+- Eid Bonus
+- Special Hadiya
+- Performance Bonus
+
+Bonus can be:
+- Fixed amount
+- Percentage based
+
+------------------------------------------------
+### 6. PAYROLL PROCESS FLOW
+Implement a professional payroll lifecycle:
+
+1. Select Payroll Month
+2. Fetch Attendance + Leave Data
+3. Auto-calculate salary
+4. Generate Draft Payroll
+5. Review payroll summary
+6. Approve payroll
+7. Lock payroll after approval (no edit allowed)
+
+------------------------------------------------
+### 7. PAYSLIP GENERATION
+Each employee must get a payslip containing:
+- Employee details
+- Salary breakdown
+- Attendance summary
+- Deductions
+- Net payable salary
+- Payroll month
+
+Payslip formats:
+- On-screen view
+- PDF download
+- Print-ready layout
+
+------------------------------------------------
+### 8. PAYMENT MANAGEMENT
+Track salary payments with:
+- Payment method (Bank / Mobile Banking / Cash)
+- Payment reference number
+- Payment date
+- Payment status (Paid / Unpaid)
+
+------------------------------------------------
+### 9. REPORTS & ANALYTICS
+Generate the following reports:
+- Monthly Payroll Report
+- Employee-wise Salary Report
+- Department-wise Payroll Report
+- Deduction Summary
+- Bonus Report
+- Yearly Payroll Summary
+
+Reports must be exportable (PDF / Excel if possible).
+
+------------------------------------------------
+### 10. ROLE & PERMISSION CONTROL
+Access rules:
+- Super Admin: Full access
+- Office Admin: Manage payroll but cannot delete finalized payroll
+- Accountant: Payroll processing & payment
+- Teacher/Staff: View only their own payslip
+
+------------------------------------------------
+### 11. DATABASE DESIGN
+Design normalized tables:
+- employees
+- attendance_summary
+- leave_records
+- salary_structures
+- payrolls
+- payroll_items
+- bonuses
+- deductions
+- payments
+
+Ensure:
+- Proper foreign keys
+- Indexing
+- Data integrity
+
+------------------------------------------------
+### 12. UI / UX REQUIREMENTS
+- Clean, simple dashboard
+- Month selector
+- Table-based payroll preview
+- Status badges (Draft, Approved, Paid)
+- Error handling & validation messages
+
+------------------------------------------------
+### 13. CODE QUALITY
+- Modular code
+- Reusable components
+- Secure API endpoints
+- Input validation
+- Error handling
+- Ready for future expansion
+
+------------------------------------------------
+IMPORTANT:
+- Do NOT create demo or fake logic
+- Do NOT oversimplify
+- Build like a real enterprise Madrasa ERP payroll system
+- Follow best practices

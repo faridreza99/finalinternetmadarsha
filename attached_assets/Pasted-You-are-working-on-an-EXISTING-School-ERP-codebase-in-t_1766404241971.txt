@@ -1,0 +1,101 @@
+You are working on an EXISTING School ERP codebase in this Replit project.
+DO NOT rebuild the system.
+DO NOT change existing architecture unless required.
+Reuse existing models, UI components, and API patterns.
+
+GOAL:
+Extend the existing ERP to complete the Student Management experience.
+
+-----------------------------------
+STEP 1: ANALYZE EXISTING CODE
+-----------------------------------
+- Scan current student model, forms, and APIs
+- Identify existing student fields and reuse them
+- Identify existing auth, RBAC, tenant handling
+- Follow current folder structure and naming
+
+-----------------------------------
+STEP 2: STUDENT SELF-SERVICE FEATURES
+-----------------------------------
+Add the following WITHOUT breaking admin features:
+
+1) Student Profile (Self)
+- Create `/student/profile` page
+- Prefill data from existing student table
+- Allow student to update ONLY:
+  - phone
+  - email
+  - address
+  - guardian phone
+  - photo
+- Lock all academic & system fields
+- Use existing update APIs or extend safely
+
+-----------------------------------
+
+2) Payment History (Student View)
+- Create `/student/fees` page
+- Fetch payments using existing fee tables
+- Show:
+  - fee type
+  - amount
+  - paid/due status
+  - payment date
+- Add total paid & total due summary
+- Read-only for student
+
+-----------------------------------
+
+3) Admit Card Download
+- Create `/student/admit-card` page
+- Reuse existing exam & student data
+- Generate PDF using existing PDF utilities
+- Block download if fee due (config flag)
+- Ensure student can only download OWN admit card
+
+-----------------------------------
+
+4) Student Dashboard
+- Create `/student/dashboard`
+- Show cards:
+  - Attendance %
+  - Fee Status
+  - Latest Result
+  - Notifications
+- Use existing data sources
+
+-----------------------------------
+STEP 3: API & SECURITY
+-----------------------------------
+- Reuse JWT authentication
+- Ensure student_id from token matches request
+- Add middleware checks if missing
+- Do NOT expose other students’ data
+- Log profile updates and downloads
+
+-----------------------------------
+STEP 4: UI CONSISTENCY
+-----------------------------------
+- Use existing Tailwind + Shadcn UI components
+- Match current design and dark mode
+- Follow current layout & sidebar logic
+- Add student menu items only for student role
+
+-----------------------------------
+STEP 5: DATABASE & TENANCY
+-----------------------------------
+- Reuse existing collections
+- Ensure student-linked data includes:
+  - student_id
+  - tenant_id
+  - school_id
+- Do not duplicate tables unnecessarily
+
+-----------------------------------
+FINAL RULES
+-----------------------------------
+- No breaking changes
+- No duplicate student models
+- No new auth system
+- Follow existing code style
+- Add comments where logic is extended

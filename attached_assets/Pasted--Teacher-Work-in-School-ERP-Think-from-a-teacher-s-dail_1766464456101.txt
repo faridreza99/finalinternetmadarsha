@@ -1,0 +1,192 @@
+👩‍🏫 Teacher Work in School ERP
+
+Think from a teacher’s daily routine 👇
+“What do I do when I log in?”
+
+1️⃣ Teacher Dashboard (First Screen)
+
+A teacher should see:
+
+Today’s classes
+
+Assigned subjects
+
+Attendance summary
+
+Pending tasks (marks entry, homework)
+
+Notifications from admin
+
+Read-only stats, quick actions
+
+2️⃣ Class & Subject Access (Core)
+
+Teacher can access ONLY assigned:
+
+Classes
+
+Sections
+
+Subjects
+
+❌ Cannot see other teachers’ classes
+
+3️⃣ Student List (Assigned Classes Only)
+
+Teacher can:
+
+View student list
+
+See student basic profile
+
+Search students by name/roll
+
+❌ Cannot edit student personal data
+
+4️⃣ Attendance Management (Daily Work)
+
+Teacher can:
+
+Take daily attendance
+
+Mark Present / Absent / Late
+
+Edit attendance for the same day (time-limited)
+
+System does:
+
+Auto date & class binding
+
+Lock after admin-defined time
+
+Notify parents (optional)
+
+5️⃣ Homework & Assignment
+
+Teacher can:
+
+Create homework
+
+Add instructions
+
+Upload files (PDF, image)
+
+Set submission date
+
+Student can:
+
+View homework
+
+Download files
+
+6️⃣ Exam Marks Entry (Very Important)
+
+Teacher can:
+
+Enter marks for assigned subjects
+
+Edit marks before result publish
+
+View subject-wise mark list
+
+❌ Cannot publish results
+
+Admin:
+
+Reviews
+
+Publishes results
+
+7️⃣ Lesson Plan (Optional but Powerful)
+
+Teacher can:
+
+Create lesson plans
+
+Link lessons to syllabus topics
+
+Track completed vs pending topics
+
+8️⃣ Academic Content Access (CMS)
+
+Teacher can:
+
+View academic books
+
+Upload notes (if permitted)
+
+Access question papers
+
+❌ Cannot delete admin content
+
+9️⃣ AI Tools (Teacher Role)
+
+Teacher can:
+
+Generate quizzes
+
+Generate test papers
+
+Create summaries/notes for class
+
+Edit AI-generated content before use
+
+AI outputs saved under:
+
+teacher_id
+
+class_id
+
+subject_id
+
+🔔 10️⃣ Notifications & Communication
+
+Teacher can:
+
+Receive notices
+
+Send class notices (if allowed)
+
+Message admin (optional)
+
+📊 11️⃣ Reports (Limited)
+
+Teacher can view:
+
+Attendance summary (own class)
+
+Subject performance overview
+
+❌ No financial reports
+
+🔐 12️⃣ What Teacher CANNOT Do (Important)
+
+Teacher cannot:
+
+Edit fees
+
+Edit student admission data
+
+Change class structure
+
+Publish results
+
+Access system settings
+
+🧩 Teacher-Linked Modules Summary
+Module	Access Type
+Dashboard	View
+Class & Subject	View (Assigned only)
+Student List	View
+Attendance	Create / Edit
+Homework	Create
+Marks Entry	Create
+Lesson Plan	Create
+Academic CMS	View / Upload (limited)
+AI Tools	Use
+Notifications	View / Send (limited)
+Reports	View (limited)
+🧠 ERP DESIGN RULE (REMEMBER THIS)
+
+If a teacher did not teach that class →
+They must not see it

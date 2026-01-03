@@ -1,0 +1,777 @@
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  FileText,
+  Sparkles,
+  BookOpen,
+  Trash2,
+  Download,
+  Loader2,
+} from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "/api";
+
+/**
+ * Convert a class object to the canonical class_standard value.
+ * Returns the standard with ordinal suffix (e.g., "5th", "6th")
+ * to match the format stored in subjects collection.
+ */
+const getClassValue = (cls) => {
+  // If class has standard field (e.g., "5th"), use it directly
+  if (cls.standard) {
+    return String(cls.standard);
+  }
+  // If class_standard is already in ordinal format
+  if (cls.class_standard !== undefined && cls.class_standard !== null) {
+    const val = String(cls.class_standard);
+    // If already has ordinal suffix, return as is
+    if (val.match(/\d+(st|nd|rd|th)$/i)) {
+      return val;
+    }
+    // Add ordinal suffix
+    const num = parseInt(val.match(/\d+/)?.[0] || val, 10);
+    if (!isNaN(num)) {
+      return `${num}${getOrdinalSuffix(num)}`;
+    }
+    return val;
+  }
+  if (cls.name) {
+    const nameStr = String(cls.name);
+    const match = nameStr.match(/\d+/);
+    if (match) {
+      const num = parseInt(match[0], 10);
+      return `${num}${getOrdinalSuffix(num)}`;
+    }
+    return nameStr;
+  }
+  return String(cls.id);
+};
+
+const getOrdinalSuffix = (num) => {
+  const j = num % 10;
+  const k = num % 100;
+  if (j === 1 && k !== 11) return "st";
+  if (j === 2 && k !== 12) return "nd";
+  if (j === 3 && k !== 13) return "rd";
+  return "th";
+};
+
+const AINotes = () => {
+  const [loading, setLoading] = useState(false); // history list loading
+  const [generating, setGenerating] = useState(false); // generate button loading
+  const [notesList, setNotesList] = useState([]);
+  const [currentNotes, setCurrentNotes] = useState(null);
+
+  // ---------- Class options (from Class API) ----------
+  const [classOptions, setClassOptions] = useState([]);
+  const [classLoading, setClassLoading] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState(""); // form dropdown value (ID)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    class_standard: "", // e.g. "10"
+    subject: "",
+    chapter: "",
+    topic: "",
+  });
+
+  // Dynamic curriculum state from backend (FORM)
+  const [subjectsOptions, setSubjectsOptions] = useState([]); // subjects for selected class (form)
+  const [chaptersOptions, setChaptersOptions] = useState([]); // chapters for selected subject (form)
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+
+  // Filter state for history
+  const [filterClass, setFilterClass] = useState(""); // class_standard value
+  const [filterSubject, setFilterSubject] = useState("");
+  const [filterChapter, setFilterChapter] = useState("");
+
+  // ===============================
+  // Load classes from backend
+  // ===============================
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        setClassLoading(true);
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(`${API_BASE_URL}/classes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setClassOptions(res.data || []);
+      } catch (err) {
+        console.error("Class load failed:", err);
+        toast.error("Failed to load class list");
+      } finally {
+        setClassLoading(false);
+      }
+    };
+
+    fetchClasses();
+  }, []);
+
+  // ===============================
+  // Helpers to fetch notes (history)
+  // ===============================
+
+  const fetchNotes = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const params = {};
+      if (filterClass) params.class_standard = filterClass;
+      if (filterSubject) params.subject = filterSubject;
+      if (filterChapter) params.chapter = filterChapter;
+
+      const response = await axios.get(`${API_BASE_URL}/ai/notes/list`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      });
+
+      if (response.data.success) {
+        setNotesList(response.data.notes);
+      }
+    } catch (error) {
+      console.error("Fetch notes error:", error);
+      toast.error("Failed to load notes");
+    } finally {
+      setLoading(false);
+    }
+  }, [filterClass, filterSubject, filterChapter]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  // ===============================
+  // Dynamic Class → Subject → Chapter (FORM)
+  // ===============================
+
+  const handleClassChange = async (e) => {
+    const classId = e.target.value; // DB ID from select
+    setSelectedClassId(classId);
+
+    // Find class and derive class_standard (e.g. "10")
+    const cls = classOptions.find((c) => String(c.id) === String(classId));
+    const classStandard = cls ? getClassValue(cls) : "";
+
+    setFormData((prev) => ({
+      ...prev,
+      class_standard: classStandard, // used by AI + notes backend
+      subject: "",
+      chapter: "",
+      topic: "",
+    }));
+    setCurrentNotes(null);
+    setSubjectsOptions([]);
+    setChaptersOptions([]);
+
+    if (!classId) return;
+
+    try {
+      setSubjectsLoading(true);
+      const token = localStorage.getItem("token");
+
+      // SUBJECT API expects CLASS STANDARD (e.g., "6th", "7th")
+      const res = await axios.get(
+        `${API_BASE_URL}/subjects/by-class/${classStandard}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      setSubjectsOptions(res.data || []);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      toast.error("Failed to load subjects for selected class");
+    } finally {
+      setSubjectsLoading(false);
+    }
+  };
+
+  const handleSubjectChange = (e) => {
+    const value = e.target.value;
+
+    setFormData((prev) => ({
+      ...prev,
+      subject: value,
+      chapter: "",
+      topic: "",
+    }));
+    setCurrentNotes(null);
+
+    // Find subject object and build chapter list from syllabus
+    const selectedSubject = subjectsOptions.find(
+      (s) => s.subject_name === value,
+    );
+
+    if (!selectedSubject || !Array.isArray(selectedSubject.syllabus)) {
+      setChaptersOptions([]);
+      return;
+    }
+
+    const chapters = selectedSubject.syllabus
+      .map((unit) => unit.unit_name)
+      .filter(Boolean);
+
+    const uniqueChapters = Array.from(new Set(chapters));
+    setChaptersOptions(uniqueChapters);
+  };
+
+  const handleChapterChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, chapter: value }));
+  };
+
+  // ===============================
+  // Generate Notes
+  // ===============================
+
+  const handleGenerate = async () => {
+    if (!formData.class_standard || !formData.subject) {
+      toast.error("Please select Class and Subject");
+      return;
+    }
+
+    setGenerating(true);
+    setCurrentNotes(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${API_BASE_URL}/ai/notes/generate`,
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (response.data.success) {
+        setCurrentNotes(response.data);
+        if (response.data.source === "cms") {
+          toast.success("Notes loaded from library!");
+        } else {
+          toast.success("AI Notes generated and saved!");
+        }
+        fetchNotes();
+      }
+    } catch (error) {
+      console.error("Generate notes error:", error);
+      toast.error(error?.response?.data?.detail || "Failed to generate notes");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // ===============================
+  // Notes Actions (View / Delete / Download)
+  // ===============================
+
+  const handleDelete = async (notesId) => {
+    if (!window.confirm("Delete these notes?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/ai/notes/${notesId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("Notes deleted");
+      fetchNotes();
+      if (currentNotes?.notes_id === notesId) {
+        setCurrentNotes(null);
+      }
+    } catch (error) {
+      console.error("Delete notes error:", error);
+      toast.error("Failed to delete notes");
+    }
+  };
+
+  const handleViewNotes = (notes) => {
+    setCurrentNotes({
+      notes_id: notes.id,
+      content: notes.content,
+      source: notes.source,
+      class_standard: notes.class_standard,
+      subject: notes.subject,
+      chapter: notes.chapter,
+      topic: notes.topic,
+      created_at: notes.created_at,
+    });
+
+    // Sync form selections when viewing from history
+    setFormData((prev) => ({
+      ...prev,
+      class_standard: notes.class_standard || prev.class_standard,
+      subject: notes.subject || prev.subject,
+      chapter: notes.chapter || prev.chapter,
+      topic: notes.topic || prev.topic,
+    }));
+  };
+
+  const handleDownload = () => {
+    if (!currentNotes) return;
+
+    const content = `
+${currentNotes.subject} - Class ${currentNotes.class_standard}
+${currentNotes.chapter ? `Chapter: ${currentNotes.chapter}` : ""}
+${currentNotes.topic ? `Topic: ${currentNotes.topic}` : ""}
+
+${currentNotes.content}
+
+---
+Generated: ${new Date(currentNotes.created_at).toLocaleString()}
+Source: ${currentNotes.source === "cms" ? "Library" : "AI Generated"}
+    `.trim();
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `notes_${currentNotes.subject}_${currentNotes.class_standard}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // ===============================
+  // Filter options derived from notesList
+  // ===============================
+
+  const subjectFilterOptions = useMemo(() => {
+    const filteredByClass = notesList.filter((n) =>
+      filterClass ? String(n.class_standard) === String(filterClass) : true,
+    );
+    const subjects = filteredByClass.map((n) => n.subject).filter(Boolean);
+    return Array.from(new Set(subjects));
+  }, [notesList, filterClass]);
+
+  const chapterFilterOptions = useMemo(() => {
+    const filtered = notesList.filter((n) => {
+      if (filterClass && String(n.class_standard) !== String(filterClass))
+        return false;
+      if (filterSubject && n.subject !== filterSubject) return false;
+      return true;
+    });
+
+    const chapters = filtered.map((n) => n.chapter).filter(Boolean);
+    return Array.from(new Set(chapters));
+  }, [notesList, filterClass, filterSubject]);
+
+  // Filter handlers (Notes Library)
+  const handleFilterClassChange = (e) => {
+    const value = e.target.value; // class_standard
+    setFilterClass(value);
+    setFilterSubject("");
+    setFilterChapter("");
+  };
+
+  const handleFilterSubjectChange = (e) => {
+    const value = e.target.value;
+    setFilterSubject(value);
+    setFilterChapter("");
+  };
+
+  const handleFilterChapterChange = (e) => {
+    const value = e.target.value;
+    setFilterChapter(value);
+  };
+
+  // ===============================
+  // Render
+  // ===============================
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <FileText className="text-white" size={32} />
+            <h1 className="text-3xl font-bold text-white">
+              AI নোটস জেনারেটর
+            </h1>
+          </div>
+          <p className="text-blue-100">
+            উদাহরণ ও অনুশীলন প্রশ্নসহ বিস্তারিত নোটস তৈরি করুন
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Generate Form */}
+          <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-white">
+              <Sparkles size={20} className="text-blue-600" />
+              নোটস তৈরি করুন
+            </h2>
+
+            <div className="space-y-4">
+              {/* Class */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  মারহালা *
+                </label>
+                <select
+                  value={selectedClassId}
+                  onChange={handleClassChange}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">
+                    {classLoading ? "মারহালা লোড হচ্ছে..." : "মারহালা নির্বাচন করুন"}
+                  </option>
+                  {classOptions.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name || `Class ${getClassValue(cls)}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Subject (dynamic from backend) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  বিষয় *
+                </label>
+                <select
+                  value={formData.subject}
+                  onChange={handleSubjectChange}
+                  disabled={!formData.class_standard || subjectsLoading}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">
+                    {subjectsLoading
+                      ? "বিষয় লোড হচ্ছে..."
+                      : formData.class_standard
+                        ? "বিষয় নির্বাচন করুন"
+                        : "প্রথমে মারহালা নির্বাচন করুন"}
+                  </option>
+
+                  {/* Backend subjects */}
+                  {subjectsOptions.map((subject) => (
+                    <option key={subject.id} value={subject.subject_name}>
+                      {subject.subject_name}
+                    </option>
+                  ))}
+
+                  {/* Message when no subjects available */}
+                  {subjectsOptions.length === 0 && !subjectsLoading && formData.class_standard && (
+                    <option value="" disabled>
+                      কোন বিষয় পাওয়া যায়নি - মারহালা ব্যবস্থাপনায় যোগ করুন
+                    </option>
+                  )}
+                </select>
+              </div>
+
+              {/* Chapter (dynamic from syllabus) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  অধ্যায়
+                </label>
+                {chaptersOptions.length > 0 ? (
+                  <select
+                    value={formData.chapter}
+                    onChange={handleChapterChange}
+                    disabled={!formData.subject}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">অধ্যায় নির্বাচন করুন</option>
+                    {chaptersOptions.map((ch) => (
+                      <option key={ch} value={ch}>
+                        {ch}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.chapter}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        chapter: e.target.value,
+                      }))
+                    }
+                    placeholder={
+                      formData.subject
+                        ? "সিলেবাসে অধ্যায় পাওয়া যায়নি – অধ্যায়ের নাম লিখুন"
+                        : "প্রথমে বিষয় নির্বাচন করুন"
+                    }
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                )}
+              </div>
+
+              {/* Topic (free text) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  টপিক
+                </label>
+                <input
+                  type="text"
+                  value={formData.topic}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      topic: e.target.value,
+                    }))
+                  }
+                  placeholder="যেমন, তাপগতিবিদ্যার সূত্র"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              {/* Generate Button */}
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:bg-gray-400"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    তৈরি হচ্ছে...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} />
+                    নোটস তৈরি করুন
+                  </>
+                )}
+              </button>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                শিখন উদ্দেশ্য, উদাহরণ এবং অনুশীলন প্রশ্ন অন্তর্ভুক্ত
+              </p>
+            </div>
+          </div>
+
+          {/* Middle: Notes Display */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2 dark:text-white">
+                <BookOpen size={20} className="text-blue-600" />
+                স্টাডি নোটস
+              </h2>
+              {currentNotes && (
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                >
+                  <Download size={18} />
+                  ডাউনলোড
+                </button>
+              )}
+            </div>
+
+            {currentNotes ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-gray-700 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">মারহালা:</span>{" "}
+                      <span className="text-gray-900 dark:text-white">
+                        {currentNotes.class_standard}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        বিষয়:
+                      </span>{" "}
+                      <span className="text-gray-900 dark:text-white">
+                        {currentNotes.subject}
+                      </span>
+                    </div>
+                    {currentNotes.chapter && (
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          অধ্যায়:
+                        </span>{" "}
+                        <span className="text-gray-900 dark:text-white">
+                          {currentNotes.chapter}
+                        </span>
+                      </div>
+                    )}
+                    {currentNotes.topic && (
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          টপিক:
+                        </span>{" "}
+                        <span className="text-gray-900 dark:text-white">
+                          {currentNotes.topic}
+                        </span>
+                      </div>
+                    )}
+                    <div className="col-span-2">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">উৎস:</span>{" "}
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          currentNotes.source === "cms"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {currentNotes.source === "cms"
+                          ? "লাইব্রেরি"
+                          : "AI তৈরি"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="prose max-w-none dark:prose-invert">
+                  <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {currentNotes.content}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+                <FileText size={64} className="mx-auto mb-4 opacity-30" />
+                <p>এখানে দেখতে নোটস তৈরি করুন</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Notes History */}
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">নোটস লাইব্রেরি</h2>
+
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Filter by Class */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                মারহালা দিয়ে ফিল্টার
+              </label>
+              <select
+                value={filterClass}
+                onChange={handleFilterClassChange}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">
+                  {classLoading ? "মারহালা লোড হচ্ছে..." : "সকল মারহালা"}
+                </option>
+                {classOptions.map((cls) => (
+                  <option key={cls.id} value={getClassValue(cls)}>
+                    {cls.name || `Class ${getClassValue(cls)}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter by Subject */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                বিষয় দিয়ে ফিল্টার
+              </label>
+              <select
+                value={filterSubject}
+                onChange={handleFilterSubjectChange}
+                disabled={subjectFilterOptions.length === 0}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">
+                  {subjectFilterOptions.length
+                    ? "সকল বিষয়"
+                    : "কোন বিষয় পাওয়া যায়নি"}
+                </option>
+                {subjectFilterOptions.map((subj) => (
+                  <option key={subj} value={subj}>
+                    {subj}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter by Chapter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                অধ্যায় দিয়ে ফিল্টার
+              </label>
+              <select
+                value={filterChapter}
+                onChange={handleFilterChapterChange}
+                disabled={chapterFilterOptions.length === 0}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">
+                  {chapterFilterOptions.length
+                    ? "সকল অধ্যায়"
+                    : "কোন অধ্যায় পাওয়া যায়নি"}
+                </option>
+                {chapterFilterOptions.map((ch) => (
+                  <option key={ch} value={ch}>
+                    {ch}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="space-y-3">
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 py-8">
+                <Loader2 className="animate-spin" size={18} />
+                নোটস লোড হচ্ছে...
+              </div>
+            ) : notesList.length > 0 ? (
+              notesList.map((notes) => (
+                <div
+                  key={notes.id}
+                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-500 transition cursor-pointer"
+                  onClick={() => handleViewNotes(notes)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white">
+                        {notes.subject} - Class {notes.class_standard}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {notes.chapter && `অধ্যায়: ${notes.chapter}`}
+                        {notes.chapter && notes.topic && " | "}
+                        {notes.topic && `টপিক: ${notes.topic}`}
+                      </p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(notes.created_at).toLocaleDateString()}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            notes.source === "ai_generated"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {notes.source === "ai_generated" ? "AI" : "লাইব্রেরি"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(notes.id);
+                      }}
+                      className="text-red-600 hover:text-red-800 p-2"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-400 dark:text-gray-500">
+                কোন নোটস পাওয়া যায়নি
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AINotes;

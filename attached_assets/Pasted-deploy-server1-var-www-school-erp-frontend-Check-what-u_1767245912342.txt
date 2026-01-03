@@ -1,0 +1,61 @@
+deploy@server1:/var/www/school-erp/frontend$ # Check what user the backend is running as
+ps aux | grep uvicorn
+
+# Make uploads writable by all
+sudo chmod -R 777 /var/www/school-erp/backend/uploads
+sudo chown -R deploy:deploy /var/www/school-erp/backend/uploads
+
+# Restart the backend
+sudo systemctl restart school-erp-backend
+
+# Check backend logs for any photo upload errors
+sudo journalctl -u school-erp-backend -n 50
+deploy    182225  0.0  0.4  37008 27268 ?        Ss    2025   0:30 /var/www/all-in-one-erp/backend/venv/bin/python3 /var/www/all-in-one-erp/backend/venv/bin/gunicorn -k uvicorn.workers.UvicornWorker server:app --bind 127.0.0.1:8000 --workers 2
+deploy    182230  0.3  1.5 2395092 91092 ?       Sl    2025  19:07 /var/www/all-in-one-erp/backend/venv/bin/python3 /var/www/all-in-one-erp/backend/venv/bin/gunicorn -k uvicorn.workers.UvicornWorker server:app --bind 127.0.0.1:8000 --workers 2
+deploy    182231  0.3  1.5 2395124 91916 ?       Sl    2025  19:16 /var/www/all-in-one-erp/backend/venv/bin/python3 /var/www/all-in-one-erp/backend/venv/bin/gunicorn -k uvicorn.workers.UvicornWorker server:app --bind 127.0.0.1:8000 --workers 2
+deploy    291856  0.0  0.4  34676 25212 ?        Ss   05:34   0:00 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8001 --workers 3 --timeout 120
+deploy    291859  1.0  2.5 1705688 152612 ?      Sl   05:34   0:02 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8001 --workers 3 --timeout 120
+deploy    291860  1.0  2.4 1186620 149656 ?      Sl   05:34   0:02 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8001 --workers 3 --timeout 120
+deploy    291861  1.0  2.4 1041460 149980 ?      Sl   05:34   0:02 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8001 --workers 3 --timeout 120
+deploy    291948  0.0  0.0   6612  2312 pts/2    S+   05:38   0:00 grep --color=auto uvicorn
+Jan 01 05:36:18 server1.maxtechbd.com gunicorn[291861]:     return await dependant.call(**values)
+Jan 01 05:36:18 server1.maxtechbd.com gunicorn[291861]:   File "/var/www/school-erp/backend/server.py", line 3984, in upload_student_photo
+Jan 01 05:36:18 server1.maxtechbd.com gunicorn[291861]:     with open(file_path, "wb") as buffer:
+Jan 01 05:36:18 server1.maxtechbd.com gunicorn[291861]: PermissionError: [Errno 13] Permission denied: 'uploads/mham5678/students/STU260001_c9eeb928-5a59-4>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291859]: [2026-01-01 05:36:42 +0000] [291859] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:36:42 +0000] [291861] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:36:42 +0000] [291860] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:36:42 +0000] [291860] [INFO] DEBUG MongoDB Query - Looking for user with id='619c637>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:36:42 +0000] [291860] [INFO] DEBUG get_current_user: Fetched from DB - username='mha>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:36:42 +0000] [291860] [INFO] DEBUG get_current_user: After User() creation - usernam>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:36:42 +0000] [291861] [INFO] DEBUG MongoDB Query - Looking for user with id='619c637>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:36:42 +0000] [291861] [INFO] DEBUG get_current_user: Fetched from DB - username='mha>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:36:42 +0000] [291861] [INFO] DEBUG get_current_user: After User() creation - usernam>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291859]: [2026-01-01 05:36:42 +0000] [291859] [INFO] DEBUG MongoDB Query - Looking for user with id='619c637>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291859]: [2026-01-01 05:36:42 +0000] [291859] [INFO] DEBUG get_current_user: Fetched from DB - username='mha>
+Jan 01 05:36:42 server1.maxtechbd.com gunicorn[291859]: [2026-01-01 05:36:42 +0000] [291859] [INFO] DEBUG get_current_user: After User() creation - usernam>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:12 +0000] [291861] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:12 +0000] [291861] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:12 +0000] [291860] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:12 +0000] [291860] [INFO] DEBUG MongoDB Query - Looking for user with id='619c637>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:12 +0000] [291860] [INFO] DEBUG get_current_user: Fetched from DB - username='mha>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:12 +0000] [291860] [INFO] DEBUG get_current_user: After User() creation - usernam>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:12 +0000] [291861] [INFO] DEBUG MongoDB Query - Looking for user with id='619c637>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:12 +0000] [291861] [INFO] DEBUG get_current_user: Fetched from DB - username='mha>
+Jan 01 05:38:12 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:12 +0000] [291861] [INFO] DEBUG get_current_user: After User() creation - usernam>
+Jan 01 05:38:14 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:14 +0000] [291861] [INFO] DEBUG MongoDB Query - Looking for user with id='619c637>
+Jan 01 05:38:14 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:14 +0000] [291861] [INFO] DEBUG get_current_user: Fetched from DB - username='mha>
+Jan 01 05:38:14 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:14 +0000] [291861] [INFO] DEBUG get_current_user: After User() creation - usernam>
+Jan 01 05:38:20 server1.maxtechbd.com systemd[1]: Stopping School ERP FastAPI Backend...
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291856]: [2026-01-01 05:38:20 +0000] [291856] [INFO] Handling signal: term
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:20 +0000] [291860] [INFO] Shutting down
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:20 +0000] [291861] [INFO] Shutting down
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291859]: [2026-01-01 05:38:20 +0000] [291859] [INFO] Shutting down
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:20 +0000] [291860] [INFO] Waiting for application shutdown.
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:20 +0000] [291861] [INFO] Waiting for application shutdown.
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291859]: [2026-01-01 05:38:20 +0000] [291859] [INFO] Waiting for application shutdown.
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:20 +0000] [291860] [INFO] Application shutdown complete.
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:20 +0000] [291860] [INFO] Finished server process [291860]
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291860]: [2026-01-01 05:38:20 +0000] [291860] [INFO] Worker exiting (pid: 291860)
+Jan 01 05:38:20 server1.maxtechbd.com gunicorn[291861]: [2026-01-01 05:38:20 +0000] [291861] [INFO] Application shutdown complete.
+lines 1-40

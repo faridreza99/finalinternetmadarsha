@@ -1,0 +1,66 @@
+(venv) deploy@server1:/var/www/school-erp/backend$ # Check current backend status
+sudo systemctl status school-erp-backend
+
+# Get the latest backend logs (last 50 lines)
+sudo journalctl -u school-erp-backend -n 50 --no-pager
+
+# Check if port 8001 is listening (your service binds to 8001)
+ss -tlnp | grep 8001
+● school-erp-backend.service - School ERP FastAPI Backend
+     Loaded: loaded (/etc/systemd/system/school-erp-backend.service; enabled; vendor preset: enabled)
+     Active: activating (auto-restart) (Result: exit-code) since Wed 2025-12-31 12:47:58 UTC; 3s ago
+    Process: 269439 ExecStart=/var/www/school-erp/backend/venv/bin/gunicorn server:app -k uvicorn.workers.UvicornWorker>
+   Main PID: 269439 (code=exited, status=3)
+        CPU: 1.444s
+
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:   File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:   File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:   File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:   File "/var/www/school-erp/backend/server.py", line 14, in <module>
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:     from id_card_generator import generate_staff_id_card_pdf
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:   File "/var/www/school-erp/backend/id_card_generator.py", line 22, in <module>
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]:     import qrcode
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]: ModuleNotFoundError: No module named 'qrcode'
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269457]: [2025-12-31 12:48:09 +0000] [269457] [INFO] Worker exiting (pid: 269457)
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]: [2025-12-31 12:48:09 +0000] [269458] [ERROR] Exception in worker process
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]: Traceback (most recent call last):
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     worker.init_process()
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/workers.py", line 66, in init_process
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     super(UvicornWorker, self).init_process()
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     self.load_wsgi()
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     self.wsgi = self.app.wsgi()
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     self.callable = self.load()
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     return self.load_wsgiapp()
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     return util.import_app(self.app_uri)
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/gunicorn/util.py", line 370, in import_app
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     mod = importlib.import_module(module)
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     return _bootstrap._gcd_import(name[level:], package, level)
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/server.py", line 14, in <module>
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     from id_card_generator import generate_staff_id_card_pdf
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:   File "/var/www/school-erp/backend/id_card_generator.py", line 22, in <module>
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]:     import qrcode
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]: ModuleNotFoundError: No module named 'qrcode'
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269458]: [2025-12-31 12:48:09 +0000] [269458] [INFO] Worker exiting (pid: 269458)
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269456]: [2025-12-31 12:48:09 +0000] [269456] [ERROR] Worker (pid:269457) exited with code 3
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269456]: [2025-12-31 12:48:09 +0000] [269456] [ERROR] Worker (pid:269459) was sent SIGTERM!
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269456]: [2025-12-31 12:48:09 +0000] [269456] [ERROR] Worker (pid:269458) was sent SIGTERM!
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269456]: [2025-12-31 12:48:09 +0000] [269456] [ERROR] Shutting down: Master
+Dec 31 12:48:09 server1.maxtechbd.com gunicorn[269456]: [2025-12-31 12:48:09 +0000] [269456] [ERROR] Reason: Worker failed to boot.
+Dec 31 12:48:09 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=3/NOTIMPLEMENTED
+Dec 31 12:48:09 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:48:09 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Consumed 1.321s CPU time.
+(venv) deploy@server1:/var/www/school-erp/backend$

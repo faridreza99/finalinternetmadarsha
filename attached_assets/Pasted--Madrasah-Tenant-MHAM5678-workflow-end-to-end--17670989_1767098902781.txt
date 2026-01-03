@@ -1,0 +1,130 @@
+হাই টিম,
+
+আমি এখন Madrasah Tenant (MHAM5678)–এ পুরো workflow end-to-end টেস্ট করছি। কয়েকটি গুরুত্বপূর্ণ সমস্যা ও উন্নয়ন পয়েন্ট পেয়েছি, অনুগ্রহ করে নিচেরগুলো একসাথে দেখবেন:
+
+❌ সমস্যা ১: Student ID Card Generate হচ্ছে না
+
+বর্তমান অবস্থা:
+
+Students → Student ID Cards পেজে স্টুডেন্ট লিস্ট দেখাচ্ছে
+
+কিন্তু View / Download / Print আইকনে ক্লিক করলে
+👉 কোনো ID Card generate হচ্ছে না
+
+এছাড়া ID Card Design / Template কোথাও কনফিগার করার অপশন নেই
+
+আমি যে ধরনের ID Card চাই (সংযুক্ত স্যাম্পল অনুযায়ী):
+
+Front + Back design
+
+Logo, Madrasah Name
+
+Student Photo
+
+Student Name
+
+Father’s Name
+
+Class / Marhala
+
+Roll Number
+
+Mobile
+
+Issue Date
+
+Authority Signature
+
+QR / Serial (optional)
+
+➡️ অনুগ্রহ করে:
+
+ID Card Template Builder / Default Madrasah Template যোগ করুন
+
+Student ID Card generate → preview → print → download (PDF) নিশ্চিত করুন
+
+❌ সমস্যা ২: কিছু জায়গায় Translation Key দেখাচ্ছে
+
+নিচের জায়গাগুলোতে এখনো raw key দেখা যাচ্ছে:
+
+common.class
+
+common.section
+
+common.rollNo
+
+classManagement.title
+
+common.refresh
+
+➡️ অনুগ্রহ করে Madrasah mode-এ:
+
+সব label / column / button পুরোপুরি বাংলায় করুন
+
+কোনো i18n key যেন UI-তে না দেখা যায়
+
+❌ সমস্যা ৩: Roll Number Logic পরিষ্কার না
+
+বর্তমানে:
+
+Roll Number ম্যানুয়ালি দিতে হচ্ছে
+
+duplicate হওয়ার ঝুঁকি আছে
+
+আমার প্রস্তাব:
+
+✅ Auto-generate Roll Number (Class + Section অনুযায়ী)
+
+✅ সাথে একটি toggle দিন:
+🔘 Auto Generate
+🔘 Manual Entry (Override)
+
+⚙️ প্রস্তাবনা: Madrasah Workflow আরও সহজ করা
+
+Madrasah ব্যবহারকারীদের জন্য আমি নিচের simplification recommend করছি:
+
+Student Module
+
+Minimal required fields (optional collapse)
+
+Roll auto-generate
+
+One-click ID Card
+
+ID Card Module
+
+আলাদা “ID Card Settings” tab
+
+Logo, signature, color auto-use from School Branding
+
+Batch print (class/section)
+
+General UX
+
+One page = One task
+
+বড় বাটন
+
+No English leftovers
+
+No complex options visible
+
+🎯 Expected Outcome
+
+Madrasah Admin যেন:
+
+Student add করতে পারে
+
+Auto roll পায়
+
+এক ক্লিকে Professional ID Card generate করতে পারে
+
+প্রিন্ট করে ব্যবহার করতে পারে
+
+এই অংশটা ছাড়া পুরো Madrasah workflow complete বলা যাবে না।
+
+অনুগ্রহ করে এগুলো priority হিসেবে ঠিক করুন।
+আমি fix হওয়ার সাথে সাথে আবার end-to-end test করব।
+
+ধন্যবাদ 🙏
+— Farid

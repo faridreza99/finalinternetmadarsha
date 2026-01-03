@@ -1,0 +1,157 @@
+Hello Team,
+
+We are configuring GiNi ERP for a Madrasah tenant
+Tenant ID: MHAM5678 – Mohazampur Hafizia Atimkana Madrasha.
+
+After full functional testing, I’d like to share critical usability feedback, especially from a Madrasah administrator’s perspective.
+The system works technically, but the UI/UX is currently too complex for Madrasah use.
+
+🔴 Key Problem: UI Is Not Madrasah-Friendly
+
+Madrasah admins are usually:
+
+Not finance/tech oriented
+
+Used to very simple workflows
+
+Prefer Bengali-first, minimal screens, fewer clicks
+
+Currently:
+
+Too many cards, stats, numbers
+
+Too many English labels
+
+Too many actions on one screen
+
+This increases confusion and training time.
+
+✅ Required UI Simplification (ONLY for MHAM5678)
+🔹 1️⃣ Introduce “Madrasah Simple UI Mode”
+
+Add a tenant-level flag:
+
+{
+  tenant_id: "MHAM5678",
+  institution_type: "madrasah",
+  ui_mode: "simple"
+}
+
+
+This must affect only this tenant, not global UI.
+
+🔹 2️⃣ Simplified Fees Management UI (Madrasah Mode)
+❌ Hide for Madrasah:
+
+Graphs (Collected / Pending / Overdue cards)
+
+Monthly Target
+
+Transport Fees
+
+Bulk Payment
+
+Advanced Finance Reports
+
+✅ Show Only:
+
+Class-wise Monthly Fee
+
+Paid / Unpaid status
+
+Simple “Collect Fee” button
+
+📌 One clean screen instead of 3–4 sections.
+
+🔹 3️⃣ Example: Ideal Madrasah Fees Screen
+বেতন ব্যবস্থাপনা
+
+[ ক্লাস নির্বাচন ]
+[ সেকশন নির্বাচন ]
+
+ইবতেদায়ী ১ম বর্ষ – 300 টাকা
+[ আদায় হয়েছে ] / [ বকেয়া ]
+
+ইবতেদায়ী ২য় বর্ষ – 300 টাকা
+
+
+No graphs, no analytics, no targets.
+
+🔹 4️⃣ Bengali-First UI for Madrasah
+
+Please replace English-heavy labels for this tenant:
+
+Current	Madrasah UI
+Fees Management	বেতন ব্যবস্থাপনা
+Pending	বকেয়া
+Collected	আদায় হয়েছে
+Collect	আদায় করুন
+Reports	রিপোর্ট
+🔹 5️⃣ Reduce Clicks & Load Time
+
+Avoid loading multiple APIs on one page
+
+Load data only after class + section is selected
+
+Cache sections for the selected class
+
+Close modal instantly after save (background refresh)
+
+This is important because slow loading creates trust issues for Madrasah admins.
+
+🟢 Additional Notes (Important)
+✔ AI Should Remain Enabled
+
+Madrasah will use AI, especially:
+
+AI Assistant
+
+Notes / Summary
+
+Quiz for Islamic subjects
+
+Please do not hide AI modules for Madrasah tenants.
+
+✔ ID Card Module Needs Improvement
+
+Student ID Card:
+
+Missing student photo
+
+Missing Madrasah name & logo
+
+Layout not standard
+
+Staff ID Card:
+
+Staff exists but not showing in ID card list
+
+Likely filter / tenant mapping issue
+
+🎯 Final Goal
+
+We want GiNi ERP to feel:
+
+Simple
+
+Bengali-friendly
+
+Madrasah-oriented
+
+Usable without training
+
+Please treat this as a Madrasah UX optimization, not just a feature change.
+
+Let me know once:
+
+Simple UI mode is applied
+
+Fees UI is reduced
+
+Performance is stable
+
+I’ll retest everything from the Madrasah admin account.
+
+Thanks & regards,
+Farid
+Product Owner – MaxTechBD

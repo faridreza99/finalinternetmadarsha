@@ -1,0 +1,125 @@
+deploy@server1:/var/www/school-erp/frontend$ cd /var/www/school-erp
+deploy@server1:/var/www/school-erp$ # On VPS, fix photo upload permissions
+sudo mkdir -p /var/www/school-erp/backend/uploads/mham5678/students
+sudo chown -R www-data:www-data /var/www/school-erp/backend/uploads
+sudo chmod -R 755 /var/www/school-erp/backend/uploads
+deploy@server1:/var/www/school-erp$ cd /var/www/school-erp
+git pull
+cd frontend && npm run build --legacy-peer-deps
+sudo systemctl restart school-erp-backend
+remote: Enumerating objects: 23, done.
+remote: Counting objects: 100% (23/23), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 16 (delta 13), reused 16 (delta 13), pack-reused 0 (from 0)
+Unpacking objects: 100% (16/16), 6.62 KiB | 847.00 KiB/s, done.
+From https://github.com/faridreza99/school-erp
+   ce52dec7..8c771371  main       -> origin/main
+Updating ce52dec7..8c771371
+Fast-forward
+ attached_assets/Pasted-deploy-server1-var-www-school-erp-frontend-Check-backen_1767244828100.txt | 139 ++++++++++++
+ frontend/src/App.js                                                                              | 122 +++++-----
+ frontend/src/components/StudentList.js                                                           | 616 ++++++++++++++++++++++++++++++++-------------------
+ 3 files changed, 599 insertions(+), 278 deletions(-)
+ create mode 100644 attached_assets/Pasted-deploy-server1-var-www-school-erp-frontend-Check-backen_1767244828100.txt
+
+> frontend@0.1.0 build
+> NODE_OPTIONS=--max-old-space-size=4096 craco build && cp public/_redirects build/_redirects
+
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  192.08 kB (-601.08 kB)  build/static/js/main.91c90d69.js
+  108.75 kB               build/static/js/7055.cbaaead2.chunk.js
+  93.06 kB                build/static/js/9958.264b8ad9.chunk.js
+  55.47 kB                build/static/js/3325.0d6af767.chunk.js
+  28.96 kB                build/static/js/8201.afc0cceb.chunk.js
+  28.24 kB                build/static/js/1157.39d93180.chunk.js
+  27.45 kB                build/static/js/2198.885a3db4.chunk.js
+  26.97 kB                build/static/js/6202.7486f846.chunk.js
+  25.31 kB                build/static/js/2540.b01c4a8a.chunk.js
+  24.77 kB                build/static/js/8730.a24fa2d4.chunk.js
+  21.19 kB                build/static/js/9941.e56753f7.chunk.js
+  20.97 kB (-4.91 kB)     build/static/css/main.583f36f7.css
+  18.12 kB                build/static/js/7457.532e758f.chunk.js
+  15.09 kB                build/static/js/3980.61a4ae57.chunk.js
+  13.97 kB                build/static/js/9035.c50fece2.chunk.js
+  11.74 kB                build/static/js/275.a1b295f7.chunk.js
+  11.38 kB                build/static/js/2590.a1abf841.chunk.js
+  11.03 kB                build/static/js/9094.ea45d4de.chunk.js
+  10.61 kB                build/static/js/1075.101ae7b4.chunk.js
+  10.08 kB                build/static/js/1870.2f68f51c.chunk.js
+  9.36 kB                 build/static/js/2310.6fb4edd5.chunk.js
+  9.31 kB                 build/static/js/9820.0228f545.chunk.js
+  8.89 kB                 build/static/js/9176.f221ea35.chunk.js
+  8.78 kB                 build/static/js/8688.4eadc380.chunk.js
+  7.71 kB                 build/static/js/9620.e069a2bc.chunk.js
+  7.65 kB                 build/static/js/7001.d1f7cbd5.chunk.js
+  7.26 kB                 build/static/js/933.a292a17d.chunk.js
+  7.15 kB                 build/static/js/9206.1abaffba.chunk.js
+  7.06 kB                 build/static/js/854.3ed3ca9d.chunk.js
+  6.87 kB                 build/static/js/7725.46086e9e.chunk.js
+  6.84 kB                 build/static/js/757.7124ef64.chunk.js
+  6.59 kB                 build/static/js/9007.ac0bbdcf.chunk.js
+  6.46 kB                 build/static/js/1119.18aca31d.chunk.js
+  6.18 kB                 build/static/js/2377.80aad923.chunk.js
+  6.13 kB                 build/static/js/8505.b20fa0ba.chunk.js
+  6.06 kB                 build/static/js/4792.5e36a609.chunk.js
+  5.94 kB                 build/static/js/8216.b45b228c.chunk.js
+  5.54 kB                 build/static/js/6635.7b0451ba.chunk.js
+  5.38 kB                 build/static/css/8730.386dec1a.chunk.css
+  5.28 kB                 build/static/js/1257.61a78625.chunk.js
+  5.09 kB                 build/static/js/5859.cabb6c91.chunk.js
+  5.02 kB                 build/static/js/9426.6ada754b.chunk.js
+  4.88 kB                 build/static/js/8644.399fde53.chunk.js
+  4.86 kB                 build/static/js/8877.96d526e1.chunk.js
+  4.51 kB                 build/static/js/2438.a12ca44a.chunk.js
+  4.45 kB                 build/static/js/4394.025135a1.chunk.js
+  4.39 kB                 build/static/js/1915.4022a1a5.chunk.js
+  4.36 kB                 build/static/js/9133.0e5c10bf.chunk.js
+  4.26 kB                 build/static/js/5546.499ad562.chunk.js
+  4.22 kB                 build/static/js/2458.2fb30d92.chunk.js
+  4.18 kB                 build/static/js/9872.387fdc4c.chunk.js
+  4.1 kB                  build/static/js/3824.66b230f7.chunk.js
+  4.06 kB                 build/static/js/3029.11c2e69e.chunk.js
+  4.03 kB                 build/static/js/7502.293ce051.chunk.js
+  3.91 kB                 build/static/js/6935.a6598355.chunk.js
+  3.86 kB                 build/static/js/5358.671bb853.chunk.js
+  3.81 kB                 build/static/js/6307.aadafb1f.chunk.js
+  3.63 kB                 build/static/js/726.ea7881e5.chunk.js
+  3.61 kB                 build/static/js/635.cfefa4a3.chunk.js
+  3.6 kB                  build/static/js/4616.b202cd80.chunk.js
+  3.53 kB                 build/static/js/1089.bcc5eccc.chunk.js
+  3.52 kB                 build/static/js/8800.5cf79656.chunk.js
+  3.46 kB                 build/static/js/9489.4ecf7105.chunk.js
+  3.46 kB                 build/static/js/7133.e1b8cd83.chunk.js
+  3.42 kB                 build/static/js/1299.be3e6a09.chunk.js
+  3.36 kB                 build/static/js/4729.13f54afc.chunk.js
+  3.36 kB                 build/static/js/1727.ba362ca9.chunk.js
+  3.35 kB                 build/static/js/9235.909f6908.chunk.js
+  3.21 kB                 build/static/js/335.630f4283.chunk.js
+  3.17 kB                 build/static/js/2343.f38bb6b3.chunk.js
+  3.16 kB                 build/static/js/5220.cf92f49f.chunk.js
+  3.13 kB                 build/static/js/8223.787048aa.chunk.js
+  3.11 kB                 build/static/js/820.e22c759e.chunk.js
+  3.09 kB                 build/static/js/4680.1fe87a7c.chunk.js
+  3.07 kB                 build/static/js/4923.fa2d088a.chunk.js
+  3.01 kB                 build/static/js/2785.fb1b4daf.chunk.js
+  2.89 kB                 build/static/js/2383.43ab9fd2.chunk.js
+  2.39 kB                 build/static/js/5241.0bb2b5ec.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
+deploy@server1:/var/www/school-erp/frontend$

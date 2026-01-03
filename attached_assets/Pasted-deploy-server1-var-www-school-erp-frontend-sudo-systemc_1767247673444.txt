@@ -1,0 +1,35 @@
+deploy@server1:/var/www/school-erp/frontend$ sudo systemctl reload nginx
+deploy@server1:/var/www/school-erp/frontend$ grep -A3 "location /uploads" /etc/nginx/sites-available/school-erp
+    location /uploads {
+        alias /var/www/school-erp/backend/uploads;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+deploy@server1:/var/www/school-erp/frontend$ ls -la /var/www/school-erp/backend/uploads/mham5678/students/
+total 5964
+drwxrwxrwx 2 deploy deploy    4096 Jan  1 06:03  .
+drwxrwxrwx 5 deploy deploy    4096 Dec 31 12:31  ..
+-rwxrwxrwx 1 deploy deploy 1379505 Dec 31 12:31  451458_37ea85fd-f3ee-4386-b96f-ab0dfb5c012b.jpg
+-rwxrwxrwx 1 deploy deploy    7368 Dec 31 12:31  _46e12e91-bbd1-44ab-a65a-df33022c4dcd.webp
+-rwxrwxrwx 1 deploy deploy 1379505 Dec 28 10:29  6544_9333b1c6-d4da-44c0-87d4-7cf7bbb3176f.jpg
+-rwxrwxrwx 1 deploy deploy 1379505 Dec 31 12:31  6544_de9b6920-bf16-4b1b-8863-de69710c4094.jpg
+-rwxrwxrwx 1 deploy deploy   20341 Dec 31 12:31 'Add New Student_8e253fd6-5092-4331-8724-eaa7c2876f13.jpg'
+-rwxrwxrwx 1 deploy deploy    3908 Dec 31 12:31  M5678_821382ad-6ae8-408a-b42d-6272e9b0dbad.webp
+-rwxrwxrwx 1 deploy deploy 1379505 Dec 31 12:31  MHAM5678250001_ced813bc-4c12-466e-b70c-2d4aa24b1459.jpg
+-rwxrwxrwx 1 deploy deploy  192929 Dec 31 12:31  MHAM5678250002_c8f04d68-b38f-45fe-81f5-494305df043b.jpg
+-rwxrwxrwx 1 deploy deploy   68183 Jan  1 05:10  STU260001_1f622bb1-76fb-4552-a44d-f77b7057ce19.jpg
+-rw-r--r-- 1 deploy deploy   68183 Jan  1 05:49  STU260001_acec5bab-83d9-4fcb-8ee4-81fce25ea8a3.jpg
+-rw-r--r-- 1 deploy deploy   68183 Jan  1 06:03  STU260001_b1c58b4f-65c3-4b1c-854d-08d230d8b51f.jpg
+-rw-r--r-- 1 deploy deploy   68183 Jan  1 05:56  STU260001_d546fb55-1845-4f91-beef-90407f74e0dd.jpg
+-rw-r--r-- 1 deploy deploy   68183 Jan  1 05:48  STU260001_f39e8dab-6484-4ff4-839e-071c5543da1b.jpg
+deploy@server1:/var/www/school-erp/frontend$ grep -A4 "location /uploads" /etc/nginx/sites-available/school-erp
+    location /uploads {
+        alias /var/www/school-erp/backend/uploads;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+deploy@server1:/var/www/school-erp/frontend$ sudo nano /etc/nginx/sites-available/school-erp
+deploy@server1:/var/www/school-erp/frontend$ sudo nginx -t
+sudo systemctl reload nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+deploy@server1:/var/www/school-erp/frontend$

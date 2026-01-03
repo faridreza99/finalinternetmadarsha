@@ -1,0 +1,270 @@
+Enterprise Attendance Management System
+(Biometric + RFID + Manual + ERP Integrated)
+1. SYSTEM ROLE & IDENTITY
+
+You are building a production-grade Attendance Management System for real schools and madrasas in Bangladesh.
+
+This system must work in live school environments, integrated with:
+
+Biometric devices (Fingerprint / Face)
+
+RFID cards (optional)
+
+Manual attendance (fallback)
+
+School ERP modules
+
+This is NOT a demo system.
+This is enterprise-ready, scalable, auditable, and secure.
+
+2. CORE OBJECTIVES
+
+The system must:
+
+Accurately record student & staff attendance
+
+Integrate with physical biometric devices
+
+Support multiple attendance sources
+
+Work offline & sync online
+
+Enforce school policies automatically
+
+Generate real academic reports
+
+3. SUPPORTED ATTENDANCE MODES (MANDATORY)
+✅ Attendance Sources
+
+Biometric Device
+
+Fingerprint
+
+Face recognition
+
+RFID / Smart Card
+
+Manual Teacher Entry
+
+Admin Override (logged & audited)
+
+Each record must store:
+
+Source type
+
+Device ID
+
+Timestamp
+
+Verification status
+
+4. BIOMETRIC DEVICE INTEGRATION (CRITICAL)
+Supported Devices
+
+ZKTeco
+
+Hikvision
+
+Suprema
+
+Any TCP/IP biometric device
+
+Integration Methods
+
+TCP/IP Push (preferred)
+
+REST API (if available)
+
+Scheduled device polling
+
+Offline sync support
+
+Device Registration Model
+{
+  "device_id": "BIO-001",
+  "device_type": "Fingerprint",
+  "location": "Main Gate",
+  "school_id": "SCH-001",
+  "ip_address": "192.168.1.10",
+  "status": "active"
+}
+
+5. ATTENDANCE RULE ENGINE (VERY IMPORTANT)
+
+Attendance behavior must be rule-driven, not random.
+
+Rule Examples:
+
+Late if after 09:00 AM
+
+Absent if no check-in by 10:00 AM
+
+Half-day if checkout before 1:00 PM
+
+Friday / holiday auto-excluded
+
+Exam days follow different rules
+
+Rules must be:
+
+Class-wise
+
+Shift-wise
+
+Institution-wise
+
+6. STUDENT ATTENDANCE FLOW
+
+Student scans fingerprint / face
+
+Device validates locally
+
+Data sent to ERP server
+
+ERP:
+
+Maps student ID
+
+Applies attendance rules
+
+Marks Present / Late / Absent
+
+Parent notification sent (optional)
+
+7. TEACHER & STAFF ATTENDANCE
+
+Separate attendance logic
+
+Supports:
+
+Multiple shifts
+
+Overtime
+
+Leave integration
+
+Used for:
+
+Payroll
+
+Performance reports
+
+8. OFFLINE MODE & SYNC (MANDATORY)
+
+Biometric devices must:
+
+Work without internet
+
+Store logs locally
+
+Auto-sync when connection restored
+
+ERP must:
+
+Detect duplicate logs
+
+Resolve conflicts safely
+
+Never lose attendance data
+
+9. DATA STRUCTURE (CORE TABLES)
+Attendance Record
+{
+  "user_id": "STD-1023",
+  "role": "student",
+  "date": "2025-01-10",
+  "check_in": "08:45",
+  "check_out": "14:30",
+  "status": "Present",
+  "source": "biometric",
+  "device_id": "BIO-001"
+}
+
+10. MANUAL ATTENDANCE (CONTROLLED)
+
+Teachers can:
+
+Take class attendance manually
+
+Edit only same-day records
+
+Restrictions:
+
+Past edits require admin approval
+
+All edits logged with reason
+
+11. AI-ASSISTED ATTENDANCE INSIGHTS (OPTIONAL)
+
+AI can:
+
+Detect irregular attendance
+
+Flag chronic absenteeism
+
+Generate monthly insights
+
+Predict dropout risk
+
+AI must never auto-modify attendance.
+
+12. PARENT NOTIFICATION SYSTEM
+
+SMS / App notification on:
+
+Late arrival
+
+Absence
+
+Language: Bangla
+
+Configurable by school
+
+13. REPORTING & EXPORTS
+
+Generate:
+
+Daily attendance sheet
+
+Monthly summary
+
+Class-wise attendance %
+
+Student attendance history
+
+Teacher attendance for payroll
+
+Exports:
+
+PDF
+
+Excel
+
+14. ROLES & PERMISSIONS
+Admin
+
+Configure devices
+
+Define attendance rules
+
+Override records (logged)
+
+Teacher
+
+Take manual attendance
+
+View class reports
+
+Student / Parent
+
+View attendance only
+
+15. SECURITY & COMPLIANCE
+
+No biometric data stored as raw images
+
+Store templates only (device-level)
+
+Encrypted communication
+
+Full audit logs

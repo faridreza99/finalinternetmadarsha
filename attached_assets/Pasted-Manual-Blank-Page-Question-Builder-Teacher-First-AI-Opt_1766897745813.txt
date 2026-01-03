@@ -1,0 +1,218 @@
+Manual Blank Page Question Builder
+(Teacher-First | AI-Optional | Rule-Safe)
+1. CORE REQUIREMENT (VERY IMPORTANT)
+
+The system MUST provide a Manual Blank Page Question Builder, where:
+
+Teacher can start from a completely blank page
+
+Teacher can build questions manually
+
+AI is optional, not mandatory
+
+All academic rules still apply automatically
+
+This builder must feel like:
+
+“I’m writing a real exam paper on paper — but digitally.”
+
+2. WHEN THIS BUILDER IS USED
+
+Teacher can choose ONE of THREE modes:
+
+✅ Manual (Blank Page)
+
+AI-Assisted (Section-wise)
+
+AI-Generated (Full Paper)
+
+This section defines Mode 1: Manual (Blank Page).
+
+3. MANUAL BLANK PAGE BUILDER – ENTRY FLOW
+Teacher clicks:
+
+➕ Create New Question Paper
+
+System asks:
+
+Class
+
+Subject
+
+Exam Type
+
+Total Marks (default 100)
+
+Then teacher selects:
+
+“Start from Blank Page (Manual)”
+
+4. WHAT LOADS ON SCREEN (CRITICAL)
+✅ Preloaded Automatically (LOCKED)
+
+Branding Header (school name, logo, address)
+
+Exam Meta:
+
+Exam name
+
+Class
+
+Subject
+
+Time
+
+Full Marks (100)
+
+Teacher cannot delete these.
+
+✍️ Editable Area (BLANK)
+
+Below the header:
+
+Empty editor
+
+No sections
+
+No questions
+
+No AI content
+
+Teacher starts writing everything manually.
+
+5. WHAT THE TEACHER CAN DO (MANUAL MODE)
+
+Teacher can manually:
+
+Type section titles
+(e.g. “১. এক কথায় উত্তর দাও”)
+
+Type questions freely
+
+Decide:
+
+How many sections
+
+How many questions
+
+Question wording
+
+Assign marks per question
+
+Reorder content freely
+
+This is a free-form academic editor, not AI-driven.
+
+6. WHAT THE SYSTEM STILL CONTROLS (IMPORTANT)
+
+Even in manual mode, the system must ENFORCE RULES IN BACKGROUND.
+
+Rule Enforcement (Silent but Strict):
+
+❌ Teacher cannot add a section that is not allowed for that class
+
+❌ Teacher cannot exceed MCQ limits
+
+❌ Total marks ≠ 100 → submission blocked
+
+❌ Disallowed section titles auto-flagged
+
+Example warning:
+
+“এই শ্রেণিতে ‘MCQ’ প্রশ্ন প্রযোজ্য নয়”
+
+7. MANUAL SECTION CREATION LOGIC
+
+When teacher types a section title:
+
+System must:
+
+Detect section type (by title or selection)
+
+Validate against class-wise allowed sections
+
+If invalid:
+
+Block OR
+
+Ask teacher to change section type
+
+8. OPTIONAL AI HELP (INSIDE MANUAL MODE)
+
+Even in blank mode:
+
+Teacher can click:
+
+“Suggest Questions for This Section”
+
+“Improve Language”
+
+AI will:
+
+Only work on selected text
+
+Never auto-generate whole paper
+
+Never add new sections
+
+AI is a helper, not an author.
+
+9. DATA MODEL (MANUAL MODE COMPATIBLE)
+
+Even manual content must be stored structurally.
+
+{
+  "paper_mode": "manual",
+  "sections": [
+    {
+      "section_type": "short",
+      "title": "সংক্ষিপ্ত প্রশ্ন",
+      "questions": [
+        {
+          "text": "বাংলাদেশের রাজধানীর নাম লেখ।",
+          "marks": 2
+        }
+      ]
+    }
+  ]
+}
+
+10. LOCKING, APPROVAL & PDF (SAME RULES APPLY)
+
+Manual papers must still support:
+
+Draft → Submit → Approve → Lock
+
+Audit logs
+
+Print-ready PDF export
+
+Branding preserved
+
+Section rules respected
+
+No difference from AI papers after submission.
+
+11. UI LABELING (VERY IMPORTANT)
+
+The UI must clearly show:
+
+📝 Manual Question Builder (Blank Page)
+🤖 AI is OFF by default
+
+This avoids teacher confusion and builds trust.
+
+12. FINAL GUARANTEE
+
+With this feature:
+
+✅ Senior teachers can ignore AI completely
+✅ Traditional question setters feel comfortable
+✅ AI becomes optional, not forced
+✅ System works for real schools
+
+🔥 FINAL SYSTEM PRINCIPLE
+
+AI is an assistant.
+Teacher is the author.
+Rules are the authority.

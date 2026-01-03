@@ -1,0 +1,508 @@
+deploy@server1:/var/www/school-erp$ npm i
+
+added 382 packages, and audited 383 packages in 3s
+
+195 packages are looking for funding
+  run `npm fund` for details
+
+2 vulnerabilities (1 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+deploy@server1:/var/www/school-erp$ cd frontend
+deploy@server1:/var/www/school-erp/frontend$ npm i
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/eslint-plugin@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn node_modules/@typescript-eslint/eslint-plugin
+npm warn   @typescript-eslint/eslint-plugin@"^5.5.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn   1 more (eslint-plugin-jest)
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn     @typescript-eslint/eslint-plugin@"^5.5.0" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn     1 more (eslint-plugin-jest)
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/experimental-utils@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/experimental-utils@5.62.0
+npm warn node_modules/@typescript-eslint/experimental-utils
+npm warn   @typescript-eslint/experimental-utils@"^5.0.0" from eslint-plugin-jest@25.7.0
+npm warn   node_modules/eslint-plugin-jest
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/experimental-utils@5.62.0
+npm warn   node_modules/@typescript-eslint/experimental-utils
+npm warn     @typescript-eslint/experimental-utils@"^5.0.0" from eslint-plugin-jest@25.7.0
+npm warn     node_modules/eslint-plugin-jest
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/parser@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/parser@5.62.0
+npm warn node_modules/@typescript-eslint/parser
+npm warn   peer @typescript-eslint/parser@"^5.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn   1 more (eslint-config-react-app)
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/parser@5.62.0
+npm warn   node_modules/@typescript-eslint/parser
+npm warn     peer @typescript-eslint/parser@"^5.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn     node_modules/@typescript-eslint/eslint-plugin
+npm warn     1 more (eslint-config-react-app)
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/utils@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/utils@5.62.0
+npm warn node_modules/@typescript-eslint/utils
+npm warn   @typescript-eslint/utils@"5.62.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn   3 more (@typescript-eslint/experimental-utils, ...)
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/utils@5.62.0
+npm warn   node_modules/@typescript-eslint/utils
+npm warn     @typescript-eslint/utils@"5.62.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn     node_modules/@typescript-eslint/eslint-plugin
+npm warn     3 more (@typescript-eslint/experimental-utils, ...)
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-config-react-app@7.0.1
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^8.0.0" from eslint-config-react-app@7.0.1
+npm warn node_modules/eslint-config-react-app
+npm warn   eslint-config-react-app@"^7.0.1" from react-scripts@5.0.1
+npm warn   node_modules/react-scripts
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^8.0.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn     eslint-config-react-app@"^7.0.1" from react-scripts@5.0.1
+npm warn     node_modules/react-scripts
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-flowtype@8.0.3
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^8.1.0" from eslint-plugin-flowtype@8.0.3
+npm warn node_modules/eslint-plugin-flowtype
+npm warn   eslint-plugin-flowtype@"^8.0.3" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^8.1.0" from eslint-plugin-flowtype@8.0.3
+npm warn   node_modules/eslint-plugin-flowtype
+npm warn     eslint-plugin-flowtype@"^8.0.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-jest@25.7.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from eslint-plugin-jest@25.7.0
+npm warn node_modules/eslint-plugin-jest
+npm warn   eslint-plugin-jest@"^25.3.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from eslint-plugin-jest@25.7.0
+npm warn   node_modules/eslint-plugin-jest
+npm warn     eslint-plugin-jest@"^25.3.0" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-react-hooks@4.6.2
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0" from eslint-plugin-react-hooks@4.6.2
+npm warn node_modules/eslint-plugin-react-hooks
+npm warn   eslint-plugin-react-hooks@"^4.3.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0" from eslint-plugin-react-hooks@4.6.2
+npm warn   node_modules/eslint-plugin-react-hooks
+npm warn     eslint-plugin-react-hooks@"^4.3.0" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-testing-library@5.11.1
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^7.5.0 || ^8.0.0" from eslint-plugin-testing-library@5.11.1
+npm warn node_modules/eslint-plugin-testing-library
+npm warn   eslint-plugin-testing-library@"^5.0.1" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0" from eslint-plugin-testing-library@5.11.1
+npm warn   node_modules/eslint-plugin-testing-library
+npm warn     eslint-plugin-testing-library@"^5.0.1" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-webpack-plugin@3.2.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   7 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^7.0.0 || ^8.0.0" from eslint-webpack-plugin@3.2.0
+npm warn node_modules/eslint-webpack-plugin
+npm warn   eslint-webpack-plugin@"^3.1.1" from react-scripts@5.0.1
+npm warn   node_modules/react-scripts
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.0.0 || ^8.0.0" from eslint-webpack-plugin@3.2.0
+npm warn   node_modules/eslint-webpack-plugin
+npm warn     eslint-webpack-plugin@"^3.1.1" from react-scripts@5.0.1
+npm warn     node_modules/react-scripts
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: react-day-picker@8.10.1
+npm error Found: date-fns@4.1.0
+npm error node_modules/date-fns
+npm error   date-fns@"^4.1.0" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer date-fns@"^2.28.0 || ^3.0.0" from react-day-picker@8.10.1
+npm error node_modules/react-day-picker
+npm error   react-day-picker@"8.10.1" from the root project
+npm error
+npm error Conflicting peer dependency: date-fns@3.6.0
+npm error node_modules/date-fns
+npm error   peer date-fns@"^2.28.0 || ^3.0.0" from react-day-picker@8.10.1
+npm error   node_modules/react-day-picker
+npm error     react-day-picker@"8.10.1" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/deploy/.npm/_logs/2025-12-31T12_31_47_805Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/deploy/.npm/_logs/2025-12-31T12_31_47_805Z-debug-0.log
+deploy@server1:/var/www/school-erp/frontend$ npm run build
+
+> frontend@0.1.0 build
+> NODE_OPTIONS=--max-old-space-size=4096 craco build && cp public/_redirects build/_redirects
+
+craco:  *** Cannot find ESLint loader (eslint-loader). ***
+Creating an optimized production build...
+Failed to compile.
+
+Module not found: Error: Can't resolve 'jszip' in '/var/www/school-erp/frontend/src/components'
+
+
+deploy@server1:/var/www/school-erp/frontend$ npm i jszip
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/eslint-plugin@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn node_modules/@typescript-eslint/eslint-plugin
+npm warn   @typescript-eslint/eslint-plugin@"^5.5.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn   1 more (eslint-plugin-jest)
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn     @typescript-eslint/eslint-plugin@"^5.5.0" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn     1 more (eslint-plugin-jest)
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/experimental-utils@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/experimental-utils@5.62.0
+npm warn node_modules/@typescript-eslint/experimental-utils
+npm warn   @typescript-eslint/experimental-utils@"^5.0.0" from eslint-plugin-jest@25.7.0
+npm warn   node_modules/eslint-plugin-jest
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/experimental-utils@5.62.0
+npm warn   node_modules/@typescript-eslint/experimental-utils
+npm warn     @typescript-eslint/experimental-utils@"^5.0.0" from eslint-plugin-jest@25.7.0
+npm warn     node_modules/eslint-plugin-jest
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/parser@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/parser@5.62.0
+npm warn node_modules/@typescript-eslint/parser
+npm warn   peer @typescript-eslint/parser@"^5.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn   1 more (eslint-config-react-app)
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/parser@5.62.0
+npm warn   node_modules/@typescript-eslint/parser
+npm warn     peer @typescript-eslint/parser@"^5.0.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn     node_modules/@typescript-eslint/eslint-plugin
+npm warn     1 more (eslint-config-react-app)
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/utils@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/utils@5.62.0
+npm warn node_modules/@typescript-eslint/utils
+npm warn   @typescript-eslint/utils@"5.62.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn   3 more (@typescript-eslint/experimental-utils, ...)
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/utils@5.62.0
+npm warn   node_modules/@typescript-eslint/utils
+npm warn     @typescript-eslint/utils@"5.62.0" from @typescript-eslint/eslint-plugin@5.62.0
+npm warn     node_modules/@typescript-eslint/eslint-plugin
+npm warn     3 more (@typescript-eslint/experimental-utils, ...)
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-config-react-app@7.0.1
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^8.0.0" from eslint-config-react-app@7.0.1
+npm warn node_modules/eslint-config-react-app
+npm warn   eslint-config-react-app@"^7.0.1" from react-scripts@5.0.1
+npm warn   node_modules/react-scripts
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^8.0.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn     eslint-config-react-app@"^7.0.1" from react-scripts@5.0.1
+npm warn     node_modules/react-scripts
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-flowtype@8.0.3
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^8.1.0" from eslint-plugin-flowtype@8.0.3
+npm warn node_modules/eslint-plugin-flowtype
+npm warn   eslint-plugin-flowtype@"^8.0.3" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^8.1.0" from eslint-plugin-flowtype@8.0.3
+npm warn   node_modules/eslint-plugin-flowtype
+npm warn     eslint-plugin-flowtype@"^8.0.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-jest@25.7.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from eslint-plugin-jest@25.7.0
+npm warn node_modules/eslint-plugin-jest
+npm warn   eslint-plugin-jest@"^25.3.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from eslint-plugin-jest@25.7.0
+npm warn   node_modules/eslint-plugin-jest
+npm warn     eslint-plugin-jest@"^25.3.0" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-react-hooks@4.6.2
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0" from eslint-plugin-react-hooks@4.6.2
+npm warn node_modules/eslint-plugin-react-hooks
+npm warn   eslint-plugin-react-hooks@"^4.3.0" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0" from eslint-plugin-react-hooks@4.6.2
+npm warn   node_modules/eslint-plugin-react-hooks
+npm warn     eslint-plugin-react-hooks@"^4.3.0" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-plugin-testing-library@5.11.1
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^7.5.0 || ^8.0.0" from eslint-plugin-testing-library@5.11.1
+npm warn node_modules/eslint-plugin-testing-library
+npm warn   eslint-plugin-testing-library@"^5.0.1" from eslint-config-react-app@7.0.1
+npm warn   node_modules/eslint-config-react-app
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0" from eslint-plugin-testing-library@5.11.1
+npm warn   node_modules/eslint-plugin-testing-library
+npm warn     eslint-plugin-testing-library@"^5.0.1" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: eslint-webpack-plugin@3.2.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.5.0 || ^8.0.0 || ^9.0.0" from @babel/eslint-parser@7.28.4
+npm warn   node_modules/@babel/eslint-parser
+npm warn     @babel/eslint-parser@"^7.16.3" from eslint-config-react-app@7.0.1
+npm warn     node_modules/eslint-config-react-app
+npm warn   7 more (@eslint-community/eslint-utils, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^7.0.0 || ^8.0.0" from eslint-webpack-plugin@3.2.0
+npm warn node_modules/eslint-webpack-plugin
+npm warn   eslint-webpack-plugin@"^3.1.1" from react-scripts@5.0.1
+npm warn   node_modules/react-scripts
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^7.0.0 || ^8.0.0" from eslint-webpack-plugin@3.2.0
+npm warn   node_modules/eslint-webpack-plugin
+npm warn     eslint-webpack-plugin@"^3.1.1" from react-scripts@5.0.1
+npm warn     node_modules/react-scripts
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: react-day-picker@8.10.1
+npm error Found: date-fns@4.1.0
+npm error node_modules/date-fns
+npm error   date-fns@"^4.1.0" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer date-fns@"^2.28.0 || ^3.0.0" from react-day-picker@8.10.1
+npm error node_modules/react-day-picker
+npm error   react-day-picker@"8.10.1" from the root project
+npm error
+npm error Conflicting peer dependency: date-fns@3.6.0
+npm error node_modules/date-fns
+npm error   peer date-fns@"^2.28.0 || ^3.0.0" from react-day-picker@8.10.1
+npm error   node_modules/react-day-picker
+npm error     react-day-picker@"8.10.1" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/deploy/.npm/_logs/2025-12-31T12_32_49_869Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/deploy/.npm/_logs/2025-12-31T12_32_49_869Z-debug-0.log
+deploy@server1:/var/www/school-erp/frontend$

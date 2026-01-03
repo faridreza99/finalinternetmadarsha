@@ -1,0 +1,165 @@
+হাই Replit টিম,
+
+Madrasah (Tenant: MHAM5678) এর জন্য করা কাজগুলো আমি টেস্ট করছি। অনেক জায়গায় ফিচার আছে, কিন্তু end-to-end workflow ঠিকভাবে complete হচ্ছে না। নিচে আমার সমস্যা + সাজেশনগুলো দিচ্ছি:
+
+❌ 1. Student ID Card Generate হচ্ছে না (Critical)
+
+বর্তমান অবস্থায়:
+
+Student ID Cards লিস্ট দেখা যাচ্ছে
+
+কিন্তু View / Download / Print বাটনে ক্লিক করলে
+➜ কোনো proper ID card generate হচ্ছে না
+
+👉 আমি একটি নির্দিষ্ট sample ID card design দিয়েছি (front + back)
+আমি চাই:
+
+সেই design অনুযায়ী dynamic ID card generate হোক
+
+Data auto-fill হোক:
+
+Student photo
+
+Name
+
+Father name
+
+Class / Section
+
+Roll
+
+Mobile
+
+Issue date / Expiry date
+
+PDF + Print-ready format
+
+বর্তমান card output design-wise ও content-wise match করছে না।
+
+❌ 2. Roll Number Logic (Must Fix)
+
+এখন:
+
+Roll Number manual input only
+
+আমি চাই:
+
+✅ Auto-generate roll number (class + section based)
+
+✅ Manual override option থাকুক (checkbox / toggle দিয়ে)
+
+Example:
+Class: ইবতেদায়ী ১ম বর্ষ
+Section: B
+→ Auto Roll: 1, 2, 3…
+
+❌ 3. Mixed Language Issue (English + Bangla)
+
+Madrasah mode হলেও এখনো দেখা যাচ্ছে:
+
+“Calendar”
+
+“Classes”
+
+“common.class / common.section / common.refresh”
+
+“Search by name, roll no…”
+
+👉 Request:
+
+Madrasah mode = 100% Bangla
+
+Translation key fallback যেন UI-তে না দেখা যায়
+
+❌ 4. Student ID Card Section – UX Problem
+
+এখনকার flow confusing:
+
+Generate কোথায়?
+
+Preview কোথায়?
+
+Single student vs bulk generate clear না
+
+👉 Suggestion:
+
+প্রতি student row-তে:
+
+👁 Preview
+
+⬇ Download PDF
+
+🖨 Print
+
+উপরে:
+
+“সব ছাত্রের ID Card Generate করুন” (Bulk)
+
+❌ 5. Settings Section – Too Complex for Madrasah
+
+Settings-এ এখন আছে:
+
+Academic Period
+
+Subscription & Billing
+
+Branding
+
+Biometric
+
+User Management
+
+👉 Madrasah-friendly simplification proposal:
+Madrasah Basic Settings (One Page):
+
+প্রতিষ্ঠানের নাম, লোগো, ঠিকানা
+
+শিক্ষাবর্ষ (Active)
+
+মারহালা / শ্রেণি
+
+শাখা
+
+Principal নাম + স্বাক্ষর
+
+ID Card / Certificate toggle
+
+Advanced / Billing / Device → আলাদা tab বা hidden
+
+✅ My Overall Suggestion (Very Important)
+
+আমি strongly recommend:
+👉 “One Student Full Journey Test” approach
+
+Example test:
+1️⃣ Settings → Academic Year Active
+2️⃣ Settings → Class + Section add
+3️⃣ Student Add
+4️⃣ Auto Roll generate
+5️⃣ Attendance mark
+6️⃣ Simple Result assign
+7️⃣ ID Card generate (PDF)
+8️⃣ Certificate generate
+
+এই ১ জন student-এর flow যদি ১০০% smooth হয়,
+তাহলে পুরো Madrasah system production-ready হবে।
+
+🎯 Final Request
+
+অনুগ্রহ করে:
+
+ID Card generation issue priority তে fix করুন
+
+Roll auto-generation implement করুন
+
+Madrasah mode-এ পুরো UI Bangla করুন
+
+Settings + Student flow simplify করুন
+
+আমি ready আছি আবার test করার জন্য।
+
+ধন্যবাদ 🙏
+
+—
+Farid
+(MaxTechBD)

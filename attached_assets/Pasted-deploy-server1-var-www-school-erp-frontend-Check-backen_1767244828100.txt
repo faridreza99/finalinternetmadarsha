@@ -1,0 +1,139 @@
+deploy@server1:/var/www/school-erp/frontend$ # Check backend logs first
+sudo journalctl -u school-erp-backend -n 100 --no-pager
+
+# Update the code
+cd /var/www/school-erp
+git pull
+
+# Rebuild frontend
+cd frontend && npm run build --legacy-peer-deps
+
+# Restart backend
+sudo systemctl restart school-erp-backend
+
+# Check if backend is running
+sudo systemctl status school-erp-backend
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await super().__call__(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/applications.py", line 123, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await self.middleware_stack(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await self.app(scope, receive, _send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/cors.py", line 85, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await self.app(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 189, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     with collapse_excgroups():
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     self.gen.throw(typ, value, traceback)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_utils.py", line 93, in collapse_excgroups
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 191, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     response = await self.dispatch_func(request, call_next)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/server.py", line 236, in tenant_resolver_middleware
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     response = await call_next(request)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 165, in call_next
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     raise app_exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 151, in coro
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await self.app(scope, receive_or_disconnect, send_no_error)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await app(scope, receive, sender)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 756, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await self.middleware_stack(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 776, in app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await route.handle(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 297, in handle
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await self.app(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 77, in app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await app(scope, receive, sender)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 75, in app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     await response(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/responses.py", line 330, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     |     raise RuntimeError(f"File at path {self.path} does not exist.")
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     | RuntimeError: File at path /var/www/school-erp/frontend/build/index.html does not exist.
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     +------------------------------------
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]: During handling of the above exception, another exception occurred:
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]: Traceback (most recent call last):
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     result = await app(  # type: ignore[func-returns-value]
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     return await self.app(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/fastapi/applications.py", line 1054, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await super().__call__(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/applications.py", line 123, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await self.middleware_stack(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await self.app(scope, receive, _send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/cors.py", line 85, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await self.app(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 189, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     with collapse_excgroups():
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     self.gen.throw(typ, value, traceback)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_utils.py", line 93, in collapse_excgroups
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 191, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     response = await self.dispatch_func(request, call_next)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/server.py", line 236, in tenant_resolver_middleware
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     response = await call_next(request)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 165, in call_next
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     raise app_exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/base.py", line 151, in coro
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await self.app(scope, receive_or_disconnect, send_no_error)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await app(scope, receive, sender)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 756, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await self.middleware_stack(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 776, in app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await route.handle(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 297, in handle
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await self.app(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 77, in app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     raise exc
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await app(scope, receive, sender)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/routing.py", line 75, in app
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     await response(scope, receive, send)
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:   File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/starlette/responses.py", line 330, in __call__
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]:     raise RuntimeError(f"File at path {self.path} does not exist.")
+Jan 01 05:18:15 server1.maxtechbd.com gunicorn[290932]: RuntimeError: File at path /var/www/school-erp/frontend/build/index.html does not exist.
+remote: Enumerating objects: 29, done.
+remote: Counting objects: 100% (29/29), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 21 (delta 17), reused 21 (delta 17), pack-reused 0 (from 0)
+Unpacking objects: 100% (21/21), 204.15 KiB | 1.08 MiB/s, done.
+From https://github.com/faridreza99/school-erp
+   c397295e..ce52dec7  main       -> origin/main
+Updating c397295e..ce52dec7
+Fast-forward
+ attached_assets/Pasted--API-Base-URL-https-portal-mahajampurdarbarsharif-org-a_1767244532549.txt |  19 +++++++++++++++
+ attached_assets/image_1767244266498.png                                                          | Bin 0 -> 159641 bytes
+ attached_assets/image_1767244750520.png                                                          | Bin 0 -> 61741 bytes
+ frontend/src/components/ClassManagement.js                                                       |  13 ++++++----
+ frontend/src/components/MadrasahSimpleRoutine.js                                                 |   8 ++++---
+ frontend/src/components/StudentList.js                                                           |  66 +++++++++++++++++++++++++--------------------------
+ 6 files changed, 66 insertions(+), 40 deletions(-)
+ create mode 100644 attached_assets/Pasted--API-Base-URL-https-portal-mahajampurdarbarsharif-org-a_1767244532549.txt
+ create mode 100644 attached_assets/image_1767244266498.png
+ create mode 100644 attached_assets/image_1767244750520.png
+
+> frontend@0.1.0 build
+> NODE_OPTIONS=--max-old-space-size=4096 craco build && cp public/_redirects build/_redirects
+
+Creating an optimized production build...

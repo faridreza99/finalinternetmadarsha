@@ -1,0 +1,60 @@
+deploy@server1:/var/www/school-erp$ cd /var/www/school-erp/backend
+
+# server.py এর শেষে favicon endpoint যোগ করুন
+cat >> server.py << 'ENDPOINT'
+
+# ============ FAVICON UPLOAD ENDPOINT ============
+@app.post("/api/institution/favicon")
+async def upload_favicon(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload favicon to Cloudinary"""
+    import cloudinary
+    import cloudinary.uploader
+
+    # Check file size (max 500KB)
+    contents = await file.read()
+    if len(contents) > 500 * 1024:
+        raise HTTPException(status_code=400, detail="ফাইল সাইজ ৫০০KB এর বেশি হতে পারবে না")
+
+    # Validate file type
+    allowed_types = ["image/png", "image/x-icon", "image/vnd.microsoft.icon", "image/ico", "image/jpeg"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="শুধুমাত্র PNG, ICO বা JPG ফাইল আপলোড করা যাবে")
+
+    tenant_id = current_user.get("tenant_id", "MHAM5678")
+
+    try:
+        # Configure Cloudinary
+        cloudinary.config(
+            cloud_name=os.getenv("REACT_APP_CLOUDINARY_CLOUD_NAME", "dxn7swwvn"),
+            api_key=os.getenv("CLOUDINARY_API_KEY", "887633936972566"),
+            api_secret=os.getenv("CLOUDINARY_API_SECRET", "ToVlR0Vee2Kr8pu23zRM2jvXBNY")
+        )
+
+        # Upload to Cloudinary
+        import io
+        result = cloudinary.uploader.upload(
+            io.BytesIO(contents),
+            folder=f"school-erp/{tenant_id}/favicon",
+            public_id=f"favicon_{tenant_id}",
+sudo systemctl restart school-erps_code=500, detail=f"আপলোড ব্যর্থ: {str(e)}")
+deploy@server1:/var/www/school-erp/backend$ curl -X POST http://localhost:8001/api/institution/favicon -v
+*   Trying 127.0.0.1:8001...
+* Connected to localhost (127.0.0.1) port 8001 (#0)
+> POST /api/institution/favicon HTTP/1.1
+> Host: localhost:8001
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 405 Method Not Allowed
+< date: Thu, 01 Jan 2026 12:03:17 GMT
+< server: uvicorn
+< allow: GET
+< content-length: 31
+< content-type: application/json
+<
+* Connection #0 to host localhost left intact
+{"detail":"Method Not Allowed"}deploy@server1:/var/www/school-erp/backend$

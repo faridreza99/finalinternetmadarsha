@@ -1,0 +1,137 @@
+Hi Replit Team,
+
+We are still facing layout and data rendering issues in the Student ID Card, and it is not usable in its current form. Please review carefully.
+
+❌ Current Problems (Critical)
+1️⃣ Organization / Madrasah Name NOT Showing
+
+The Madrasah / Organization name is missing or broken at the top.
+
+It should come from School Branding → School Name.
+
+Right now it either:
+
+does not render at all, or
+
+shows broken Bengali glyphs.
+
+Expected:
+✔ Full Madrasah name visible
+✔ Proper Bengali font
+✔ Center-aligned in header area
+
+2️⃣ Student Details Are Incomplete / Cut
+
+Not all student fields are visible.
+
+Fields like:
+
+Address
+
+Mobile
+
+Guardian info
+are missing or clipped.
+
+Expected fields (minimum):
+
+Student Name
+
+Father’s Name
+
+Class / Section
+
+Roll / ID
+
+Mobile
+
+Address
+
+Layout must never clip or overflow text.
+
+3️⃣ Signature & Seal Position Is WRONG
+
+Principal signature and official seal are not in correct positions.
+
+Currently floating / misaligned.
+
+Expected (standard Madrasah format):
+
+Seal → center bottom (back side)
+
+Principal Signature → right bottom
+
+Both must come from:
+
+Uploaded seal image
+
+Uploaded signature image
+
+Fixed position (not dynamic / auto-flow)
+
+4️⃣ Bengali Text Is Breaking
+
+Bengali sentences are breaking into boxes / unreadable characters.
+
+This indicates:
+
+wrong font
+
+font not embedded in PDF
+
+Must fix by:
+
+Using a proper Unicode Bengali font
+(e.g. Noto Sans Bengali / SolaimanLipi)
+
+Embedding font in PDF generation
+
+Proper line-height and word-break
+
+5️⃣ ID Card Must Be Portrait (Not Auto-Stretched)
+
+Orientation must be strict portrait
+
+No auto scaling
+
+Required:
+
+Fixed width & height (ID card ratio)
+
+CSS + PDF config locked to portrait
+
+Front & back aligned vertically
+
+✅ Final Expected Output
+
+Portrait ID card
+
+Clear Madrasah name on top
+
+Clean Bengali text
+
+Full student details visible
+
+Properly aligned:
+
+Photo
+
+Seal
+
+Signature
+
+Print-ready professional layout
+
+This is a core production feature for Madrasah usage, so accuracy is critical.
+
+Please confirm once:
+
+Madrasah name renders correctly
+
+Bengali font issue is fixed
+
+Signature & seal are placed correctly
+
+No student data is clipped
+
+Thank you.

@@ -1,0 +1,83 @@
+Hi Replit Team,
+
+Thank you for the detailed update. Before we close this task, I would like to request a final confirmation and verification to ensure that everything has been implemented exactly as required in our existing Madrasah Student Management System.
+
+Please confirm the following points clearly:
+
+1️⃣ Live Class → Telegram → Auto Attendance
+
+When a student clicks Join during the scheduled class time:
+
+The Telegram class link opens correctly
+
+Attendance is automatically marked as Present
+
+Attendance is saved in both the live class attendance record and the main attendance collection
+
+2️⃣ Payment-Based Access Control
+
+If a student has not paid for the current month:
+
+Live Class is hidden
+
+Attendance is hidden
+
+Homework is hidden
+
+If payment is completed:
+
+All related features become visible automatically
+
+3️⃣ Gender-Based Class Visibility
+
+Male students only see male classes
+
+Female students only see female classes
+
+4️⃣ Monthly Class & Telegram Link Handling
+
+Live classes are correctly filtered by Month
+
+Telegram class links are configurable per month via the Admin Panel
+
+5️⃣ Homework Module
+
+Teachers/Admin can assign homework by class
+
+Students can view and submit homework
+
+Submission status is saved correctly
+
+6️⃣ Reports
+
+Student-wise Attendance Report is accurate
+
+Student-wise Payment Report is accurate
+
+7️⃣ Admin Configurations
+
+Fee Type management (General, Foreign, Zakat, Nafol, Sadaqah) with amounts
+
+Donation/Fund management works correctly
+
+Contact links are editable from Admin Panel and visible on Student Dashboard
+
+8️⃣ UI & Stability
+
+All new menu items appear correctly in the Student Sidebar (Bangla labels)
+
+No route corruption or console errors exist
+
+Backend and frontend workflows are running without issues
+
+Once you confirm the above points, please let us know:
+
+If any limitation, workaround, or known issue still exists
+
+If the system is fully production-ready from your side
+
+Thanks again for your support.
+Looking forward to your confirmation.
+
+Best regards,
+Farid

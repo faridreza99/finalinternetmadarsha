@@ -1,0 +1,37 @@
+LoginPage.js:57 
+ GET https://portal.mahajampurdarbarsharif.org/api/school-branding/public/mham5678 404 (Not Found)
+
+LoginPage.js:90 🔄 Login form submitted! 
+{username: 'mham_admin', password: 'DNGC!uJNq2zC', tenantId: 'mham5678'}
+LoginPage.js:94 🔄 Calling login function...
+App.js:138 🔄 Login function called with: 
+{username: 'mham_admin', password: '***', tenantId: 'mham5678'}
+App.js:144 🔄 Making API request to: https://portal.mahajampurdarbarsharif.org/api/auth/login
+App.js:151 ✅ Login API response: 
+{access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2M…ExN30.3ZbVApOmCuEk8oqNdJKOIukAA6HWZAjrO9Hue7ro1Mw', token_type: 'bearer', user: {…}}
+LoginPage.js:96 ✅ Login result: 
+{success: true}
+Dashboard.js:465 Uncaught TypeError: f.map is not a function
+    at UM (Dashboard.js:465:22)
+InstitutionContext.js:27 
+ GET https://portal.mahajampurdarbarsharif.org/api/institution/settings 404 (Not Found)
+App.js:127 
+ GET https://portal.mahajampurdarbarsharif.org/api/auth/me 404 (Not Found)
+InstitutionContext.js:39 Failed to fetch institution settings: 
+xr {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+App.js:130 Failed to fetch user: 
+xr {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Sidebar.js:99 
+ GET https://portal.mahajampurdarbarsharif.org/api/tenant/allowed-modules 404 (Not Found)
+Sidebar.js:72 
+ GET https://portal.mahajampurdarbarsharif.org/api/school-branding 404 (Not Found)
+Dashboard.js:61 
+ GET https://portal.mahajampurdarbarsharif.org/api/subscriptions/current 404 (Not Found)
+Dashboard.js:66 Error fetching subscription info: 
+xr {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+App.js:251 
+ GET https://portal.mahajampurdarbarsharif.org/api/subscriptions/current 404 (Not Found)
+App.js:262 Failed to check subscription: 
+xr {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+﻿
+

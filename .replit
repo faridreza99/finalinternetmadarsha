@@ -1,0 +1,85 @@
+modules = ["nodejs-20", "python-3.11", "web", "bash"]
+[agent]
+expertMode = true
+integrations = ["replitmail:1.0.0", "twilio_send_message:1.0.0"]
+
+[nix]
+channel = "stable-25_05"
+packages = ["cargo", "file", "freetype", "fribidi", "glibcLocales", "harfbuzz", "lcms2", "libiconv", "libimagequant", "libjpeg", "libraqm", "libtiff", "libwebp", "libxcrypt", "noto-fonts", "openjpeg", "openssl", "pkg-config", "postgresql", "rustc", "tcl", "tesseract", "tk", "unzip", "zlib"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Backend API"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Frontend"
+
+[[workflows.workflow]]
+name = "Backend API"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && python -m uvicorn server:app --host 0.0.0.0 --port 8000"
+waitForPort = 8000
+
+[[workflows.workflow]]
+name = "Frontend"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && npm start"
+waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3000
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
+localPort = 8083
+externalPort = 3002
+
+[[ports]]
+localPort = 8085
+externalPort = 3003
+
+[[ports]]
+localPort = 8086
+externalPort = 4200
+
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["bash", "start.sh"]
+build = ["bash", "build.sh"]
+
+[userenv]
+
+[userenv.shared]
+DB_NAME = "school_erp_dev"
+JWT_SECRET_KEY = "e7e9bb9ff5ba8f831a54e0efdf07c21ae277c7967901aab2841eefb5d2548dd2"
+CORS_ORIGINS = "http://localhost:5000,http://0.0.0.0:5000"

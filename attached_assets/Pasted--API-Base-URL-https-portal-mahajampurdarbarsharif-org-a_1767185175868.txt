@@ -1,0 +1,11 @@
+🔗 API Base URL: https://portal.mahajampurdarbarsharif.org/api
+rrweb-plugin-console-record.js:160 API URL -  https://portal.mahajampurdarbarsharif.org/api
+api/school-branding/public/mham5678:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+rrweb-plugin-console-record.js:160 🔄 Login form submitted! Object
+rrweb-plugin-console-record.js:160 🔄 Calling login function...
+rrweb-plugin-console-record.js:160 🔄 Login function called with: Object
+rrweb-plugin-console-record.js:160 🔄 Making API request to: https://portal.mahajampurdarbarsharif.org/api/auth/login
+api/auth/login:1  Failed to load resource: the server responded with a status of 502 ()Understand this error
+rrweb-plugin-console-record.js:160 ❌ Login API failed: xrcode: "ERR_BAD_RESPONSE"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Request failed with status code 502"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}response: {data: '<html>\r\n<head><title>502 Bad Gateway</title></head…disable MSIE and Chrome friendly error page -->\r\n', status: 502, statusText: '', headers: Kr, config: {…}, …}status: 502stack: "AxiosError: Request failed with status code 502\n    at Jr (https://portal.mahajampurdarbarsharif.org/static/js/main.5ed641d1.js:2:580439)\n    at XMLHttpRequest.f (https://portal.mahajampurdarbarsharif.org/static/js/main.5ed641d1.js:2:585208)\n    at Vs.request (https://portal.mahajampurdarbarsharif.org/static/js/main.5ed641d1.js:2:596826)\n    at async login (https://portal.mahajampurdarbarsharif.org/static/js/main.5ed641d1.js:2:3526241)\n    at async onSubmit (https://portal.mahajampurdarbarsharif.org/static/js/main.5ed641d1.js:2:699758)"[[Prototype]]: Error
+(anonymous) @ rrweb-plugin-console-record.js:160Understand this error
+rrweb-plugin-console-record.js:160 ✅ Login result: Objecterror: "Login failed"success: false[[Prototype]]: Object

@@ -1,0 +1,114 @@
+🔗 API Base URL: https://portal.mahajampurdarbarsharif.org/api
+App.js:78 API URL -  https://portal.mahajampurdarbarsharif.org/api
+Sidebar.js:84 Error fetching branding: SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+(anonymous) @ rrweb-plugin-console-record.js:160
+(anonymous) @ Sidebar.js:84
+await in (anonymous)
+(anonymous) @ Sidebar.js:87
+fo @ react-dom-client.production.js:8583
+tc @ react-dom-client.production.js:10276
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10269
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10269
+tc @ react-dom-client.production.js:10269
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10269
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10269
+tc @ react-dom-client.production.js:10323
+tc @ react-dom-client.production.js:10269
+tc @ react-dom-client.production.js:10269
+ec @ react-dom-client.production.js:10221
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10137
+jd @ react-dom-client.production.js:11763
+bd @ react-dom-client.production.js:11739
+Ud @ react-dom-client.production.js:12085
+Id @ react-dom-client.production.js:11956
+vd @ react-dom-client.production.js:11726
+xd @ react-dom-client.production.js:11521
+Xc @ react-dom-client.production.js:10920
+$c @ react-dom-client.production.js:10826
+zd @ react-dom-client.production.js:12078
+E @ scheduler.production.js:151Understand this error
+Sidebar.js:84 Error fetching branding: SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+(anonymous) @ rrweb-plugin-console-record.js:160
+(anonymous) @ Sidebar.js:84
+await in (anonymous)
+(anonymous) @ Sidebar.js:87
+fo @ react-dom-client.production.js:8583
+ec @ react-dom-client.production.js:10126
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10120
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10214
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10241
+Jo @ react-dom-client.production.js:10101
+ec @ react-dom-client.production.js:10137
+jd @ react-dom-client.production.js:11763
+bd @ react-dom-client.production.js:11739
+Ud @ react-dom-client.production.js:12085
+Id @ react-dom-client.production.js:11956
+vd @ react-dom-client.production.js:11726
+xd @ react-dom-client.production.js:11521
+Xc @ react-dom-client.production.js:10920
+$c @ react-dom-client.production.js:10826
+zd @ react-dom-client.production.js:12078
+E @ scheduler.production.js:151Understand this error
+Dashboard.js:465 Uncaught TypeError: f.map is not a function
+    at UM (Dashboard.js:465:22)
+    at ei (react-dom-client.production.js:4351:21)
+    at Vl (react-dom-client.production.js:6497:15)
+    at so (react-dom-client.production.js:7473:14)
+    at dd (react-dom-client.production.js:11305:14)
+    at od (react-dom-client.production.js:11182:37)
+    at ld (react-dom-client.production.js:11163:7)
+    at $c (react-dom-client.production.js:10728:40)
+    at zd (react-dom-client.production.js:12078:3)
+    at MessagePort.E (scheduler.production.js:151:44)
+UM @ Dashboard.js:465
+ei @ react-dom-client.production.js:4351
+Vl @ react-dom-client.production.js:6497
+so @ react-dom-client.production.js:7473
+dd @ react-dom-client.production.js:11305
+od @ react-dom-client.production.js:11182
+ld @ react-dom-client.production.js:11163
+$c @ react-dom-client.production.js:10728
+zd @ react-dom-client.production.js:12078
+E @ scheduler.production.js:151Understand this error

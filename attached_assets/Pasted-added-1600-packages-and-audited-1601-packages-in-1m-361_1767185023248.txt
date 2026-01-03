@@ -1,0 +1,363 @@
+added 1600 packages, and audited 1601 packages in 1m
+
+361 packages are looking for funding
+  run `npm fund` for details
+
+10 vulnerabilities (3 moderate, 7 high)
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+
+> frontend@0.1.0 build
+> NODE_OPTIONS=--max-old-space-size=4096 craco build && cp public/_redirects build/_redirects
+
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  795.37 kB  build/static/js/main.5ed641d1.js
+  25.88 kB   build/static/css/main.4e756b4d.css
+
+The bundle size is significantly larger than recommended.
+Consider reducing it with code splitting: https://goo.gl/9VhYWB
+You can also analyze the project dependencies: https://goo.gl/LeUzfb
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
+deploy@server1:/var/www/school-erp/frontend$ cd /var/www/school-erp/backend
+
+# Create virtual environment (if not exists)
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Make sure the fonts folder exists with Bengali fonts
+mkdir -p fonts
+
+# Restart your backend service (depends on how you run it)
+# If using systemd:
+sudo systemctl restart school-erp-backend
+
+# Or if using PM2:
+pm2 restart school-erp-backend
+
+# Or if running directly:
+python -m uvicorn server:app --host 0.0.0.0 --port 8000
+Collecting fastapi==0.110.1
+  Downloading fastapi-0.110.1-py3-none-any.whl (91 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.9/91.9 KB 461.7 kB/s eta 0:00:00
+Collecting uvicorn==0.25.0
+  Downloading uvicorn-0.25.0-py3-none-any.whl (60 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.3/60.3 KB 2.1 MB/s eta 0:00:00
+Collecting boto3>=1.34.129
+  Downloading boto3-1.42.19-py3-none-any.whl (140 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 140.6/140.6 KB 1.1 MB/s eta 0:00:00
+Collecting requests-oauthlib>=2.0.0
+  Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl (24 kB)
+Collecting cryptography>=42.0.8
+  Downloading cryptography-46.0.3-cp38-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 8.5 MB/s eta 0:00:00
+Collecting python-dotenv>=1.0.1
+  Downloading python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+Collecting pymongo==4.5.0
+  Downloading pymongo-4.5.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (671 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 671.3/671.3 KB 61.5 MB/s eta 0:00:00
+Collecting pydantic>=2.6.4
+  Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 463.6/463.6 KB 74.4 MB/s eta 0:00:00
+Collecting email-validator>=2.2.0
+  Downloading email_validator-2.3.0-py3-none-any.whl (35 kB)
+Collecting pyjwt>=2.10.1
+  Downloading PyJWT-2.10.1-py3-none-any.whl (22 kB)
+Collecting passlib>=1.7.4
+  Downloading passlib-1.7.4-py2.py3-none-any.whl (525 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 525.6/525.6 KB 57.0 MB/s eta 0:00:00
+Collecting tzdata>=2024.2
+  Downloading tzdata-2025.3-py2.py3-none-any.whl (348 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 348.5/348.5 KB 43.6 MB/s eta 0:00:00
+Collecting motor==3.3.1
+  Downloading motor-3.3.1-py3-none-any.whl (70 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 70.1/70.1 KB 14.6 MB/s eta 0:00:00
+Collecting pytest>=8.0.0
+  Downloading pytest-9.0.2-py3-none-any.whl (374 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 374.8/374.8 KB 72.9 MB/s eta 0:00:00
+Collecting black>=24.1.1
+  Downloading black-25.12.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 56.8 MB/s eta 0:00:00
+Collecting isort>=5.13.2
+  Downloading isort-7.0.0-py3-none-any.whl (94 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 94.7/94.7 KB 32.7 MB/s eta 0:00:00
+Collecting flake8>=7.0.0
+  Downloading flake8-7.3.0-py2.py3-none-any.whl (57 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.9/57.9 KB 21.7 MB/s eta 0:00:00
+Collecting mypy>=1.8.0
+  Downloading mypy-1.19.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (13.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.5/13.5 MB 19.3 MB/s eta 0:00:00
+Collecting python-jose[cryptography]>=3.3.0
+  Downloading python_jose-3.5.0-py2.py3-none-any.whl (34 kB)
+Collecting bcrypt>=4.0.0
+  Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl (278 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 278.2/278.2 KB 37.8 MB/s eta 0:00:00
+Collecting requests>=2.31.0
+  Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 KB 22.1 MB/s eta 0:00:00
+Collecting pandas>=2.2.0
+  Downloading pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (12.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.8/12.8 MB 20.0 MB/s eta 0:00:00
+Collecting numpy>=1.26.0
+  Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 21.1 MB/s eta 0:00:00
+Collecting python-multipart>=0.0.9
+  Downloading python_multipart-0.0.21-py3-none-any.whl (24 kB)
+Collecting jq>=1.6.0
+  Downloading jq-1.10.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (743 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 743.5/743.5 KB 33.2 MB/s eta 0:00:00
+Collecting typer>=0.9.0
+  Downloading typer-0.21.0-py3-none-any.whl (47 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.1/47.1 KB 6.8 MB/s eta 0:00:00
+Collecting openpyxl>=3.1.0
+  Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.9/250.9 KB 28.9 MB/s eta 0:00:00
+Collecting reportlab>=4.0.0
+  Downloading reportlab-4.4.7-py3-none-any.whl (2.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 35.3 MB/s eta 0:00:00
+Collecting twilio>=8.12.0
+  Downloading twilio-9.9.0-py2.py3-none-any.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 35.7 MB/s eta 0:00:00
+Collecting openai>=1.0.0
+  Downloading openai-2.14.0-py3-none-any.whl (1.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 32.5 MB/s eta 0:00:00
+Collecting cloudinary>=1.36.0
+  Downloading cloudinary-1.44.1-py3-none-any.whl (147 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 147.8/147.8 KB 23.7 MB/s eta 0:00:00
+Collecting starlette<0.38.0,>=0.37.2
+  Downloading starlette-0.37.2-py3-none-any.whl (71 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.9/71.9 KB 23.7 MB/s eta 0:00:00
+Collecting typing-extensions>=4.8.0
+  Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 KB 14.5 MB/s eta 0:00:00
+Collecting h11>=0.8
+  Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Collecting click>=7.0
+  Downloading click-8.3.1-py3-none-any.whl (108 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 108.3/108.3 KB 17.6 MB/s eta 0:00:00
+Collecting dnspython<3.0.0,>=1.16.0
+  Downloading dnspython-2.8.0-py3-none-any.whl (331 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 331.1/331.1 KB 40.7 MB/s eta 0:00:00
+Collecting s3transfer<0.17.0,>=0.16.0
+  Downloading s3transfer-0.16.0-py3-none-any.whl (86 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 86.8/86.8 KB 28.5 MB/s eta 0:00:00
+Collecting jmespath<2.0.0,>=0.7.1
+  Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)
+Collecting botocore<1.43.0,>=1.42.19
+  Downloading botocore-1.42.19-py3-none-any.whl (14.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.6/14.6 MB 21.9 MB/s eta 0:00:00
+Collecting oauthlib>=3.0.0
+  Downloading oauthlib-3.3.1-py3-none-any.whl (160 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 160.1/160.1 KB 51.6 MB/s eta 0:00:00
+Collecting cffi>=2.0.0
+  Downloading cffi-2.0.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (216 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 216.5/216.5 KB 29.7 MB/s eta 0:00:00
+Collecting typing-inspection>=0.4.2
+  Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Collecting pydantic-core==2.41.5
+  Downloading pydantic_core-2.41.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 33.8 MB/s eta 0:00:00
+Collecting annotated-types>=0.6.0
+  Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Collecting idna>=2.0.0
+  Downloading idna-3.11-py3-none-any.whl (71 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 KB 27.9 MB/s eta 0:00:00
+Collecting pygments>=2.7.2
+  Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 35.1 MB/s eta 0:00:00
+Collecting packaging>=22
+  Downloading packaging-25.0-py3-none-any.whl (66 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 66.5/66.5 KB 11.8 MB/s eta 0:00:00
+Collecting tomli>=1
+  Downloading tomli-2.3.0-py3-none-any.whl (14 kB)
+Collecting iniconfig>=1.0.1
+  Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Collecting exceptiongroup>=1
+  Downloading exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+Collecting pluggy<2,>=1.5
+  Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Collecting mypy-extensions>=0.4.3
+  Downloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Collecting pathspec>=0.9.0
+  Downloading pathspec-0.12.1-py3-none-any.whl (31 kB)
+Collecting platformdirs>=2
+  Downloading platformdirs-4.5.1-py3-none-any.whl (18 kB)
+Collecting pytokens>=0.3.0
+  Downloading pytokens-0.3.0-py3-none-any.whl (12 kB)
+Collecting mccabe<0.8.0,>=0.7.0
+  Downloading mccabe-0.7.0-py2.py3-none-any.whl (7.3 kB)
+Collecting pycodestyle<2.15.0,>=2.14.0
+  Downloading pycodestyle-2.14.0-py2.py3-none-any.whl (31 kB)
+Collecting pyflakes<3.5.0,>=3.4.0
+  Downloading pyflakes-3.4.0-py2.py3-none-any.whl (63 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 63.6/63.6 KB 23.6 MB/s eta 0:00:00
+Collecting librt>=0.6.2
+  Downloading librt-0.7.5-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (183 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 183.3/183.3 KB 23.7 MB/s eta 0:00:00
+Collecting rsa!=4.1.1,!=4.4,<5.0,>=4.0
+  Downloading rsa-4.9.1-py3-none-any.whl (34 kB)
+Collecting ecdsa!=0.15
+  Downloading ecdsa-0.19.1-py2.py3-none-any.whl (150 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 150.6/150.6 KB 21.7 MB/s eta 0:00:00
+Collecting pyasn1>=0.5.0
+  Downloading pyasn1-0.6.1-py3-none-any.whl (83 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.1/83.1 KB 17.5 MB/s eta 0:00:00
+Collecting certifi>=2017.4.17
+  Downloading certifi-2025.11.12-py3-none-any.whl (159 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 159.4/159.4 KB 23.1 MB/s eta 0:00:00
+Collecting urllib3<3,>=1.21.1
+  Downloading urllib3-2.6.2-py3-none-any.whl (131 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.2/131.2 KB 25.8 MB/s eta 0:00:00
+Collecting charset_normalizer<4,>=2
+  Downloading charset_normalizer-3.4.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.6/153.6 KB 24.5 MB/s eta 0:00:00
+Collecting pytz>=2020.1
+  Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 509.2/509.2 KB 36.9 MB/s eta 0:00:00
+Collecting python-dateutil>=2.8.2
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 KB 34.2 MB/s eta 0:00:00
+Collecting rich>=10.11.0
+  Downloading rich-14.2.0-py3-none-any.whl (243 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 243.4/243.4 KB 6.0 MB/s eta 0:00:00
+Collecting shellingham>=1.3.0
+  Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+Collecting et-xmlfile
+  Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+Collecting pillow>=9.0.0
+  Downloading pillow-12.0.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 22.9 MB/s eta 0:00:00
+Collecting aiohttp-retry>=2.8.3
+  Downloading aiohttp_retry-2.9.1-py3-none-any.whl (10.0 kB)
+Collecting aiohttp>=3.8.4
+  Downloading aiohttp-3.13.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.7 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 35.0 MB/s eta 0:00:00
+Collecting sniffio
+  Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+Collecting tqdm>4
+  Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 KB 13.5 MB/s eta 0:00:00
+Collecting jiter<1,>=0.10.0
+  Downloading jiter-0.12.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (364 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 364.4/364.4 KB 41.0 MB/s eta 0:00:00
+Collecting distro<2,>=1.7.0
+  Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+Collecting httpx<1,>=0.23.0
+  Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 KB 26.8 MB/s eta 0:00:00
+Collecting anyio<5,>=3.5.0
+  Downloading anyio-4.12.0-py3-none-any.whl (113 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.4/113.4 KB 39.3 MB/s eta 0:00:00
+Collecting six
+  Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Collecting async-timeout<6.0,>=4.0
+  Downloading async_timeout-5.0.1-py3-none-any.whl (6.2 kB)
+Collecting multidict<7.0,>=4.5
+  Downloading multidict-6.7.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (241 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 241.7/241.7 KB 41.4 MB/s eta 0:00:00
+Collecting aiosignal>=1.4.0
+  Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Collecting propcache>=0.2.0
+  Downloading propcache-0.4.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (196 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.9/196.9 KB 28.4 MB/s eta 0:00:00
+Collecting aiohappyeyeballs>=2.5.0
+  Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl (15 kB)
+Collecting attrs>=17.3.0
+  Downloading attrs-25.4.0-py3-none-any.whl (67 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.6/67.6 KB 20.3 MB/s eta 0:00:00
+Collecting yarl<2.0,>=1.17.0
+  Downloading yarl-1.22.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (346 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 347.0/347.0 KB 30.6 MB/s eta 0:00:00
+Collecting frozenlist>=1.1.1
+  Downloading frozenlist-1.8.0-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (219 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 219.5/219.5 KB 31.6 MB/s eta 0:00:00
+Collecting pycparser
+  Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.1/118.1 KB 42.4 MB/s eta 0:00:00
+Collecting httpcore==1.*
+  Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 KB 23.7 MB/s eta 0:00:00
+Collecting markdown-it-py>=2.2.0
+  Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.3/87.3 KB 1.4 MB/s eta 0:00:00
+Collecting mdurl~=0.1
+  Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Installing collected packages: pytz, passlib, urllib3, tzdata, typing-extensions, tqdm, tomli, sniffio, six, shellingham, pytokens, python-multipart, python-dotenv, pyjwt, pygments, pyflakes, pycparser, pycodestyle, pyasn1, propcache, pluggy, platformdirs, pillow, pathspec, packaging, oauthlib, numpy, mypy-extensions, mdurl, mccabe, librt, jq, jmespath, jiter, isort, iniconfig, idna, h11, frozenlist, et-xmlfile, dnspython, distro, click, charset_normalizer, certifi, bcrypt, attrs, async-timeout, annotated-types, aiohappyeyeballs, uvicorn, typing-inspection, rsa, requests, reportlab, python-dateutil, pymongo, pydantic-core, openpyxl, mypy, multidict, markdown-it-py, httpcore, flake8, exceptiongroup, email-validator, ecdsa, cloudinary, cffi, black, aiosignal, yarl, rich, requests-oauthlib, python-jose, pytest, pydantic, pandas, motor, cryptography, botocore, anyio, typer, starlette, s3transfer, httpx, aiohttp, openai, fastapi, boto3, aiohttp-retry, twilio
+Successfully installed aiohappyeyeballs-2.6.1 aiohttp-3.13.2 aiohttp-retry-2.9.1 aiosignal-1.4.0 annotated-types-0.7.0 anyio-4.12.0 async-timeout-5.0.1 attrs-25.4.0 bcrypt-5.0.0 black-25.12.0 boto3-1.42.19 botocore-1.42.19 certifi-2025.11.12 cffi-2.0.0 charset_normalizer-3.4.4 click-8.3.1 cloudinary-1.44.1 cryptography-46.0.3 distro-1.9.0 dnspython-2.8.0 ecdsa-0.19.1 email-validator-2.3.0 et-xmlfile-2.0.0 exceptiongroup-1.3.1 fastapi-0.110.1 flake8-7.3.0 frozenlist-1.8.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.11 iniconfig-2.3.0 isort-7.0.0 jiter-0.12.0 jmespath-1.0.1 jq-1.10.0 librt-0.7.5 markdown-it-py-4.0.0 mccabe-0.7.0 mdurl-0.1.2 motor-3.3.1 multidict-6.7.0 mypy-1.19.1 mypy-extensions-1.1.0 numpy-2.2.6 oauthlib-3.3.1 openai-2.14.0 openpyxl-3.1.5 packaging-25.0 pandas-2.3.3 passlib-1.7.4 pathspec-0.12.1 pillow-12.0.0 platformdirs-4.5.1 pluggy-1.6.0 propcache-0.4.1 pyasn1-0.6.1 pycodestyle-2.14.0 pycparser-2.23 pydantic-2.12.5 pydantic-core-2.41.5 pyflakes-3.4.0 pygments-2.19.2 pyjwt-2.10.1 pymongo-4.5.0 pytest-9.0.2 python-dateutil-2.9.0.post0 python-dotenv-1.2.1 python-jose-3.5.0 python-multipart-0.0.21 pytokens-0.3.0 pytz-2025.2 reportlab-4.4.7 requests-2.32.5 requests-oauthlib-2.0.0 rich-14.2.0 rsa-4.9.1 s3transfer-0.16.0 shellingham-1.5.4 six-1.17.0 sniffio-1.3.1 starlette-0.37.2 tomli-2.3.0 tqdm-4.67.1 twilio-9.9.0 typer-0.21.0 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2025.3 urllib3-2.6.2 uvicorn-0.25.0 yarl-1.22.0
+[sudo] password for deploy:
+Use --update-env to update environment variables
+[PM2][ERROR] Process or Namespace school-erp-backend not found
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/__main__.py", line 4, in <module>
+    uvicorn.main()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/main.py", line 416, in main
+    run(
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/main.py", line 587, in run
+    server.run()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/server.py", line 61, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/server.py", line 68, in serve
+    config.load()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/config.py", line 467, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/importer.py", line 24, in import_from_string
+    raise exc from None
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/var/www/school-erp/backend/server.py", line 14, in <module>
+    from id_card_generator import generate_staff_id_card_pdf
+  File "/var/www/school-erp/backend/id_card_generator.py", line 22, in <module>
+    import qrcode
+ModuleNotFoundError: No module named 'qrcode'
+(venv) deploy@server1:/var/www/school-erp/backend$

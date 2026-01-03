@@ -1,0 +1,60 @@
+{"detail":"Method Not Allowed"}deploy@server1:/var/www/school-erp/backend$ # প্রথমে VPS-এ আসল server.py restore করুন
+cd /var/www/school-erp
+git checkout -- backend/server.py
+
+# তারপর এই Python script চালান endpoint যোগ করতে
+python3 << 'EOF'
+endpoint_code = '''
+
+# ============ FAVICON UPLOAD ENDPOINT ============
+@api_router.post("/institution/favicon")
+async def upload_institution_favicon(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload institution favicon using Cloudinary"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    allowed_types = ["image/jpeg", "image/png", "image/x-icon", "image/vnd.microsoft.icon"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only PNG or ICO files are allowed")
+
+    file_content = await file.read()
+    if len(file_content) > 500 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 500KB limit")
+
+    try:
+        import io
+        upload_result = cloudinary.uploader.upload(
+            io.BytesIO(file_content),
+            folder=f"school_erp/{current_user.tenant_id}/favicon",
+            public_id=f"favicon_{current_user.tenant_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            resource_type="image"
+        )
+        favicon_url = upload_result.get("secure_url")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload favicon: {str(e)}")
+
+    await db.institutions.update_one(
+        {"tenant_id": current_user.tenant_id, "is_active": True},
+        {"$set": {"favicon_url": favicon_url, "updated_at": datetime.utcnow()}}
+curl -X POST http://localhost:8001/api/institution/favicon -vcon_url": favicon_url}
+Endpoint added successfully!
+*   Trying 127.0.0.1:8001...
+* Connected to localhost (127.0.0.1) port 8001 (#0)
+> POST /api/institution/favicon HTTP/1.1
+> Host: localhost:8001
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 405 Method Not Allowed
+< date: Thu, 01 Jan 2026 12:05:08 GMT
+< server: uvicorn
+< allow: GET
+< content-length: 31
+< content-type: application/json
+<
+* Connection #0 to host localhost left intact
+{"detail":"Method Not Allowed"}deploy@server1:/var/www/school-erp$

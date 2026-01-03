@@ -1,0 +1,62 @@
+(venv) deploy@server1:/var/www/school-erp/backend$ cd /var/www/school-erp/backend
+source venv/bin/activate
+python -c "
+from pymongo import MongoClient
+from passlib.context import CryptContext
+import os
+
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+client = MongoClient(os.getenv('MONGO_URL'))
+db = client['school_erp']  # Specify database name
+
+user = {
+    'id': '619c6374-3497-4f6d-9a0d-d9b8a5eff5d9',
+    'username': 'mham_admin',
+    'email': 'mham@edu.bd',
+    'hashed_password': pwd_context.hash('DNGC!uJNq2zC'),
+    'full_name': 'MHAM Administrator',
+    'role': 'admin',
+    'tenant_id': 'mham5678',
+    'school_id': 'school-mham5678',
+    'is_active': True
+}
+db.users.update_one({'username': 'mham_admin', 'tenant_id': 'mham5678'}, {'\$set': user}, upsert=True)
+print('User created with password: DNGC!uJNq2zC')
+"
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+AttributeError: module 'bcrypt' has no attribute '__about__'
+Traceback (most recent call last):
+  File "<string>", line 14, in <module>
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 779, in hash
+    self.checksum = self._calc_checksum(secret)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 591, in _calc_checksum
+    self._stub_requires_backend()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 2163, in set_backend
+    return cls.set_backend(name, dryrun=dryrun)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 2188, in set_backend
+    cls._set_backend(name, dryrun)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 2311, in _set_backend
+    super(SubclassBackendMixin, cls)._set_backend(name, dryrun)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 2224, in _set_backend
+    ok = loader(**kwds)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 626, in _load_backend_mixin
+    return mixin_cls._finalize_backend_mixin(name, dryrun)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 421, in _finalize_backend_mixin
+    if detect_wrap_bug(IDENT_2A):
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 380, in detect_wrap_bug
+    if verify(secret, bug_hash):
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+  File "/var/www/school-erp/backend/venv/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 655, in _calc_checksum
+    hash = _bcrypt.hashpw(secret, config)
+ValueError: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+(venv) deploy@server1:/var/www/school-erp/backend$

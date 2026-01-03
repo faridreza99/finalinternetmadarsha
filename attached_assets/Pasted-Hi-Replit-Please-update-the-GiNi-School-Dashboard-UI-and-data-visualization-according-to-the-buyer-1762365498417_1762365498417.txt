@@ -1,0 +1,89 @@
+Hi Replit,
+
+Please update the GiNi School Dashboard UI and data visualization according to the buyer’s shared reference (image example).
+
+🧩 1️⃣ Dashboard Design Improvements
+
+Use the buyer’s example layout for reference.
+Make the dashboard visually cleaner, balanced, and more professional.
+Ensure it’s fully responsive and works on all devices.
+
+✅ Top Section (Cards):
+
+Total Students Using AI
+
+Total AI Interactions
+
+Active Classes
+
+Weekly Growth (%)
+
+✅ Filters (Top Row):
+
+Time Period: Week / Month
+
+Class Selector
+
+Subject Selector
+
+✅ Tabs Section (Buttons):
+AI Assistant | Quiz | Test Generator | Summary | Notes
+→ Each should show module-specific data when clicked.
+
+✅ Charts Section (Middle):
+
+Left: Line Chart → “Usage Trend” (Weekly/Monthly)
+
+Center: Class-wise Chart
+
+Right: Subject-wise Chart
+→ All charts should update dynamically when filters change.
+
+✅ Table Section (Bottom):
+Columns:
+
+Class
+
+Subject
+
+Total Interactions
+
+Active Students
+→ Show real data from backend. Add scroll for large data sets.
+
+✅ Footer:
+Include export options:
+
+Export: PDF | Excel | Share Report
+
+🧩 2️⃣ Data Logic & Backend Connection
+
+Fetch data dynamically based on selected Class / Subject / Duration.
+
+All data must come from actual AI usage logs (GiNi Assistant, Quiz, Test Generator, etc.)
+
+Each tab should load relevant statistics from its module.
+
+Ensure accurate total counts, average growth, and active user calculation.
+
+🧩 3️⃣ Additional Enhancements
+
+Add smooth chart animations and hover tooltips.
+
+Make all cards clickable to drill down into detailed module reports.
+
+Use consistent font, shadow, and card spacing for a professional school dashboard look.
+
+Keep colors consistent with the current GiNi branding.
+
+🎯 Goal
+
+✅ Replicate and enhance the buyer’s dashboard sample.
+✅ Keep all modules connected to live backend data.
+✅ Don’t touch any other working functionality outside the dashboard.
+
+After implementation, please test on:
+
+Desktop & Mobile view
+
+All 5 module tabs (AI Assistant, Quiz, Test Generator, Summary, Notes)

@@ -1,0 +1,112 @@
+deploy@server1:/var/www/school-erp/backend$ # চেক করুন সঠিক branch-এ আছেন কিনা
+cd /var/www/school-erp
+git branch
+git status
+
+# Force pull করুন
+git fetch origin
+git reset --hard origin/main
+
+# Backend restart করুন
+sudo systemctl restart school-erp
+* main
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   backend/uploads/demo/008f91c9-bc4d-4256-b2bc-811872555195.pdf
+        modified:   backend/uploads/demo/0860b477-dd8c-40de-a1db-48e24fd0653e.jpg
+        modified:   backend/uploads/demo/0ceaae81-d34a-4d82-ba07-bcea76de6f91.png
+        modified:   backend/uploads/demo/0ecedb21-9c81-49bc-b9ee-6e4cbfbaecde.pdf
+        modified:   backend/uploads/demo/10ad4cc4-173b-4560-b8ca-e09dc328f783.pdf
+        modified:   backend/uploads/demo/20ffc037-79e5-4a8c-b27f-1a0ed0d178e7.png
+        modified:   backend/uploads/demo/28f95949-5f49-4153-9158-a758320ea071.pdf
+        modified:   backend/uploads/demo/2bc61e13-4c20-4e83-9608-a177ecfbf2bd.pdf
+        modified:   backend/uploads/demo/2dcbf62c-ad20-4349-9d11-c0111be21ae4.png
+        modified:   backend/uploads/demo/2f91107f-5588-4930-8766-54db6d8015a2.png
+        modified:   backend/uploads/demo/31dd98ff-fe40-4d62-b77d-4e2176a72fbe.pdf
+        modified:   backend/uploads/demo/34c7b64c-f72b-43b8-bf7b-5e7d3897339b.jpg
+        modified:   backend/uploads/demo/360d3252-c4a0-4e59-b91d-8a0b0a491a8f.pdf
+        modified:   backend/uploads/demo/42b383c5-a049-4b5f-a915-794b1507b1e7.jpg
+        modified:   backend/uploads/demo/445b8fd1-f3e9-4253-97dd-92caf00580b8.png
+        modified:   backend/uploads/demo/45837342-460d-4bc5-92cb-27b2652d4008.pdf
+        modified:   backend/uploads/demo/4d2023e9-4f9e-4a06-9571-78d194de3e57.png
+        modified:   backend/uploads/demo/4eab6416-3770-42d4-93f3-290bc3aade2d.png
+        modified:   backend/uploads/demo/565ee656-6db8-445e-97c9-6657f4e45da6.pdf
+        modified:   backend/uploads/demo/584676bf-6315-4164-82f9-d063fa6e40cc.jpg
+        modified:   backend/uploads/demo/5a517034-1b43-4329-aa44-48cf56d5cc53.pdf
+        modified:   backend/uploads/demo/62cf93a2-a97a-4114-8387-aaf84208a5cb.pdf
+        modified:   backend/uploads/demo/6aa171df-035c-46d2-aa4b-77ec118a8cd2.pdf
+        modified:   backend/uploads/demo/75643bae-eb3e-4d3f-a3a9-d681c96e0b58.pdf
+        modified:   backend/uploads/demo/77de6af9-594c-4f1c-a074-417b981aab04.pdf
+        modified:   backend/uploads/demo/7cfcb2f7-18de-466a-8b82-05cc277eb2be.pdf
+        modified:   backend/uploads/demo/7d8740dd-ba22-4030-b889-32919589e874.pdf
+        modified:   backend/uploads/demo/80fb2053-207b-4d11-918d-6464574f35de.png
+        modified:   backend/uploads/demo/84d60aa2-ffa3-4b5d-b78f-129f7907fac9.pdf
+        modified:   backend/uploads/demo/94abaa0a-8424-4205-b33f-d4f7223801f1.pdf
+        modified:   backend/uploads/demo/99852944-7eb2-41d8-bcf4-984426ec26b5.pdf
+        modified:   backend/uploads/demo/a8fa4457-a34e-4476-87d7-7c8a783bd3e0.png
+        modified:   backend/uploads/demo/af6a5b74-1d9f-485f-8166-70c3f9fddefd.png
+        modified:   backend/uploads/demo/af7733cd-7442-42d6-9bb7-ac4379351277.jpg
+        modified:   backend/uploads/demo/b1dd0c20-8bf4-4e7e-867b-2907036f81a4.jpg
+        modified:   backend/uploads/demo/b259361d-48c0-4833-82d4-39400b717729.pdf
+        modified:   backend/uploads/demo/b8bd9dee-5fac-4b9d-bc55-db4df0492a8d.png
+        modified:   backend/uploads/demo/c49009f6-f902-45a1-b1e5-af87b41bf3dd.pdf
+        modified:   backend/uploads/demo/c8e2f014-aefc-460b-b8d0-b4571bf60ab1.pdf
+        modified:   backend/uploads/demo/c9c7352f-fa58-453e-8a9e-d09eaa45888b.pdf
+        modified:   backend/uploads/demo/cc9d5da0-39ab-49a3-abca-467de55a6f49.pdf
+        modified:   backend/uploads/demo/cced1676-0a16-4787-bff2-442cd3c86abb.pdf
+        modified:   backend/uploads/demo/d1ac7647-c754-4e2f-b98c-daa5d213543e.png
+        modified:   backend/uploads/demo/d1b2e0e9-f64a-4bae-a56c-8c91794cadae.png
+        modified:   backend/uploads/demo/d9ff7c7e-db01-4aea-934a-b4c8a1a6b28e.pdf
+        modified:   backend/uploads/demo/dab2b3f4-bd09-4134-9ceb-fe620fa0552b.pdf
+        modified:   backend/uploads/demo/db28d0f6-baed-40ae-8c7a-0a8d2be9a0a4.pdf
+        modified:   backend/uploads/demo/df387c35-7f1b-44f8-b004-39d3685240d1.png
+        modified:   backend/uploads/demo/e1a866d7-e667-4971-99f9-bcf4f271cca1.pdf
+        modified:   backend/uploads/demo/e9138d71-e6f6-4efd-964f-b646d9084716.pdf
+        modified:   backend/uploads/demo/f4bfc67e-4cfb-43f8-ba98-1d313845b6e2.pdf
+        modified:   backend/uploads/demo/f6c56b8c-b69b-4b30-9a51-0fe65d389d99.png
+        modified:   backend/uploads/demo/ff7dc74e-ae5f-4745-b21f-170b67874fa4.pdf
+        modified:   backend/uploads/demo/staff/EMP-2025-0004_2627f917-c003-4f0d-b8f6-75cea5f0b0de.jpg
+        modified:   backend/uploads/demo/staff/EMP-2025-0005_077dc298-df2b-4205-b18c-bb77dda17d34.jpg
+        modified:   backend/uploads/demo/staff/ghfghfg_6bd5e12a-a5e1-41ba-9c43-e06dd2ed6314.jpg
+        modified:   backend/uploads/demo/students/1542154_d96beabe-bc0a-40e9-b436-312799dad694.jpg
+        modified:   backend/uploads/demo/students/5000_b1f92eb0-d98e-4bfe-88cf-415e486328de.jpg
+        modified:   backend/uploads/demo/students/7777_d5ff0b6b-9870-464b-85bc-5ca1e01a5013.jpg
+        modified:   backend/uploads/demo/students/EX001_1e2e4466-d7cf-4e79-a598-9c07221b5d02.jpeg
+        modified:   backend/uploads/demo/students/HSS001_866862fd-80ea-49ab-9ffd-da41e673ffb3.jpg
+        modified:   backend/uploads/demo/students/HSS001_f3241e29-0982-4943-afe9-d6b5a65d9035.jpg
+        modified:   backend/uploads/demo/students/gfg22_b1bed020-8605-45ea-8402-14cc8b6e6221.jpg
+        modified:   backend/uploads/demo/students/gfg_2f8d2266-1764-4901-bdef-b33a29829ea6.jpg
+        modified:   backend/uploads/mham5678/institution/logo_mham5678_20251229103545.jpg
+        modified:   backend/uploads/mham5678/staff/EMP101_62b4e870-1cf7-48c5-9f60-ea4ae7ac94d8.jpg
+        modified:   backend/uploads/mham5678/staff/EMP5485748_d831aa17-6deb-4f30-965a-86a0ece0aa06.jpg
+        modified:   backend/uploads/mham5678/staff/emt_915d775f-e767-4890-95e0-bd79098a173e.jpeg
+        modified:   backend/uploads/mham5678/staff/fsdf_93de653b-5e66-414e-b04e-6ba118a5120d.webp
+        modified:   backend/uploads/mham5678/students/451458_37ea85fd-f3ee-4386-b96f-ab0dfb5c012b.jpg
+        modified:   backend/uploads/mham5678/students/6544_9333b1c6-d4da-44c0-87d4-7cf7bbb3176f.jpg
+        modified:   backend/uploads/mham5678/students/6544_de9b6920-bf16-4b1b-8863-de69710c4094.jpg
+        modified:   backend/uploads/mham5678/students/Add New Student_8e253fd6-5092-4331-8724-eaa7c2876f13.jpg
+        modified:   backend/uploads/mham5678/students/M5678_821382ad-6ae8-408a-b42d-6272e9b0dbad.webp
+        modified:   backend/uploads/mham5678/students/MHAM5678250001_ced813bc-4c12-466e-b70c-2d4aa24b1459.jpg
+        modified:   backend/uploads/mham5678/students/MHAM5678250002_c8f04d68-b38f-45fe-81f5-494305df043b.jpg
+        modified:   backend/uploads/mham5678/students/_46e12e91-bbd1-44ab-a65a-df33022c4dcd.webp
+        modified:   frontend/package-lock.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        backend/uploads/mham5678/staff/EMP-2026-0005_1356cddb-63e6-47a7-a166-005ddaa2c677.jpg
+        backend/uploads/mham5678/staff/EMP-2026-0005_7f9b86ef-a30e-4632-b47c-b692c693ef8d.jpg
+        backend/uploads/mham5678/staff/EMP-2026-0005_dcbe41da-d310-4058-89d7-8af49adb872c.jpg
+        backend/uploads/mham5678/students/STU260001_1f622bb1-76fb-4552-a44d-f77b7057ce19.jpg
+        backend/uploads/mham5678/students/STU260001_acec5bab-83d9-4fcb-8ee4-81fce25ea8a3.jpg
+        backend/uploads/mham5678/students/STU260001_b1c58b4f-65c3-4b1c-854d-08d230d8b51f.jpg
+        backend/uploads/mham5678/students/STU260001_d546fb55-1845-4f91-beef-90407f74e0dd.jpg
+        backend/uploads/mham5678/students/STU260001_f39e8dab-6484-4ff4-839e-071c5543da1b.jpg
+        backend/venv/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+HEAD is now at 1818b975 Add public access to institution branding information
+deploy@server1:/var/www/school-erp$

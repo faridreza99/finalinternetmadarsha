@@ -1,0 +1,209 @@
+AcademicCMS.js:504 
+AxiosError {message: 'Request failed with status code 422', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+code
+: 
+"ERR_BAD_REQUEST"
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
+message
+: 
+"Request failed with status code 422"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
+response
+: 
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
+data
+: 
+detail
+: 
+Array(1)
+0
+: 
+input
+: 
+2025
+loc
+: 
+(2) ['body', 'exam_year']
+msg
+: 
+"Input should be a valid string"
+type
+: 
+"string_type"
+url
+: 
+"https://errors.pydantic.dev/2.11/v/string_type"
+[[Prototype]]
+: 
+Object
+length
+: 
+1
+[[Prototype]]
+: 
+Array(0)
+at
+: 
+ƒ at()
+concat
+: 
+ƒ concat()
+constructor
+: 
+ƒ Array()
+copyWithin
+: 
+ƒ copyWithin()
+entries
+: 
+ƒ entries()
+every
+: 
+ƒ every()
+fill
+: 
+ƒ fill()
+filter
+: 
+ƒ filter()
+find
+: 
+ƒ find()
+findIndex
+: 
+ƒ findIndex()
+findLast
+: 
+ƒ findLast()
+findLastIndex
+: 
+ƒ findLastIndex()
+flat
+: 
+ƒ flat()
+flatMap
+: 
+ƒ flatMap()
+forEach
+: 
+ƒ forEach()
+includes
+: 
+ƒ includes()
+indexOf
+: 
+ƒ indexOf()
+join
+: 
+ƒ join()
+keys
+: 
+ƒ keys()
+lastIndexOf
+: 
+ƒ lastIndexOf()
+length
+: 
+0
+map
+: 
+ƒ map()
+pop
+: 
+ƒ pop()
+push
+: 
+ƒ push()
+reduce
+: 
+ƒ reduce()
+reduceRight
+: 
+ƒ reduceRight()
+reverse
+: 
+ƒ reverse()
+shift
+: 
+ƒ shift()
+slice
+: 
+ƒ slice()
+some
+: 
+ƒ some()
+sort
+: 
+ƒ sort()
+splice
+: 
+ƒ splice()
+toLocaleString
+: 
+ƒ toLocaleString()
+toReversed
+: 
+ƒ toReversed()
+toSorted
+: 
+ƒ toSorted()
+toSpliced
+: 
+ƒ toSpliced()
+toString
+: 
+ƒ toString()
+unshift
+: 
+ƒ unshift()
+values
+: 
+ƒ values()
+with
+: 
+ƒ with()
+Symbol(Symbol.iterator)
+: 
+ƒ values()
+Symbol(Symbol.unscopables)
+: 
+{at: true, copyWithin: true, entries: true, fill: true, find: true, …}
+[[Prototype]]
+: 
+Object
+[[Prototype]]
+: 
+Object
+headers
+: 
+AxiosHeaders {access-control-allow-credentials: 'true', access-control-allow-headers: '*', access-control-allow-methods: '*', access-control-allow-origin: 'http://localhost:8000', content-length: '169', …}
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
+status
+: 
+422
+statusText
+: 
+"Unprocessable Entity"
+[[Prototype]]
+: 
+Object
+status
+: 
+422
+stack
+: 
+"AxiosError: Request failed with status code 422\n    at settle (https://3516d251-7e36-40e8-b0eb-3a3eaa6959f7-00-3t9xpjugl0f0e.pike.replit.dev/static/js/bundle.js:16784:12)\n    at XMLHttpRequest.onloadend (https://3516d251-7e36-40e8-b0eb-3a3eaa6959f7-00-3t9xpjugl0f0e.pike.replit.dev/static/js/bundle.js:15408:66)\n    at Axios.request (https://3516d251-7e36-40e8-b0eb-3a3eaa6959f7-00-3t9xpjugl0f0e.pike.replit.dev/static/js/bundle.js:15907:41)\n    at async handleAddPaper (https://3516d251-7e36-40e8-b0eb-3a3eaa6959f7-00-3t9xpjugl0f0e.pike.replit.dev/static/js/bundle.js:185920:9)"
+[[Prototype]]
+: 
+Error

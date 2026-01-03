@@ -1,0 +1,104 @@
+(venv) deploy@server1:/var/www/school-erp/backend$ # Check service logs for details
+sudo journalctl -u school-erp-backend -n 50 --no-pager
+
+# Check the service file
+cat /etc/systemd/system/school-erp-backend.service
+
+# Make sure gunicorn is installed
+source /var/www/school-erp/backend/venv/bin/activate
+pip install gunicorn
+
+# After installing, reload and restart
+sudo systemctl daemon-reload
+sudo systemctl restart school-erp-backend
+sudo systemctl status school-erp-backend
+Dec 31 12:44:34 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:44:39 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 16.
+Dec 31 12:44:39 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:44:39 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:44:39 server1.maxtechbd.com systemd[269100]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:39 server1.maxtechbd.com systemd[269100]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:39 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:44:39 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:44:45 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 17.
+Dec 31 12:44:45 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:44:45 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:44:45 server1.maxtechbd.com systemd[269101]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:45 server1.maxtechbd.com systemd[269101]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:45 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:44:45 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:44:50 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 18.
+Dec 31 12:44:50 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:44:50 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:44:50 server1.maxtechbd.com systemd[269103]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:50 server1.maxtechbd.com systemd[269103]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:50 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:44:50 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:44:55 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 19.
+Dec 31 12:44:55 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:44:55 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:44:55 server1.maxtechbd.com systemd[269104]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:55 server1.maxtechbd.com systemd[269104]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:44:55 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:44:55 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:45:00 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 20.
+Dec 31 12:45:00 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:45:00 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:45:00 server1.maxtechbd.com systemd[269108]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:45:00 server1.maxtechbd.com systemd[269108]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:45:00 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:45:00 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:45:06 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 21.
+Dec 31 12:45:06 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:45:06 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:45:06 server1.maxtechbd.com systemd[269121]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:45:06 server1.maxtechbd.com systemd[269121]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:45:06 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:45:06 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+Dec 31 12:45:11 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Scheduled restart job, restart counter is at 22.
+Dec 31 12:45:11 server1.maxtechbd.com systemd[1]: Stopped School ERP FastAPI Backend.
+Dec 31 12:45:11 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+Dec 31 12:45:11 server1.maxtechbd.com systemd[269125]: school-erp-backend.service: Failed to locate executable /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:45:11 server1.maxtechbd.com systemd[269125]: school-erp-backend.service: Failed at step EXEC spawning /var/www/school-erp/backend/venv/bin/gunicorn: No such file or directory
+Dec 31 12:45:11 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Main process exited, code=exited, status=203/EXEC
+Dec 31 12:45:11 server1.maxtechbd.com systemd[1]: school-erp-backend.service: Failed with result 'exit-code'.
+[Unit]
+Description=School ERP FastAPI Backend
+After=network.target
+
+[Service]
+User=deploy
+Group=deploy
+WorkingDirectory=/var/www/school-erp/backend
+
+Environment="PATH=/var/www/school-erp/backend/venv/bin"
+ExecStart=/var/www/school-erp/backend/venv/bin/gunicorn \
+  server:app \
+  -k uvicorn.workers.UvicornWorker \
+  --bind 127.0.0.1:8001 \
+  --workers 3 \
+  --timeout 120
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+Collecting gunicorn
+  Downloading gunicorn-23.0.0-py3-none-any.whl (85 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.0/85.0 KB 501.3 kB/s eta 0:00:00
+Requirement already satisfied: packaging in ./venv/lib/python3.10/site-packages (from gunicorn) (25.0)
+Installing collected packages: gunicorn
+Successfully installed gunicorn-23.0.0
+● school-erp-backend.service - School ERP FastAPI Backend
+     Loaded: loaded (/etc/systemd/system/school-erp-backend.service; enabled; vendor preset: enabled)
+     Active: active (running) since Wed 2025-12-31 12:45:15 UTC; 11ms ago
+   Main PID: 269178 (gunicorn)
+      Tasks: 1 (limit: 6969)
+     Memory: 2.8M
+        CPU: 8ms
+     CGroup: /system.slice/school-erp-backend.service
+             └─269178 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server>
+
+Dec 31 12:45:15 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+lines 1-11/11 (END)

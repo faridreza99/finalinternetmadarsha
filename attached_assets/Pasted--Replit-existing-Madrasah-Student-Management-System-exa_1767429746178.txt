@@ -1,0 +1,195 @@
+হাই Replit টিম,
+
+আমাদের existing Madrasah / Student Management System–এ নিচের ফিচারগুলো exactly নিচের নিয়ম অনুযায়ী implement করার অনুরোধ করছি। সবকিছু বর্তমান সিস্টেমের উপর update হিসেবে করতে হবে, নতুন সিস্টেম নয়।
+
+1️⃣ Attendance System
+
+Attendance হবে Manual এবং Automatic
+
+Automatic Attendance:
+
+Student যখন Live Class → Join করবে
+
+তখন Auto Attendance mark হবে
+
+Attendance শুধুমাত্র Class Time চলাকালীন হবে
+
+Class শুরুর আগে → Status: Not Start
+
+2️⃣ Live Class (Student Dashboard)
+
+Student Dashboard–এ Live Class section থাকবে
+
+Student তার Class অনুযায়ী Dynamic Class Link দেখবে
+
+Class Link Month অনুযায়ী Change হবে
+
+Live Class Table
+
+Class Name
+
+Start Time
+
+End Time
+
+Status (Not Start / Join)
+
+Join Button
+
+➡️ Join এ click করলে:
+
+Telegram link–এ যাবে
+
+একই সাথে Attendance auto mark হবে
+
+3️⃣ Admin Panel – Class Create
+
+Admin Panel থেকে Class create করতে হবে নিচের flow অনুযায়ী:
+
+Class  
+→ Select Gender (Male / Female)  
+→ Start Time  
+→ End Time  
+→ Assign Teacher  
+→ Select Month  
+→ Submit
+
+Gender Logic
+
+Male Class → শুধু Male Student
+
+Female Class → শুধু Female Student
+
+4️⃣ Student Dashboard Access Control (Payment Based)
+
+যদি Student Monthly Payment না করে:
+
+Live Class → Hide
+
+Attendance → Hide
+
+Homework → Hide
+
+Payment করলে:
+
+সব Option Show হবে
+
+5️⃣ Reports
+
+Student wise:
+
+Attendance Report
+
+Payment Report
+
+ভবিষ্যতে extra report add করার option রাখতে হবে
+
+6️⃣ Student Data Management
+
+Admin দ্বারা Student Data Manual Edit করা যাবে
+
+Student Profile–এ থাকবে:
+
+Personal Info
+
+Fee Type
+
+Payment Info
+
+Fee Type Options
+
+General
+
+Foreign
+
+Zakat
+
+Nafol
+
+Sadaqah
+
+7️⃣ Admission Page & Fee Type
+
+Admission Page–এ Fee Type dropdown থাকবে
+
+Admin Panel থেকে:
+
+Fee Type Add / Edit করা যাবে
+
+Fee Amount সেট করা যাবে
+
+Fee Example
+
+General → 720 টাকা
+
+Foreign → 1040 টাকা
+
+➡️ এগুলোই Monthly Payment হিসেবে গণনা হবে
+
+8️⃣ Monthly Payment System
+
+Student কোন মাস পর্যন্ত payment করেছে তা দেখাবে
+
+Table view:
+
+| Month | Payment Date |
+
+Payment Flow:
+
+Payment  
+→ Select Month  
+→ Submit  
+→ Payment Gateway
+
+
+Future month আগাম payment দেওয়ার option রাখতে হবে
+
+9️⃣ Homework Module
+
+Student Dashboard–এ Homework option থাকবে
+
+Admin / Teacher:
+
+Class অনুযায়ী Homework assign করবে
+
+Student:
+
+Homework submit করবে
+
+🔟 Contact Us (Student Dashboard)
+
+Student Dashboard–এ নিচের Link গুলো add করতে হবে:
+
+Facebook
+
+YouTube
+
+Facebook Review
+
+WhatsApp
+
+Website
+
+(Admin থেকে editable link)
+
+1️⃣1️⃣ Fund / Donation Module
+
+Student বা Guardian Fund দিতে পারবে:
+
+Fund  
+→ Select Purpose (Zakat / Sadaqah / Nafol / Donation)  
+→ Amount  
+→ Submit  
+→ Payment Gateway
+
+✅ Important Notes
+
+সব ফিচার existing database ও structure এর সাথে compatible করতে হবে
+
+Hard delete না করে safe update approach ব্যবহার করতে হবে
+
+Attendance, Payment, Live Class logic যেন একে অপরের সাথে properly sync থাকে
+
+আমাদের অনুরোধ অনুযায়ী এগুলো implement করে step-by-step progress update দিলে ভালো হবে।
+
+ধন্যবাদ।

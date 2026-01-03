@@ -1,0 +1,145 @@
+y></html>deploy@server1:/var/www/school-erp$ ^C
+deploy@server1:/var/www/school-erp$ curl -s http://127.0.0.1:8001/api/school-branding/public/mham5678 | head -20
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Developed by MaxTech BD"/><meta property="og:title" content="MaxTech BD | School ERP"/><meta property="og:description" content="Developed by MaxTech BD"/><meta property="og:type" content="website"/><meta property="og:url" content="https://school-erp-frontend-ixwf.onrender.com"/><meta property="og:site_name" content="MaxTech BD | School ERP"/><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="MaxTech BD | School ERP"/><meta name="twitter:description" content="Developed by MaxTech BD"/><title>MaxTech BD | School ERP</title><script defer="defer" src="/static/js/main.5ed641d1.js"></script><link href="/static/css/main.4e756b4d.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><a id="maxtechbd-badge" target="_blank" href="https://maxtechbd.com/?utm_source=footer-badge" style="display:flex!important;align-items:center!important;position:fixed!important;bottom:20px;right:20px;text-decoration:none;padding:6px 10px;font-family:-apple-system,BlinkMacSystemFont,&quot;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,.15)!important;border-radius:8px!important;background-color:#fff!important;border:1px solid rgba(255,255,255,.25)!important"><div style="display:flex;flex-direction:row;align-items:center"><p style="color:#000;font-family:-apple-system,BlinkMacSystemFont,&quot;align-items:center;margin-bottom:0">Made by MaxTechBD</p></div></a><script>!function(e,t){var r,s,o,i;t.__SV||(window.posthog=t,t._i=[],t.init=function(n,a,p){function c(e,t){var r=t.split(".");2==r.length&&(e=e[r[0]],t=r[1]),e[t]=function(){e.push([t].concat(Array.prototype.slice.call(arguments,0)))}}(o=e.createElement("script")).type="text/javascript",o.crossOrigin="anonymous",o.async=!0,o.src=a.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(i=e.getElementsByTagName("script")[0]).parentNode.insertBefore(o,i);var g=t;for(void 0!==p?g=t[p]=[]:p="posthog",g.people=g.people||[],g.toString=function(e){var t="posthog";return"posthog"!==p&&(t+="."+p),e||(t+=" (stub)"),t},g.people.toString=function(){return g.toString(1)+".people (stub)"},r="init me ws ys ps bs capture je Di ks register register_once register_for_session unregister unregister_for_session Ps getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Es $s createPersonProfile Is opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Ss debug xs getPageViewId captureTraceFeedback captureTraceMetric".split(" "),s=0;s<r.length;s++)c(g,r[s]);t._i.push([n,a,p])},t.__SV=1)}(document,window.posthog||[]),posthog.init("phc_yJW1VjHGGwmCbbrtczfqqNxgBDbhlhOWcdzcIJEOTFE",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only"})</script></body></html>deploy@server1:/var/www/schcd /var/www/school-erpchool-erp
+git pull
+
+# Restart the backend
+sudo systemctl restart school-erp-backend
+
+# Check status
+sudo systemctl status school-erp-backend
+Already up to date.
+● school-erp-backend.service - School ERP FastAPI Backend
+     Loaded: loaded (/etc/systemd/system/school-erp-backend.service; enabled; vendor preset: enabled)
+     Active: active (running) since Thu 2026-01-01 04:10:16 UTC; 10ms ago
+   Main PID: 288821 (gunicorn)
+      Tasks: 1 (limit: 6969)
+     Memory: 2.5M
+        CPU: 7ms
+     CGroup: /system.slice/school-erp-backend.service
+             └─288821 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server>
+
+Jan 01 04:10:16 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+
+deploy@server1:/var/www/school-erp$ ^C
+deploy@server1:/var/www/school-erp$ cd /var/www/school-erp
+git pull
+
+# Restart the backend
+sudo systemctl restart school-erp-backend
+
+# Check status
+sudo systemctl status school-erp-backend
+remote: Enumerating objects: 43, done.
+remote: Counting objects: 100% (43/43), done.
+remote: Compressing objects: 100% (12/12), done.
+remote: Total 38 (delta 27), reused 37 (delta 26), pack-reused 0 (from 0)
+Unpacking objects: 100% (38/38), 123.08 KiB | 802.00 KiB/s, done.
+From https://github.com/faridreza99/school-erp
+   aafdbe9a..2963817b  main       -> origin/main
+Updating aafdbe9a..2963817b
+Fast-forward
+ ...API-Base-URL-https-portal-mahajampurdarbarsharif-org-a_1767185175868.txt |  11 +
+ ...venv-deploy-server1-var-www-school-erp-backend-Check-c_1767185301740.txt |  66 ++++
+ ...venv-deploy-server1-var-www-school-erp-backend-Check-s_1767185126795.txt | 104 ++++++
+ ...venv-deploy-server1-var-www-school-erp-backend-cd-var-_1767185801763.txt |  62 ++++
+ ...venv-deploy-server1-var-www-school-erp-backend-cd-var-_1767185823006.txt |  66 ++++
+ ...venv-deploy-server1-var-www-school-erp-backend-cd-var-_1767185967441.txt |  33 ++
+ ...dded-1600-packages-and-audited-1601-packages-in-1m-361_1767185023248.txt | 363 +++++++++++++++++++
+ ...eploy-server1-var-www-school-erp-Check-if-backend-is-r_1767240457909.txt |  88 +++++
+ ...unicorn-server-app-k-uvicorn-workers-UvicornWorker-bin_1767185258108.txt | 670 ++++++++++++++++++++++++++++++++++++
+ attached_assets/image_1767185842932.png                                     | Bin 0 -> 114145 bytes
+ backend/requirements.txt                                                    |   4 +-
+ backend/server.py                                                           |   3 +
+ 12 files changed, 1469 insertions(+), 1 deletion(-)
+ create mode 100644 attached_assets/Pasted--API-Base-URL-https-portal-mahajampurdarbarsharif-org-a_1767185175868.txt
+ create mode 100644 attached_assets/Pasted--venv-deploy-server1-var-www-school-erp-backend-Check-c_1767185301740.txt
+ create mode 100644 attached_assets/Pasted--venv-deploy-server1-var-www-school-erp-backend-Check-s_1767185126795.txt
+ create mode 100644 attached_assets/Pasted--venv-deploy-server1-var-www-school-erp-backend-cd-var-_1767185801763.txt
+ create mode 100644 attached_assets/Pasted--venv-deploy-server1-var-www-school-erp-backend-cd-var-_1767185823006.txt
+ create mode 100644 attached_assets/Pasted--venv-deploy-server1-var-www-school-erp-backend-cd-var-_1767185967441.txt
+ create mode 100644 attached_assets/Pasted-added-1600-packages-and-audited-1601-packages-in-1m-361_1767185023248.txt
+ create mode 100644 attached_assets/Pasted-deploy-server1-var-www-school-erp-Check-if-backend-is-r_1767240457909.txt
+ create mode 100644 attached_assets/Pasted-gunicorn-server-app-k-uvicorn-workers-UvicornWorker-bin_1767185258108.txt
+ create mode 100644 attached_assets/image_1767185842932.png
+● school-erp-backend.service - School ERP FastAPI Backend
+     Loaded: loaded (/etc/systemd/system/school-erp-backend.service; enabled; vendor preset: enabled)
+     Active: active (running) since Thu 2026-01-01 04:10:59 UTC; 8ms ago
+   Main PID: 288911 (gunicorn)
+      Tasks: 1 (limit: 6969)
+     Memory: 2.5M
+        CPU: 4ms
+     CGroup: /system.slice/school-erp-backend.service
+             └─288911 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server>
+
+Jan 01 04:10:59 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+
+deploy@server1:/var/www/school-erp$ cd /var/www/school-erp
+git pull
+
+# Restart the backend
+sudo systemctl restart school-erp-backend
+
+# Check if it started correctly
+sudo systemctl status school-erp-backend
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 6 (delta 4), reused 6 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (6/6), 1.71 KiB | 60.00 KiB/s, done.
+From https://github.com/faridreza99/school-erp
+   2963817b..eaca1dfc  main       -> origin/main
+Updating 2963817b..eaca1dfc
+Fast-forward
+ ...oginPage-js-57-GET-https-portal-mahajampurdarbarsharif_1767240734623.txt | 37 +++++++++++++++++++++++++++++++++++++
+ backend/server.py                                                           |  7 +++----
+ 2 files changed, 40 insertions(+), 4 deletions(-)
+ create mode 100644 attached_assets/Pasted-LoginPage-js-57-GET-https-portal-mahajampurdarbarsharif_1767240734623.txt
+● school-erp-backend.service - School ERP FastAPI Backend
+     Loaded: loaded (/etc/systemd/system/school-erp-backend.service; enabled; vendor preset: enabled)
+     Active: active (running) since Thu 2026-01-01 04:17:07 UTC; 9ms ago
+   Main PID: 289164 (gunicorn)
+      Tasks: 1 (limit: 6969)
+     Memory: 2.5M
+        CPU: 7ms
+     CGroup: /system.slice/school-erp-backend.service
+             └─289164 /var/www/school-erp/backend/venv/bin/python3 /var/www/school-erp/backend/venv/bin/gunicorn server>
+
+Jan 01 04:17:07 server1.maxtechbd.com systemd[1]: Started School ERP FastAPI Backend.
+
+deploy@server1:/var/www/school-erp$ # Test API directly on VPS
+curl -s http://127.0.0.1:8001/api/auth/me | head -5
+
+# Check logs
+sudo journalctl -u school-erp-backend -n 30 --no-pager
+{"detail":"Not authenticated"}Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289171]: [2026-01-01 04:17:42 +0000] [289171] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289171]: [2026-01-01 04:17:42 +0000] [289171] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289171]: [2026-01-01 04:17:42 +0000] [289171] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG institution/settings: tenant_id=mham5678
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289173]: [2026-01-01 04:17:42 +0000] [289173] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289173]: [2026-01-01 04:17:42 +0000] [289173] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289173]: [2026-01-01 04:17:42 +0000] [289173] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG institution/settings: found=True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG institution/settings: ui_mode=simple, institution_type=madrasah
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8a5eff5d9, tenant_id: mham5678
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8a5eff5d9, tenant_id: mham5678
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:42 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:42 +0000] [289172] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG JWT Token - user_id: 619c6374-3497-4f6d-9a0d-d9b8a5eff5d9, tenant_id: mham5678
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG MongoDB Query - Looking for user with id='619c6374-3497-4f6d-9a0d-d9b8a5eff5d9', found: True
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG get_current_user: Fetched from DB - username='mham_admin', role='admin'
+Jan 01 04:17:43 server1.maxtechbd.com gunicorn[289172]: [2026-01-01 04:17:43 +0000] [289172] [INFO] DEBUG get_current_user: After User() creation - username='mham_admin', role='admin'
+deploy@server1:/var/www/school-erp$
