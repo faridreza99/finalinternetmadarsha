@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import UserManagement from './UserManagement';
+import AdminUserManagement from './AdminUserManagement';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -2379,7 +2379,7 @@ const Settings = () => {
             <TabsTrigger value="institution" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Institution</TabsTrigger>
             <TabsTrigger value="staff-settings" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Staff Setting</TabsTrigger>
             <TabsTrigger value="permissions" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Permission</TabsTrigger>
-            <TabsTrigger value="user-management" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">User Management</TabsTrigger>
+            <TabsTrigger value="user-management" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">ব্যবহারকারী ব্যবস্থাপনা</TabsTrigger>
           </TabsList>
         </div>
 
@@ -2741,7 +2741,7 @@ const Settings = () => {
         </TabsContent>
 
         <TabsContent value="user-management" className="space-y-4">
-          <UserManagement />
+          <AdminUserManagement />
         </TabsContent>
       </Tabs>
 

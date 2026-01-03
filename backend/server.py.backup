@@ -2009,77 +2009,6 @@ async def create_user_by_admin(
 
 
 
-@api_router.get("/admin/users/with-details")
-async def get_all_users_with_details(current_user: User = Depends(get_current_user)):
-    """Get all users with linked student/teacher details (Admin only)"""
-    if current_user.role not in ["super_admin", "admin"]:
-        raise HTTPException(status_code=403, detail="Only Admins can access user management")
-    
-    # Get all users in the tenant
-    users = await db.users.find({"tenant_id": current_user.tenant_id}).to_list(1000)
-    
-    # Get all students and staff for linking
-    students = await db.students.find({"tenant_id": current_user.tenant_id}).to_list(5000)
-    staff = await db.staff.find({"tenant_id": current_user.tenant_id}).to_list(500)
-    
-    # Create lookup maps
-    student_by_user_id = {s.get("user_id"): s for s in students if s.get("user_id")}
-    staff_by_user_id = {s.get("user_id"): s for s in staff if s.get("user_id")}
-    
-    # Get institution short_name for detecting old format usernames
-    institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
-    school = await db.schools.find_one({"tenant_id": current_user.tenant_id})
-    
-    current_short_name = None
-    if institution and institution.get("short_name"):
-        current_short_name = institution["short_name"].lower()
-    elif school and school.get("short_name"):
-        current_short_name = school["short_name"].lower()
-    
-    result_users = []
-    for user in users:
-        user.pop("password_hash", None)
-        user.pop("_id", None)
-        
-        # Add linked entity info
-        linked_student = student_by_user_id.get(user.get("id"))
-        linked_staff = staff_by_user_id.get(user.get("id"))
-        
-        if linked_student:
-            user["linked_entity"] = {
-                "type": "student",
-                "id": linked_student.get("id"),
-                "name": linked_student.get("name"),
-                "class_name": linked_student.get("class_name"),
-                "roll_number": linked_student.get("roll_number"),
-                "admission_number": linked_student.get("admission_number")
-            }
-        elif linked_staff:
-            user["linked_entity"] = {
-                "type": "staff",
-                "id": linked_staff.get("id"),
-                "name": linked_staff.get("full_name", linked_staff.get("name")),
-                "designation": linked_staff.get("designation"),
-                "department": linked_staff.get("department")
-            }
-        else:
-            user["linked_entity"] = None
-        
-        # Check if username is in old format (e.g., mham5678_xxx)
-        username = user.get("username", "")
-        is_old_format = False
-        if current_short_name:
-            # Old format: doesn't start with current short_name
-            if not username.lower().startswith(current_short_name + "_"):
-                # Also check for common old patterns like tenant_id prefix
-                if "_" in username and username.split("_")[0].lower() != current_short_name:
-                    is_old_format = True
-        user["is_old_format"] = is_old_format
-        
-        result_users.append(user)
-    
-    return {"users": result_users, "institution_short_name": current_short_name}
-
 @api_router.put("/admin/users/{user_id}")
 async def update_user(
     user_id: str,
@@ -32993,3 +32922,74 @@ async def regenerate_user_credentials(
         "password": new_password,
         "old_username": existing_user.get("username")
     }
+
+@api_router.get("/admin/users/with-details")
+async def get_all_users_with_details(current_user: User = Depends(get_current_user)):
+    """Get all users with linked student/teacher details (Admin only)"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Only Admins can access user management")
+    
+    # Get all users in the tenant
+    users = await db.users.find({"tenant_id": current_user.tenant_id}).to_list(1000)
+    
+    # Get all students and staff for linking
+    students = await db.students.find({"tenant_id": current_user.tenant_id}).to_list(5000)
+    staff = await db.staff.find({"tenant_id": current_user.tenant_id}).to_list(500)
+    
+    # Create lookup maps
+    student_by_user_id = {s.get("user_id"): s for s in students if s.get("user_id")}
+    staff_by_user_id = {s.get("user_id"): s for s in staff if s.get("user_id")}
+    
+    # Get institution short_name for detecting old format usernames
+    institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
+    school = await db.schools.find_one({"tenant_id": current_user.tenant_id})
+    
+    current_short_name = None
+    if institution and institution.get("short_name"):
+        current_short_name = institution["short_name"].lower()
+    elif school and school.get("short_name"):
+        current_short_name = school["short_name"].lower()
+    
+    result_users = []
+    for user in users:
+        user.pop("password_hash", None)
+        user.pop("_id", None)
+        
+        # Add linked entity info
+        linked_student = student_by_user_id.get(user.get("id"))
+        linked_staff = staff_by_user_id.get(user.get("id"))
+        
+        if linked_student:
+            user["linked_entity"] = {
+                "type": "student",
+                "id": linked_student.get("id"),
+                "name": linked_student.get("name"),
+                "class_name": linked_student.get("class_name"),
+                "roll_number": linked_student.get("roll_number"),
+                "admission_number": linked_student.get("admission_number")
+            }
+        elif linked_staff:
+            user["linked_entity"] = {
+                "type": "staff",
+                "id": linked_staff.get("id"),
+                "name": linked_staff.get("full_name", linked_staff.get("name")),
+                "designation": linked_staff.get("designation"),
+                "department": linked_staff.get("department")
+            }
+        else:
+            user["linked_entity"] = None
+        
+        # Check if username is in old format (e.g., mham5678_xxx)
+        username = user.get("username", "")
+        is_old_format = False
+        if current_short_name:
+            # Old format: doesn't start with current short_name
+            if not username.lower().startswith(current_short_name + "_"):
+                # Also check for common old patterns like tenant_id prefix
+                if "_" in username and username.split("_")[0].lower() != current_short_name:
+                    is_old_format = True
+        user["is_old_format"] = is_old_format
+        
+        result_users.append(user)
+    
+    return {"users": result_users, "institution_short_name": current_short_name}
