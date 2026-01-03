@@ -19,14 +19,36 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCurrency } from '../context/CurrencyContext';
 
 const API = process.env.REACT_APP_API_URL || '/api';
+
+const toBengaliNumeral = (num) => {
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/[0-9]/g, (d) => bengaliDigits[parseInt(d)]);
+};
+
+const formatBengaliCurrency = (amount) => {
+  const formatted = new Intl.NumberFormat('en-IN').format(amount || 0);
+  return `৳${toBengaliNumeral(formatted)}`;
+};
+
+const formatBengaliDate = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('bn-BD', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return toBengaliNumeral(dateString);
+  }
+};
 
 const StudentFees = () => {
   const [loading, setLoading] = useState(true);
   const [feeData, setFeeData] = useState(null);
-  const { formatCurrency, getCurrencySymbol } = useCurrency();
 
   const fetchFees = useCallback(async () => {
     try {
@@ -38,7 +60,7 @@ const StudentFees = () => {
       setFeeData(response.data);
     } catch (error) {
       console.error('Failed to fetch fees:', error);
-      toast.error('Failed to load fee information');
+      toast.error('ফি তথ্য লোড করতে ব্যর্থ হয়েছে');
     } finally {
       setLoading(false);
     }
@@ -51,7 +73,7 @@ const StudentFees = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
@@ -60,8 +82,8 @@ const StudentFees = () => {
     return (
       <div className="p-6">
         <Card>
-          <CardContent className="py-8 text-center text-gray-500">
-            Unable to load fee information. Please try again later.
+          <CardContent className="py-8 text-center text-gray-500 dark:text-gray-400">
+            ফি তথ্য লোড করতে ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।
           </CardContent>
         </Card>
       </div>
@@ -71,26 +93,49 @@ const StudentFees = () => {
   const { ledger, payments, fee_structure, student_name, admission_no } = feeData;
   const hasDues = ledger.balance > 0;
 
+  const frequencyMap = {
+    'monthly': 'মাসিক',
+    'yearly': 'বার্ষিক',
+    'one-time': 'একবারে',
+    'annual': 'বার্ষিক',
+    'quarterly': 'ত্রৈমাসিক'
+  };
+
+  const statusMap = {
+    'paid': 'পরিশোধিত',
+    'completed': 'পরিশোধিত',
+    'pending': 'বাকি',
+    'partial': 'আংশিক'
+  };
+
+  const paymentModeMap = {
+    'cash': 'নগদ',
+    'bkash': 'বিকাশ',
+    'nagad': 'নগদ',
+    'bank': 'ব্যাংক',
+    'online': 'অনলাইন'
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Fee Status</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ফি বিবরণী</h1>
           <p className="text-gray-600 dark:text-gray-400">{student_name} ({admission_no})</p>
         </div>
         <Badge variant={hasDues ? "destructive" : "default"} className="text-lg px-4 py-2">
-          {hasDues ? 'Dues Pending' : 'All Paid'}
+          {hasDues ? 'বাকি আছে' : 'সব পরিশোধিত'}
         </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-800">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Fees</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">মোট ফি</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                  {formatCurrency(ledger.total_fees || 0)}
+                  {formatBengaliCurrency(ledger.total_fees || 0)}
                 </p>
               </div>
               <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
@@ -100,13 +145,13 @@ const StudentFees = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-gray-800">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Amount Paid</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">পরিশোধিত</p>
                 <p className="text-2xl font-bold text-green-600 flex items-center">
-                  {formatCurrency(ledger.paid_amount || 0)}
+                  {formatBengaliCurrency(ledger.paid_amount || 0)}
                 </p>
               </div>
               <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
@@ -116,13 +161,13 @@ const StudentFees = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`bg-gradient-to-br ${hasDues ? 'from-red-50 to-white dark:from-red-900/20' : 'from-green-50 to-white dark:from-green-900/20'} dark:to-gray-800`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Balance Due</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">বাকি আছে</p>
                 <p className={`text-2xl font-bold flex items-center ${hasDues ? 'text-red-600' : 'text-green-600'}`}>
-                  {formatCurrency(ledger.balance || 0)}
+                  {formatBengaliCurrency(ledger.balance || 0)}
                 </p>
               </div>
               <div className={`p-3 rounded-full ${hasDues ? 'bg-red-100 dark:bg-red-900' : 'bg-green-100 dark:bg-green-900'}`}>
@@ -141,17 +186,17 @@ const StudentFees = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              <span className="font-medium">Payment Progress</span>
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
+              <span className="font-medium">পরিশোধের অগ্রগতি</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
               <div 
-                className="bg-green-600 h-4 rounded-full transition-all duration-500"
+                className="bg-emerald-600 h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((ledger.paid_amount / ledger.total_fees) * 100, 100)}%` }}
               ></div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
-              {Math.round((ledger.paid_amount / ledger.total_fees) * 100)}% paid
+              {toBengaliNumeral(Math.round((ledger.paid_amount / ledger.total_fees) * 100))}% পরিশোধ হয়েছে
             </p>
           </CardContent>
         </Card>
@@ -161,34 +206,36 @@ const StudentFees = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
-              Fee Structure
+              <CreditCard className="h-5 w-5 text-emerald-600" />
+              ফি কাঠামো
             </CardTitle>
-            <CardDescription>Applicable fees for your class</CardDescription>
+            <CardDescription>আপনার জামাতের জন্য প্রযোজ্য ফি সমূহ</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Fee Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Frequency</TableHead>
+                    <TableHead>ক্রম</TableHead>
+                    <TableHead>ফি-র ধরন</TableHead>
+                    <TableHead>বিবরণ</TableHead>
+                    <TableHead>পরিমাণ</TableHead>
+                    <TableHead>মেয়াদ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {fee_structure.map((fee, index) => (
                     <TableRow key={fee.id || index}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell className="font-semibold">{fee.fee_type || fee.name || 'Fee'}</TableCell>
+                      <TableCell className="font-medium">{toBengaliNumeral(index + 1)}</TableCell>
+                      <TableCell className="font-semibold">{fee.name_bn || fee.fee_type || fee.name || 'ফি'}</TableCell>
                       <TableCell className="text-gray-600 dark:text-gray-400">{fee.description || '-'}</TableCell>
                       <TableCell className="font-semibold">
-                        {formatCurrency(fee.amount || 0)}
+                        {formatBengaliCurrency(fee.amount || 0)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{fee.frequency || 'Annual'}</Badge>
+                        <Badge variant="outline">
+                          {frequencyMap[(fee.frequency || 'yearly').toLowerCase()] || fee.frequency}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -202,10 +249,10 @@ const StudentFees = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-blue-600" />
-            Payment History
+            <Receipt className="h-5 w-5 text-emerald-600" />
+            পেমেন্ট ইতিহাস
           </CardTitle>
-          <CardDescription>View all your fee payments</CardDescription>
+          <CardDescription>আপনার সকল ফি পরিশোধের তালিকা</CardDescription>
         </CardHeader>
         <CardContent>
           {payments && payments.length > 0 ? (
@@ -213,36 +260,38 @@ const StudentFees = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Receipt No</TableHead>
-                    <TableHead>Fee Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Payment Date</TableHead>
-                    <TableHead>Payment Mode</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>ক্রম</TableHead>
+                    <TableHead>রসিদ নং</TableHead>
+                    <TableHead>মাস</TableHead>
+                    <TableHead>পরিমাণ</TableHead>
+                    <TableHead>পরিশোধের তারিখ</TableHead>
+                    <TableHead>মাধ্যম</TableHead>
+                    <TableHead>অবস্থা</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payments.map((payment, index) => (
                     <TableRow key={payment.id || index}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell>{payment.receipt_no || '-'}</TableCell>
-                      <TableCell>{payment.fee_type || 'Tuition Fee'}</TableCell>
+                      <TableCell className="font-medium">{toBengaliNumeral(index + 1)}</TableCell>
+                      <TableCell>{payment.receipt_no ? toBengaliNumeral(payment.receipt_no) : '-'}</TableCell>
+                      <TableCell>{payment.month || payment.fee_type || 'মাসিক ফি'}</TableCell>
                       <TableCell className="font-semibold">
-                        {formatCurrency(payment.amount || 0)}
+                        {formatBengaliCurrency(payment.amount || 0)}
                       </TableCell>
                       <TableCell>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : '-'}
+                          {payment.payment_date ? formatBengaliDate(payment.payment_date) : '-'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{payment.payment_mode || 'Cash'}</Badge>
+                        <Badge variant="outline">
+                          {paymentModeMap[(payment.payment_method || 'cash').toLowerCase()] || payment.payment_method || 'নগদ'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                          {payment.status || 'Completed'}
+                        <Badge variant={payment.status === 'paid' || payment.status === 'completed' ? 'default' : 'secondary'}>
+                          {statusMap[(payment.status || 'completed').toLowerCase()] || 'পরিশোধিত'}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -251,10 +300,10 @@ const StudentFees = () => {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">No payment records found</p>
-              <p className="text-sm">Payment history will appear here once payments are made</p>
+              <p className="text-lg font-medium">কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি</p>
+              <p className="text-sm">পেমেন্ট করার পর এখানে তালিকা দেখা যাবে</p>
             </div>
           )}
         </CardContent>
@@ -266,10 +315,10 @@ const StudentFees = () => {
             <div className="flex items-start gap-3">
               <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-red-800 dark:text-red-400">Payment Due</h3>
+                <h3 className="font-semibold text-red-800 dark:text-red-400">ফি বাকি আছে</h3>
                 <p className="text-sm text-red-700 dark:text-red-300">
-                  You have an outstanding balance of {formatCurrency(ledger.balance)}. 
-                  Please contact the school office for payment options.
+                  আপনার {formatBengaliCurrency(ledger.balance)} টাকা বাকি আছে। 
+                  অফিসে যোগাযোগ করে পরিশোধ করুন।
                 </p>
               </div>
             </div>

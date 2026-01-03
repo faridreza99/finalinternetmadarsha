@@ -55,6 +55,7 @@ from notification_service import get_notification_service, NotificationEventType
 
 from attendance_management import setup_attendance_routes
 from live_class_management import setup_live_class_routes
+from student_portal import setup_student_portal_routes
 from payroll_management import (
     SalaryStructureCreate, PayrollSettings, PayrollProcessRequest,
     PayrollItemUpdate, PayrollApprovalRequest, BonusCreate, 
@@ -29323,6 +29324,7 @@ setup_attendance_routes(api_router, db, get_current_user, User)
 
 setup_live_class_routes(api_router, db, get_current_user, get_current_tenant)
 
+setup_student_portal_routes(api_router, db, get_current_user)
 
 
 # Helper to remove MongoDB _id from documents

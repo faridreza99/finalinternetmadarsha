@@ -176,23 +176,40 @@ const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.log("🔐 Axios interceptor caught error:", {
-          status: error.response?.status,
-          url: error.config?.url,
-          message: error.message,
-          code: error.code,
-          hasResponse: !!error.response,
-          responseData: error.response?.data
-        });
-        if (error.response?.status === 401) {
-          // Clear auth state and redirect to login
-          console.log("❌ 401 error detected - clearing auth and redirecting");
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          setToken(null);
-          setUser(null);
-          delete axios.defaults.headers.common["Authorization"];
-          window.location.href = "/login";
+        const status = error.response?.status;
+        const url = error.config?.url || '';
+        
+        // Only log non-trivial errors (skip 404s which are normal)
+        if (status !== 404) {
+          console.log("🔐 Axios interceptor caught error:", {
+            status,
+            url,
+            message: error.message,
+          });
+        }
+        
+        // ONLY logout on explicit 401 Unauthorized from auth-related endpoints
+        // Do NOT logout on 404 (not found), 500 (server error), network errors, etc.
+        if (status === 401) {
+          // Check if this is a real auth failure (not just a missing optional resource)
+          const isAuthEndpoint = url.includes('/auth/');
+          const errorDetail = error.response?.data?.detail || '';
+          const isTokenExpired = errorDetail.toLowerCase().includes('token') || 
+                                 errorDetail.toLowerCase().includes('expired') ||
+                                 errorDetail.toLowerCase().includes('invalid') ||
+                                 errorDetail.toLowerCase().includes('unauthorized');
+          
+          if (isAuthEndpoint || isTokenExpired) {
+            console.log("❌ 401 auth failure - clearing auth and redirecting");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            setToken(null);
+            setUser(null);
+            delete axios.defaults.headers.common["Authorization"];
+            window.location.href = "/login";
+          } else {
+            console.log("⚠️ 401 from non-auth endpoint, not logging out:", url);
+          }
         }
         return Promise.reject(error);
       },
