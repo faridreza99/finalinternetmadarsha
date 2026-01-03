@@ -327,7 +327,8 @@ const ClassManagement = () => {
     try {
       const response = await axios.get(`${API}/institution/settings`);
       if (response.data?.institution_type) {
-        setInstitutionType(response.data.institution_type);
+        // Normalize to lowercase for consistent comparison
+        setInstitutionType(response.data.institution_type.toLowerCase());
       }
     } catch (error) {
       console.log('Using default institution type: school');
