@@ -3,6 +3,15 @@
 This Cloud School ERP is a **Single Madrasah** management system (fixed tenant: MHAM5678) with comprehensive educational modules and AI capabilities. The system includes student management, attendance tracking, results, ID card generation, fee management, and AI tools. It provides a simplified, Bengali-first interface optimized for Madrasah institutions with professional reporting and scalable architecture supporting 100k+ students.
 
 ## Recent Changes (January 2026)
+- **User Credential System Overhaul**: Complete redesign of student/user account creation:
+  - Institution `short_name` field for clean username prefixes (e.g., `imquran` instead of `mham5678`)
+  - New `student_identifier` field in student form for custom login IDs
+  - Username format: `{short_name}_{identifier}` (e.g., `imquran_farid66`)
+  - Secure password generation with per-student entropy: `{Name}{RandomDigits}@{Year}` (e.g., `Farid786@2026`)
+  - Auto-duplicate handling for usernames (appends counter if exists)
+  - Enhanced Admin User Management UI with password reset buttons, enable/disable toggle
+  - `must_change_password` flag for first-time login requirement
+- **Live Class Attendance Fix**: Fixed critical bug where main attendance upsert was skipped when live_class_attendance record existed; now always upserts to main attendance collection for dashboard visibility
 - **Class Management Bangla Localization**: Complete Madrasah-specific terminology throughout ClassManagement component:
   - Page title: জামাত ব্যবস্থাপনা (Class Management)
   - Stats cards with Bengali numerals: মোট জামাত, মোট শাখা, মোট কিতাব, নিয়োজিত উস্তাদ
