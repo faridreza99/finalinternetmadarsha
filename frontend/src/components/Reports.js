@@ -144,7 +144,7 @@ const Reports = () => {
   });
 
   // API base URL from environment
-  const API = process.env.REACT_APP_API_URL;
+  const API = process.env.REACT_APP_API_URL || '/api';
 
   // Helper function to get auth token
   const getAuthToken = () => {

@@ -66,7 +66,7 @@ import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
-const API = process.env.REACT_APP_API_URL;
+const API = process.env.REACT_APP_API_URL || '/api';
 const BASE_URL = API ? API.replace('/api', '') : '';
 
 const withTimeout = (promise, timeoutMs = 10000) => {

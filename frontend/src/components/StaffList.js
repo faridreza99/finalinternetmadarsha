@@ -52,8 +52,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_API_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || '/api';
 const API = BACKEND_URL;
+console.log('StaffList API URL - ', API);
 const BASE_URL = API ? API.replace('/api', '') : '';
 
 const withTimeout = (promise, timeoutMs = 10000) => {

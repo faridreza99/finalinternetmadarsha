@@ -57,7 +57,7 @@ import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
-const BACKEND_URL = process.env.REACT_APP_API_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || '/api';
 const API = BACKEND_URL;
 
 // Madrasah-specific Bangla labels
