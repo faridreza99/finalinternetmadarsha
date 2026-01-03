@@ -3,6 +3,17 @@
 This Cloud School ERP is a **Single Madrasah** management system (fixed tenant: MHAM5678) with comprehensive educational modules and AI capabilities. The system includes student management, attendance tracking, results, ID card generation, fee management, and AI tools. It provides a simplified, Bengali-first interface optimized for Madrasah institutions with professional reporting and scalable architecture supporting 100k+ students.
 
 ## Recent Changes (January 2026)
+- **Video Lessons & Semester System**: Complete video-based learning module with:
+  - Semester management linked to classes (জামাত) with Bengali titles
+  - Video lesson CRUD with YouTube/Cloudinary support
+  - Question system: MCQ (বহু নির্বাচনী), Fill-in-blanks (শূন্যস্থান পূরণ), Matching (মিলকরণ)
+  - Student-semester enrollment system
+  - Auto-grading with point system and progress tracking
+  - Admin UI: VideoLessons.js for managing semesters, lessons, questions
+  - Student UI: StudentVideoLessons.js for viewing videos and answering questions
+  - Full Bengali localization for all error messages and UI
+  - Database collections: semesters, video_lessons, assessment_questions, student_lesson_responses, student_semester_enrollments
+  - Routes: /video-lessons (admin), /student/video-lessons (student)
 - **User Credential System Overhaul**: Complete redesign of student/user account creation:
   - Institution `short_name` field for clean username prefixes (e.g., `imquran` instead of `mham5678`)
   - New `student_identifier` field in student form for custom login IDs
