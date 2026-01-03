@@ -48,6 +48,7 @@ import requests
 from twilio.rest import Client
 import io
 import pandas as pd
+import video_lessons
 import csv
 import cloudinary
 import cloudinary.uploader
@@ -32971,6 +32972,11 @@ async def export_date_wise_pdf(
 # ============================================================================
 
 # Include all API routes
+# Include video lessons router
+# Initialize video_lessons module with dependencies
+video_lessons.set_dependencies(db, get_current_user)
+app.include_router(video_lessons.router)
+
 app.include_router(api_router)
 
 # Serve React frontend static files in production (catch-all route)

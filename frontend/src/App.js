@@ -62,6 +62,8 @@ const MadrasahReportPage = lazy(() => import("./components/MadrasahReportPage"))
 const MadrasahSimpleSettings = lazy(() => import("./components/MadrasahSimpleSettings"));
 const ResultConfiguration = lazy(() => import("./components/ResultConfiguration"));
 const TenantManagement = lazy(() => import("./components/TenantManagement"));
+const VideoLessons = lazy(() => import("./components/VideoLessons"));
+const StudentVideoLessons = lazy(() => import("./components/StudentVideoLessons"));
 const SubscriptionManagement = lazy(() => import("./components/SubscriptionManagement"));
 const SubscriptionHistory = lazy(() => import("./components/SubscriptionHistory"));
 const SystemSettings = lazy(() => import("./components/SystemSettings"));
@@ -506,6 +508,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/video-lessons"
+                  element={
+                    <ProtectedRoute>
+                      <VideoLessons />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/attendance/*"
                   element={
                     <ProtectedRoute>
@@ -854,6 +864,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <StudentHomework />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/video-lessons"
+                  element={
+                    <ProtectedRoute>
+                      <StudentVideoLessons />
                     </ProtectedRoute>
                   }
                 />

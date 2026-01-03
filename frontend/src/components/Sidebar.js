@@ -198,6 +198,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           roles: ["student"],
         },
         {
+          title: "Video Lessons",
+          madrasahTitle: "ভিডিও পাঠ",
+          path: "/student/video-lessons",
+          roles: ["student"],
+        },
+        {
           title: "Contact Us",
           madrasahTitle: "যোগাযোগ",
           path: "/student/contact",
@@ -282,6 +288,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           madrasahTitle: "মারহালা / শ্রেণি",
           path: "/classes",
           roles: ["super_admin", "admin", "teacher"],
+        },
+        {
+          title: "Video Lessons",
+          madrasahTitle: "ভিডিও পাঠ",
+          path: "/video-lessons",
+          roles: ["super_admin", "admin"],
         },
       ],
     },
