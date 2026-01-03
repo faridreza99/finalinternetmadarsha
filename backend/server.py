@@ -250,6 +250,7 @@ class User(BaseModel):
     username: str
     full_name: str
     role: str  # super_admin, admin, teacher, student, parent
+    student_id: Optional[str] = None  # For student users - links to students collection
     school_id: Optional[str] = None  # Added for JWT context
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
