@@ -499,10 +499,35 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
     ):
         try:
             tenant_id = current_user.tenant_id
-            student_id = current_user.student_id
+            user_id = current_user.id
             
-            if not student_id:
-                raise HTTPException(status_code=400, detail="Not a student account")
+            # Find student using user_id relationship (same pattern as get_student_live_classes)
+            student = await db.students.find_one({
+                "tenant_id": tenant_id,
+                "user_id": user_id
+            })
+            
+            # Fallback: try username pattern
+            if not student:
+                username = current_user.username
+                if username and "_" in username:
+                    possible_student_id = username.split("_")[-1].upper()
+                    student = await db.students.find_one({
+                        "tenant_id": tenant_id,
+                        "$or": [
+                            {"admission_no": possible_student_id},
+                            {"admission_no": possible_student_id.lower()},
+                            {"id": possible_student_id}
+                        ]
+                    })
+            
+            if not student:
+                logger.error(f"Join class failed: No student found for user_id={user_id}, username={current_user.username}")
+                raise HTTPException(status_code=404, detail="Student record not found. Please contact admin.")
+            
+            # Extract student_id from record
+            student_id = student.get("id") or student.get("student_id") or student.get("admission_no")
+            logger.info(f"Join class: Found student {student.get('name')} with student_id={student_id}")
             
             live_class = await db.live_classes.find_one({
                 "_id": ObjectId(class_id),
