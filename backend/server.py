@@ -2009,6 +2009,133 @@ async def create_user_by_admin(
 
 
 
+
+
+@api_router.post("/admin/users/create-direct")
+async def create_user_direct(
+    user_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a user directly from Admin panel with auto-generated credentials"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Only Admins can create users")
+    
+    full_name = user_data.get("full_name", "").strip()
+    role = user_data.get("role", "student")
+    student_identifier = user_data.get("student_identifier", "").strip()
+    email = user_data.get("email", "").strip() or None
+    
+    if not full_name or not student_identifier:
+        raise HTTPException(status_code=400, detail="Name and identifier are required")
+    
+    # Validate role
+    if role not in ["student", "teacher", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    # Get institution short_name
+    institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
+    school = await db.schools.find_one({"tenant_id": current_user.tenant_id})
+    
+    short_name = None
+    if institution and institution.get("short_name"):
+        short_name = institution["short_name"].lower()
+    elif school and school.get("short_name"):
+        short_name = school["short_name"].lower()
+    
+    if not short_name:
+        short_name = current_user.tenant_id.lower()
+    
+    # Generate username: {short_name}_{student_identifier}
+    base_username = f"{short_name}_{student_identifier.lower().replace(' ', '_')}"
+    username = base_username
+    
+    # Check for duplicates and add counter if needed
+    counter = 1
+    while await db.users.find_one({"username": username, "tenant_id": current_user.tenant_id}):
+        username = f"{base_username}{counter}"
+        counter += 1
+    
+    # Generate password: {FirstName}{RandomDigits}@{Year}
+    import random
+    first_name = full_name.split()[0] if full_name else "User"
+    # Remove non-ASCII characters for password
+    clean_name = ''.join(c for c in first_name if c.isalnum())
+    if not clean_name:
+        clean_name = "User"
+    random_digits = random.randint(100, 999)
+    current_year = datetime.now().year
+    plain_password = f"{clean_name}{random_digits}@{current_year}"
+    
+    # Hash password
+    password_hash = pwd_context.hash(plain_password)
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    new_user = {
+        "id": user_id,
+        "username": username,
+        "email": email,
+        "full_name": full_name,
+        "password_hash": password_hash,
+        "role": role,
+        "is_active": True,
+        "tenant_id": current_user.tenant_id,
+        "must_change_password": True,
+        "created_at": datetime.utcnow().isoformat(),
+        "created_by": current_user.id
+    }
+    
+    await db.users.insert_one(new_user)
+    
+    logging.info(f"Admin {current_user.username} created user {username} with role {role}")
+    
+    return {
+        "message": "User created successfully",
+        "user_id": user_id,
+        "username": username,
+        "password": plain_password,
+        "role": role
+    }
+
+
+@api_router.patch("/admin/users/{user_id}/role")
+async def change_user_role(
+    user_id: str,
+    role_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Change a user's role (Admin only)"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Only Admins can change user roles")
+    
+    new_role = role_data.get("role")
+    if new_role not in ["student", "teacher", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    # Find the user
+    user = await db.users.find_one({"id": user_id, "tenant_id": current_user.tenant_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent changing super_admin role
+    if user.get("role") == "super_admin":
+        raise HTTPException(status_code=403, detail="Cannot change super_admin role")
+    
+    # Prevent changing own role
+    if user_id == current_user.id:
+        raise HTTPException(status_code=403, detail="Cannot change your own role")
+    
+    # Update role
+    await db.users.update_one(
+        {"id": user_id, "tenant_id": current_user.tenant_id},
+        {"$set": {"role": new_role, "updated_at": datetime.utcnow().isoformat()}}
+    )
+    
+    logging.info(f"Admin {current_user.username} changed role of user {user.get('username')} from {user.get('role')} to {new_role}")
+    
+    return {"message": "Role updated successfully", "new_role": new_role}
+
+
 @api_router.get("/admin/users/with-details")
 async def get_all_users_with_details(current_user: User = Depends(get_current_user)):
     """Get all users with linked student/teacher details (Admin only)"""

@@ -1,0 +1,106 @@
+Hi Replit Team,
+
+আমি এখন Admin → ব্যবহারকারী ব্যবস্থাপনা (User Management) পেজে আছি। স্ক্রিনশট সংযুক্ত করেছি।
+
+বর্তমানে আমি User list দেখতে পারছি, কিন্তু Admin হিসেবে নতুন User তৈরি করার কোনো অপশন পাচ্ছি না, এবং Admin role অনুযায়ী কী কী control থাকবে সেটাও স্পষ্ট নয়।
+
+❌ বর্তমান সমস্যা
+
+“Create User / Add User” বাটন নেই
+
+Admin নতুন Student / Teacher / Admin user তৈরি করতে পারছে না
+
+User Management page শুধু list দেখাচ্ছে
+→ কিন্তু User Create / Role Assign / Permission Control নেই
+
+Admin হিসেবে:
+
+কে Student হবে
+
+কে Teacher হবে
+
+কে Admin / Super Admin হবে
+→ এগুলো UI থেকে manage করা যাচ্ছে না
+
+User creation এখনো indirect হচ্ছে (Admission / অন্য জায়গা থেকে),
+কিন্তু Central User Control নেই
+
+✅ Expected (Internet Madarsha Requirement)
+🔐 Admin Role হলে অবশ্যই এই ক্ষমতাগুলো থাকতে হবে:
+1️⃣ User Create Option (Mandatory)
+
+Admin যেন পারেঃ
+
+➕ Create Student User
+
+➕ Create Teacher User
+
+➕ Create Admin User
+
+Form-এ থাকতে হবে:
+
+Name
+
+Role (Student / Teacher / Admin)
+
+Linked entity (Student profile / Teacher profile)
+
+Auto username generate
+
+{short_name}_{identifier}
+
+
+Auto password generate
+
+{Name}{RandomDigits}@{Year}
+
+2️⃣ User Control & Permission
+
+Admin যেন পারেঃ
+
+✅ User Active / Inactive করতে
+
+🔁 Password regenerate করতে
+
+🗑️ User delete করতে
+
+🔒 Role change করতে (Student → Teacher / Admin)
+
+👁️ দেখতে পারবে user কোন module access করতে পারবে
+
+3️⃣ Role-based Access (Clear Rules)
+Role	Permission
+Student	Only Student Portal
+Teacher	Attendance, Homework, Live Class
+Admin	Full control (Students, Teachers, Users, Settings)
+Super Admin	System-level
+⚠️ Current Status
+
+আপনারা বলেছিলেন Enhanced Admin User Management implemented,
+কিন্তু এখনো:
+
+❌ Create User UI নেই
+
+❌ Role assignment UI নেই
+
+❌ Permission control visible না
+
+❌ Admin capability incomplete
+
+এই অবস্থায় system production-ready নয়।
+
+🔴 Action Required
+
+অনুগ্রহ করে clear করুন:
+
+“Create User” button কোথায় থাকবে? (URL / Screenshot দিন)
+
+যদি এখনো implement না হয়ে থাকে → honest status দিন
+
+Admin User Management কে complete করুন (Create + Control + Permission)
+
+আমি Internet Madarsha-র জন্য centralized admin-controlled system বানাচ্ছি, তাই এই অংশটা critical।
+
+Please update urgently.
+
+Thanks.

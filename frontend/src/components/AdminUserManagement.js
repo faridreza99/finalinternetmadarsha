@@ -62,8 +62,13 @@ const AdminUserManagement = () => {
     username: '',
     full_name: '',
     password: '',
-    role: 'student'
+    role: 'student',
+    student_identifier: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [selectedLinkedEntity, setSelectedLinkedEntity] = useState(null);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -282,14 +287,63 @@ const AdminUserManagement = () => {
     return null;
   };
 
+  const handleCreateUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_BASE_URL}/admin/users/create-direct`,
+        userFormData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setGeneratedCredentials({
+        username: response.data.username,
+        password: response.data.password
+      });
+      setIsCreateUserModalOpen(false);
+      setIsCredentialsModalOpen(true);
+      setUserFormData({
+        email: '',
+        username: '',
+        full_name: '',
+        password: '',
+        role: 'student',
+        student_identifier: ''
+      });
+      toast.success('নতুন ব্যবহারকারী তৈরি হয়েছে');
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'ব্যবহারকারী তৈরি করতে সমস্যা');
+    }
+  };
+
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `${API_BASE_URL}/admin/users/${userId}/role`,
+        { role: newRole },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('রোল পরিবর্তন করা হয়েছে');
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'রোল পরিবর্তন করতে সমস্যা');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-6 w-6" />
             ব্যবহারকারী ব্যবস্থাপনা
           </CardTitle>
+          <Button onClick={() => setIsCreateUserModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            নতুন ব্যবহারকারী তৈরি
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -743,6 +797,146 @@ const AdminUserManagement = () => {
               onClick={handleBulkAction}
             >
               নিশ্চিত করুন
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateUserModalOpen} onOpenChange={setIsCreateUserModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-green-500" />
+              নতুন ব্যবহারকারী তৈরি করুন
+            </DialogTitle>
+            <DialogDescription>
+              নতুন ছাত্র, উস্তাদ বা অ্যাডমিন অ্যাকাউন্ট তৈরি করুন
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>পূর্ণ নাম *</Label>
+              <Input
+                value={userFormData.full_name}
+                onChange={(e) => setUserFormData({ ...userFormData, full_name: e.target.value })}
+                placeholder="যেমন: মুহাম্মদ ফরিদ"
+              />
+            </div>
+            
+            <div>
+              <Label>রোল *</Label>
+              <Select 
+                value={userFormData.role} 
+                onValueChange={(value) => setUserFormData({ ...userFormData, role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="রোল নির্বাচন করুন" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-blue-500" />
+                      ছাত্র
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="teacher">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-green-500" />
+                      উস্তাদ
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-purple-500" />
+                      অ্যাডমিন
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>ইউজার আইডি (Student Identifier) *</Label>
+              <Input
+                value={userFormData.student_identifier}
+                onChange={(e) => setUserFormData({ ...userFormData, student_identifier: e.target.value })}
+                placeholder="যেমন: farid66"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                ইউজারনেম হবে: {institutionShortName || 'short_name'}_{userFormData.student_identifier || 'identifier'}
+              </p>
+            </div>
+            
+            <div>
+              <Label>ইমেইল (ঐচ্ছিক)</Label>
+              <Input
+                type="email"
+                value={userFormData.email}
+                onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                placeholder="user@example.com"
+              />
+            </div>
+            
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                <Key className="h-4 w-4" />
+                <span>পাসওয়ার্ড স্বয়ংক্রিয়ভাবে তৈরি হবে</span>
+              </div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                ফরম্যাট: {userFormData.full_name?.split(' ')[0] || 'Name'}XXX@2026
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+              <h4 className="text-sm font-medium mb-2">এই রোলের অনুমতি:</h4>
+              {userFormData.role === 'student' && (
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• স্টুডেন্ট পোর্টাল অ্যাক্সেস</li>
+                  <li>• লাইভ ক্লাস দেখা</li>
+                  <li>• হোমওয়ার্ক জমা দেওয়া</li>
+                  <li>• হাজিরা দেখা</li>
+                </ul>
+              )}
+              {userFormData.role === 'teacher' && (
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• হাজিরা নেওয়া</li>
+                  <li>• হোমওয়ার্ক দেওয়া</li>
+                  <li>• লাইভ ক্লাস পরিচালনা</li>
+                  <li>• ছাত্র তথ্য দেখা</li>
+                </ul>
+              )}
+              {userFormData.role === 'admin' && (
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• সম্পূর্ণ সিস্টেম নিয়ন্ত্রণ</li>
+                  <li>• ছাত্র ও উস্তাদ ব্যবস্থাপনা</li>
+                  <li>• ফি ব্যবস্থাপনা</li>
+                  <li>• সেটিংস পরিবর্তন</li>
+                </ul>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsCreateUserModalOpen(false);
+              setUserFormData({
+                email: '',
+                username: '',
+                full_name: '',
+                password: '',
+                role: 'student',
+                student_identifier: ''
+              });
+            }}>
+              বাতিল
+            </Button>
+            <Button 
+              onClick={handleCreateUser}
+              disabled={!userFormData.full_name || !userFormData.student_identifier}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              তৈরি করুন
             </Button>
           </DialogFooter>
         </DialogContent>
