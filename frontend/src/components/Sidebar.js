@@ -572,6 +572,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           madrasahOnly: true,
         },
         {
+          title: "User Management",
+          madrasahTitle: "ব্যবহারকারী ব্যবস্থাপনা",
+          path: "/admin/user-management",
+          roles: ["super_admin", "admin"],
+        },
+        {
           title: "Contact Links",
           madrasahTitle: "যোগাযোগ লিংক",
           path: "/contact-links",

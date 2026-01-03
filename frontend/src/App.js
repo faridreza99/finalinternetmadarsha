@@ -91,6 +91,7 @@ const FeeTypeManagement = lazy(() => import("./components/FeeTypeManagement"));
 const DonationManagement = lazy(() => import("./components/DonationManagement"));
 const ContactLinksManagement = lazy(() => import("./components/ContactLinksManagement"));
 const MonthlyPayments = lazy(() => import("./components/MonthlyPayments"));
+const AdminUserManagement = lazy(() => import("./components/AdminUserManagement"));
 
 // Loading spinner for lazy components
 const LoadingSpinner = () => (
@@ -677,6 +678,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/user-management"
+                  element={
+                    <ProtectedRoute>
+                      <AdminUserManagement />
                     </ProtectedRoute>
                   }
                 />
