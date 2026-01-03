@@ -27,7 +27,7 @@ import {
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-const API = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+const API = process.env.REACT_APP_API_URL || '/api';
 const BASE_URL = API.replace('/api', '');
 
 const StudentDashboard = () => {

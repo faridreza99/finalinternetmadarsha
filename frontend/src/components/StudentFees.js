@@ -21,7 +21,7 @@ import {
 import { toast } from 'sonner';
 import { useCurrency } from '../context/CurrencyContext';
 
-const API = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+const API = process.env.REACT_APP_API_URL || '/api';
 
 const StudentFees = () => {
   const [loading, setLoading] = useState(true);

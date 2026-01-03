@@ -43,7 +43,7 @@ const SystemSettings = () => {
   const fetchConfigs = useCallback(async () => {
     try {
       setLoading(true);
-      const API = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+      const API = process.env.REACT_APP_API_URL || '/api';
       const [bkashRes, sslRes] = await Promise.all([
         axios.get(`${API}/payments/config`),
         axios.get(`${API}/payments/sslcommerz/config`).catch(() => ({ data: { store_id: '', is_sandbox: true, is_configured: false } }))
@@ -77,7 +77,7 @@ const SystemSettings = () => {
   const saveBkashConfig = async () => {
     try {
       setSaving(true);
-      const API = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+      const API = process.env.REACT_APP_API_URL || '/api';
       await axios.put(`${API}/payments/config`, bkashConfig);
       toast.success('bKash settings saved successfully');
     } catch (error) {
@@ -95,7 +95,7 @@ const SystemSettings = () => {
       if (!dataToSave.store_password) {
         delete dataToSave.store_password;
       }
-      const API = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+      const API = process.env.REACT_APP_API_URL || '/api';
       await axios.put(`${API}/payments/sslcommerz/config`, dataToSave);
       toast.success('SSLCommerz settings saved successfully');
       fetchConfigs();

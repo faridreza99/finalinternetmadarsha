@@ -8,7 +8,7 @@ import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import i18n from '../i18n';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();

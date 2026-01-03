@@ -43,7 +43,7 @@ const SchoolBranding = () => {
     principal_signature_url: null
   });
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://portal.mahajampurdarbarsharif.org/api';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
   const fetchBranding = useCallback(async () => {
     try {
