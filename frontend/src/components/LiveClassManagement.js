@@ -58,11 +58,13 @@ const toBengaliNumeral = (num) => {
 const LiveClassManagement = () => {
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [jamaats, setJamaats] = useState([]); // Class/Jamaat list
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [formData, setFormData] = useState({
     class_name: '',
+    class_id: '', // Link to specific jamaat
     gender: '',
     start_time: '',
     end_time: '',
@@ -119,10 +121,26 @@ const LiveClassManagement = () => {
     }
   }, []);
 
+  const fetchJamaats = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await axios.get(`${API}/classes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const classList = response.data?.classes || response.data || [];
+      setJamaats(classList);
+    } catch (error) {
+      console.error('Failed to fetch jamaats:', error);
+      setJamaats([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
-  }, [fetchClasses, fetchTeachers]);
+    fetchJamaats();
+  }, [fetchClasses, fetchTeachers, fetchJamaats]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -156,6 +174,7 @@ const LiveClassManagement = () => {
     setEditingClass(liveClass);
     setFormData({
       class_name: liveClass.class_name || '',
+      class_id: liveClass.class_id || '',
       gender: liveClass.gender || '',
       start_time: liveClass.start_time || '',
       end_time: liveClass.end_time || '',
@@ -190,6 +209,7 @@ const LiveClassManagement = () => {
   const resetForm = () => {
     setFormData({
       class_name: '',
+      class_id: '',
       gender: '',
       start_time: '',
       end_time: '',
@@ -268,6 +288,29 @@ const LiveClassManagement = () => {
                   placeholder="ক্লাসের নাম লিখুন"
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="class_id">জামাত নির্বাচন (ঐচ্ছিক)</Label>
+                <Select
+                  value={formData.class_id}
+                  onValueChange={(value) => setFormData({...formData, class_id: value === 'all' ? '' : value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="সকল জামাত" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সকল জামাত</SelectItem>
+                    {jamaats.map((jamaat) => (
+                      <SelectItem key={jamaat.id || jamaat.class_id} value={jamaat.id || jamaat.class_id}>
+                        {jamaat.display_name || jamaat.name || jamaat.class_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  নির্দিষ্ট জামাতের জন্য ক্লাস হলে নির্বাচন করুন
+                </p>
               </div>
 
               <div>

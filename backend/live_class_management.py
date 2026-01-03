@@ -34,6 +34,7 @@ def get_current_month_bengali():
 
 class LiveClassCreate(BaseModel):
     class_name: str
+    class_id: Optional[str] = None  # Link to class/jamaat for proper filtering
     gender: str = Field(..., pattern="^(male|female)$")
     start_time: str
     end_time: str
@@ -46,6 +47,7 @@ class LiveClassCreate(BaseModel):
 
 class LiveClassUpdate(BaseModel):
     class_name: Optional[str] = None
+    class_id: Optional[str] = None
     gender: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
@@ -175,6 +177,7 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             live_class = {
                 "tenant_id": tenant_id,
                 "class_name": data.class_name,
+                "class_id": data.class_id,  # Link to class/jamaat
                 "gender": data.gender,
                 "start_time": data.start_time,
                 "end_time": data.end_time,
@@ -317,6 +320,7 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 }
             
             student_gender = (student.get("gender") or "").lower()
+            student_class_id = student.get("class_id") or student.get("class_standard") or student.get("class_name")
             
             current_date = datetime.utcnow()
             current_month_english = current_date.strftime("%B")
@@ -351,7 +355,16 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             if student_gender in ["male", "female"]:
                 query["gender"] = student_gender
             
-            logger.info(f"Student live classes query: month={current_month_bengali}, year={current_year}, gender={student_gender}")
+            # Filter by class_id if student has class assignment
+            # Match live_class.class_id to student's class_id OR show classes with no class_id (all classes)
+            if student_class_id:
+                query["$or"] = [
+                    {"class_id": student_class_id},
+                    {"class_id": None},
+                    {"class_id": {"$exists": False}}
+                ]
+            
+            logger.info(f"Student live classes query: month={current_month_bengali}, year={current_year}, gender={student_gender}, class_id={student_class_id}")
             
             raw_classes = await db.live_classes.find(query).to_list(50)
             
