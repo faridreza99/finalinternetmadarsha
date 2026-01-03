@@ -176,7 +176,14 @@ const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.log("🔐 Axios interceptor caught error:", error.response?.status, error.config?.url);
+        console.log("🔐 Axios interceptor caught error:", {
+          status: error.response?.status,
+          url: error.config?.url,
+          message: error.message,
+          code: error.code,
+          hasResponse: !!error.response,
+          responseData: error.response?.data
+        });
         if (error.response?.status === 401) {
           // Clear auth state and redirect to login
           console.log("❌ 401 error detected - clearing auth and redirecting");
@@ -260,6 +267,7 @@ const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log("🚪 LOGOUT function called! Stack trace:", new Error().stack);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setToken(null);
