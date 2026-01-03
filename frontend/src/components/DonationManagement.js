@@ -43,7 +43,7 @@ const DonationManagement = () => {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filterPurpose, setFilterPurpose] = useState('');
+  const [filterPurpose, setFilterPurpose] = useState('all');
   const [formData, setFormData] = useState({
     donor_name: '',
     donor_phone: '',
@@ -61,7 +61,7 @@ const DonationManagement = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       let url = `${API}/donations`;
-      if (filterPurpose) {
+      if (filterPurpose && filterPurpose !== 'all') {
         url += `?purpose=${filterPurpose}`;
       }
       const response = await axios.get(url, {
@@ -322,7 +322,7 @@ const DonationManagement = () => {
                   <SelectValue placeholder="All purposes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All purposes</SelectItem>
+                  <SelectItem value="all">All purposes</SelectItem>
                   {PURPOSES.map((p) => (
                     <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                   ))}
