@@ -143,6 +143,7 @@ const StudentList = () => {
   const [formData, setFormData] = useState({
     admission_no: '',
     roll_no: '',
+    student_identifier: '',
     name: '',
     father_name: '',
     father_phone: '',
@@ -527,6 +528,7 @@ const StudentList = () => {
     setFormData({
       admission_no: '',
       roll_no: '',
+      student_identifier: '',
       name: '',
       father_name: '',
       father_phone: '',
@@ -911,7 +913,17 @@ const StudentList = () => {
                     required
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
+                  <Label htmlFor="student_identifier">ইউজার আইডি (ঐচ্ছিক)</Label>
+                  <Input
+                    id="student_identifier"
+                    value={formData.student_identifier}
+                    onChange={(e) => setFormData({...formData, student_identifier: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '')})}
+                    placeholder="যেমন: farid66"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">লগইনের জন্য ইউজার আইডি হবে: [মাদ্রাসা]_{formData.student_identifier || 'নাম থেকে স্বয়ংক্রিয়'}</p>
+                </div>
+                <div>
                   <Label htmlFor="name">পূর্ণ নাম *</Label>
                   <Input
                     id="name"

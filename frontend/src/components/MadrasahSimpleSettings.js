@@ -53,6 +53,7 @@ const MadrasahSimpleSettings = () => {
 
   const [institutionData, setInstitutionData] = useState({
     name: "",
+    shortName: "",
     logo: "",
     address: "",
     mobile: "",
@@ -120,6 +121,7 @@ const MadrasahSimpleSettings = () => {
         setInstitutionData({
           name:
             institutionRes.data.name || institutionRes.data.school_name || "",
+          shortName: institutionRes.data.short_name || "",
           logo: institutionRes.data.logo_url || institutionRes.data.logo || "",
           address: institutionRes.data.address || "",
           mobile: institutionRes.data.phone || institutionRes.data.mobile || "",
@@ -179,6 +181,7 @@ const MadrasahSimpleSettings = () => {
     try {
       await axios.put(`${API_BASE_URL}/institution`, {
         school_name: institutionData.name,
+        short_name: institutionData.shortName,
         address: institutionData.address,
         phone: institutionData.mobile,
         principal_name: institutionData.muhtamimName,
@@ -284,6 +287,21 @@ const MadrasahSimpleSettings = () => {
       toast.error("পাসওয়ার্ড রিসেট করতে সমস্যা হয়েছে");
     } finally {
       setResettingPassword(false);
+    }
+  };
+
+  const handleToggleUserActive = async (user) => {
+    const userId = user.id || user.user_id;
+    const newStatus = user.is_active === false ? true : false;
+    
+    try {
+      await axios.put(`${API_BASE_URL}/admin/users/${userId}`, {
+        is_active: newStatus
+      });
+      toast.success(newStatus ? "ব্যবহারকারী সক্রিয় করা হয়েছে" : "ব্যবহারকারী নিষ্ক্রিয় করা হয়েছে");
+      fetchData();
+    } catch (error) {
+      toast.error("আপডেট করতে সমস্যা হয়েছে");
     }
   };
 
@@ -522,6 +540,27 @@ const MadrasahSimpleSettings = () => {
                     placeholder="মাদ্রাসার নাম লিখুন"
                     className="text-lg py-3"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    <KeyRound className="h-4 w-4" />
+                    সংক্ষিপ্ত নাম (ইউজার আইডির জন্য)
+                  </Label>
+                  <Input
+                    value={institutionData.shortName}
+                    onChange={(e) =>
+                      setInstitutionData({
+                        ...institutionData,
+                        shortName: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                      })
+                    }
+                    placeholder="যেমন: imquran, mham"
+                    className="text-lg py-3"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    ছাত্রদের ইউজার আইডি এই নাম দিয়ে শুরু হবে (যেমন: imquran_farid66)
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -959,24 +998,60 @@ const MadrasahSimpleSettings = () => {
                 {users.map((user) => (
                   <div
                     key={user.id || user.user_id}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border gap-3"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center">
-                        <User className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${user.is_active !== false ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                        <User className={`h-6 w-6 ${user.is_active !== false ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`} />
                       </div>
                       <div>
-                        <p className="font-medium text-lg">
-                          {user.name || user.full_name}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-lg">
+                            {user.name || user.full_name}
+                          </p>
+                          {user.is_active === false && (
+                            <Badge variant="destructive" className="text-xs">নিষ্ক্রিয়</Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500">
                           {user.username || user.email}
                         </p>
+                        {user.role === 'student' && user.linked_student && (
+                          <p className="text-xs text-blue-500">ছাত্র: {user.linked_student}</p>
+                        )}
+                        {user.role === 'teacher' && user.linked_staff && (
+                          <p className="text-xs text-purple-500">শিক্ষক: {user.linked_staff}</p>
+                        )}
                       </div>
                     </div>
-                    <Badge className={getRoleBadgeColor(user.role)}>
-                      {getRoleLabel(user.role)}
-                    </Badge>
+                    <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        {getRoleLabel(user.role)}
+                      </Badge>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUserForReset(user);
+                          setIsResetPasswordModalOpen(true);
+                        }}
+                        title="পাসওয়ার্ড রিসেট"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant={user.is_active !== false ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => handleToggleUserActive(user)}
+                        title={user.is_active !== false ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                      >
+                        {user.is_active !== false ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 {users.length === 0 && (

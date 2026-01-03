@@ -1,0 +1,133 @@
+আমাদের প্রজেক্টটি একটি Internet Madarsha (Online Madrasah Platform)।
+এখানে User Management ও Login Credential System আরও স্ট্যান্ডার্ড ও অটোমেটেড করা জরুরি।
+
+🔴 বর্তমান সমস্যা
+
+Student add করলে user auto-create হচ্ছে
+
+কিন্তু:
+
+User ID এলোমেলো (random / system generated)
+
+Password clear না
+
+Admin-এর পূর্ণ control নেই user naming ও credential policy-তে
+
+✅ আমরা যেটা চাই (Required Behavior)
+1️⃣ Admin Full Control (Mandatory)
+
+শুধু Admin পারবে:
+
+Student / Teacher / Admin user create করতে
+
+Password reset করতে
+
+User enable / disable করতে
+
+Student নিজে কখনো user create করবে না
+
+2️⃣ Internet Madarsha Based User ID Format
+
+Student add করলে automatic user তৈরি হবে এই format অনুযায়ী:
+
+<madarsha_shortname>_<student_identifier>
+
+
+📌 Example:
+
+Madarsha short name: imquran
+
+Student name / roll: farid66
+
+👉 Final User ID:
+
+imquran_farid66
+
+
+❌ এই ধরনের user ID আর চাই না:
+
+mham5678_mham5678260002
+
+3️⃣ Auto Password Generation (Online Friendly)
+
+Student user create হলে system নিজে password generate করবে:
+
+Example:
+
+IMQ@2026
+
+
+বা
+
+Farid@786
+
+
+Rules:
+
+Minimum 8 characters
+
+Capital + number
+
+Admin পরে password reset করতে পারবে
+
+First login-এ student-কে password change করতে বলা যেতে পারে
+
+4️⃣ Student ↔ User Proper Linking (Critical for Online System)
+
+Backend-এ অবশ্যই এই relation থাকবে:
+
+student {
+  id: "student_id",
+  user_id: "user_id",
+  admission_no: "IMQ-0066"
+}
+
+user {
+  id: "user_id",
+  username: "imquran_farid66",
+  role: "student"
+}
+
+
+👉 Internet Madarsha-এর সব feature (Live Class, Attendance, Fees)
+এই mapping-এর উপর কাজ করবে।
+
+5️⃣ Admin Settings → User Management Enhancement
+
+Admin যেন এক জায়গা থেকেই পারে:
+
+User list দেখা
+
+Password reset
+
+Role দেখা (student / teacher / admin)
+
+Student/Teacher-এর সাথে linked user দেখা
+
+🎯 কেন এটা খুব জরুরি
+
+এটা ঠিক না হলে:
+
+Live Class join করলে attendance sync হবে না
+
+Student dashboard ভুল দেখাবে
+
+Login/session সমস্যা হবে
+
+Online Madarsha হিসেবে system reliable হবে না
+
+✅ Final Goal
+
+Internet Madarsha হিসেবে আমরা চাই:
+
+Clean user naming
+
+Auto credential system
+
+Admin full control
+
+Stable student login
+
+Attendance + Live class perfectly synced
+
+এটাকে দয়া করে core system design fix হিসেবে ধরুন।

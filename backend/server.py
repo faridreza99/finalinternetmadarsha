@@ -358,6 +358,7 @@ class Institution(BaseModel):
     school_id: Optional[str] = None
     school_name: str
     school_code: Optional[str] = None
+    short_name: Optional[str] = None  # Short name for clean usernames (e.g., imquran, mham)
     school_type: Optional[str] = None
     institution_type: Optional[str] = "school"  # school or madrasah
     ui_mode: Optional[str] = "standard"  # standard or simple (for madrasah)
@@ -382,6 +383,7 @@ class Institution(BaseModel):
 class InstitutionUpdate(BaseModel):
     school_name: Optional[str] = None
     school_code: Optional[str] = None
+    short_name: Optional[str] = None  # Short name for clean usernames (e.g., imquran, mham)
     school_type: Optional[str] = None
     institution_type: Optional[str] = None  # school or madrasah
     ui_mode: Optional[str] = None  # standard or simple
@@ -406,6 +408,7 @@ class Student(BaseModel):
     school_id: Optional[str] = None
     user_id: Optional[str] = None  # Link to user account for student login
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     roll_no: str
     name: Optional[str] = "Unknown"
     father_name: str
@@ -430,6 +433,7 @@ class Student(BaseModel):
 
 class StudentCreate(BaseModel):
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     roll_no: str
     name: Optional[str] = "Unknown"
     father_name: str
@@ -456,6 +460,7 @@ class StudentCreateResponse(BaseModel):
     school_id: Optional[str] = None
     user_id: Optional[str] = None
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     roll_no: str
     name: Optional[str] = "Unknown"
     father_name: str
@@ -1378,6 +1383,7 @@ class StudentResult(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     class_id: str
     class_name: str
     section_id: str
@@ -3818,13 +3824,50 @@ async def create_student(student_data: StudentCreate, current_user: User = Depen
     if existing_student:
         raise HTTPException(status_code=400, detail=f"Student with admission number {student_data.admission_no} already exists")
     
-    # Get school info for username prefix (use school_code from schools collection)
+    # Get institution info for username prefix (prefer short_name for clean usernames)
+    institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
     school = await db.schools.find_one({"id": school_id})
-    school_code = school.get("school_code", "SCH") if school else "SCH"
     
-    # Generate student username and temporary password
-    student_username = f"{school_code.lower()}_{student_data.admission_no.lower()}"
-    temp_password = f"{student_data.admission_no}@{datetime.utcnow().year}"
+    # Priority: institution.short_name > school.short_name > school.school_code
+    short_name = None
+    if institution:
+        short_name = institution.get("short_name")
+    if not short_name and school:
+        short_name = school.get("short_name") or school.get("school_code")
+    if not short_name:
+        short_name = "stu"  # Default fallback
+    short_name = short_name.lower()
+    
+    # Generate clean student identifier (use provided or generate from name)
+    student_id_field = getattr(student_data, 'student_identifier', None)
+    if student_id_field:
+        # Use provided student identifier
+        clean_identifier = re.sub(r'[^a-zA-Z0-9]', '', student_id_field.lower())
+    else:
+        # Generate from name: first name + roll or admission suffix
+        name_part = student_data.name.split()[0].lower() if student_data.name else "student"
+        name_part = re.sub(r'[^a-z]', '', name_part)  # Remove non-letters
+        roll_suffix = student_data.roll_no.replace("-", "").replace(" ", "")[-4:] or student_data.admission_no[-4:]
+        clean_identifier = f"{name_part}{roll_suffix}"
+    
+    # Generate student username: {short_name}_{clean_identifier}
+    student_username = f"{short_name}_{clean_identifier}"
+    
+    # Ensure unique username by appending number if exists
+    existing_user = await db.users.find_one({"username": student_username})
+    counter = 1
+    base_username = student_username
+    while existing_user:
+        student_username = f"{base_username}{counter}"
+        existing_user = await db.users.find_one({"username": student_username})
+        counter += 1
+    
+    # Generate unique password with per-student entropy: {Name}{RandomDigits}@{Year}
+    import random
+    name_part = student_data.name.split()[0].capitalize()[:6] if student_data.name else "Std"
+    random_suffix = str(random.randint(100, 999))  # 3 random digits for uniqueness
+    year = datetime.utcnow().year
+    temp_password = f"{name_part}{random_suffix}@{year}"  # e.g., Farid786@2026
     hashed_password = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Create student email if not provided
@@ -14883,6 +14926,7 @@ class TransferCertificate(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     date_of_admission: Optional[str] = None
     last_class: str
     last_section: str
@@ -14899,6 +14943,7 @@ class TransferCertificateRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     date_of_admission: Optional[str] = None
     last_class: str
     last_section: str
@@ -15259,6 +15304,7 @@ class ConductCertificate(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     date_of_admission: Optional[str] = None
     current_class: str
     current_section: str
@@ -15279,6 +15325,7 @@ class ConductCertificateRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     date_of_admission: Optional[str] = None
     current_class: str
     current_section: str
@@ -15339,6 +15386,7 @@ class StudentFee(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     class_id: Optional[str] = None
     section_id: Optional[str] = None
     fee_config_id: Optional[str] = None
@@ -15363,6 +15411,7 @@ class Payment(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     fee_type: str
     amount: float
     payment_mode: str  # "cash", "card", "upi", "netbanking"
@@ -16087,6 +16136,7 @@ class CourseCertificate(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     course_name: str
     completion_date: str
     grade_obtained: Optional[str] = None
@@ -16104,6 +16154,7 @@ class CourseCertificateRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     course_name: str
     completion_date: str
     grade_obtained: Optional[str] = None
@@ -16410,6 +16461,7 @@ class ProgressReport(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     class_name: str
     section: str
     academic_year: str
@@ -16429,6 +16481,7 @@ class ProgressReportRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     class_name: str
     section: str
     academic_year: str
@@ -16522,6 +16575,7 @@ class BonafideCertificate(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     father_name: str
     mother_name: str
     class_name: str
@@ -16540,6 +16594,7 @@ class BonafideCertificateRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     father_name: str
     mother_name: str
     class_name: str
@@ -16634,6 +16689,7 @@ class AdharExtract(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     adhar_number: str
     father_name: str
     mother_name: str
@@ -16653,6 +16709,7 @@ class AdharExtractRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
+    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
     adhar_number: str
     father_name: str
     mother_name: str
