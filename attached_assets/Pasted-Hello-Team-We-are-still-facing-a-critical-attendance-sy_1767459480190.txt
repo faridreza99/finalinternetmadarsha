@@ -1,0 +1,134 @@
+Hello Team,
+
+We are still facing a critical attendance sync issue even after multiple fixes.
+
+🔴 Current Behavior (Actual Result)
+
+Student clicks “Join Live Class”
+
+Telegram link opens correctly ✅
+
+Student portal shows success message:
+
+“হাজিরা সম্পন্ন হয়েছে” ✅
+
+BUT attendance does NOT reflect in:
+
+❌ Admin Dashboard → Attendance (Today)
+
+❌ Student Dashboard → My Attendance
+
+❌ Present count, percentage remain unchanged
+
+I have attached screenshots from:
+
+Student Attendance page (shows 0)
+
+Admin Attendance page (student not marked Present)
+
+Live class join success flow
+
+🟢 Expected Behavior (Required)
+
+When student clicks Join Live Class:
+
+Telegram opens ✅
+
+Attendance must be auto-marked as Present
+
+Attendance must reflect immediately in:
+
+Admin Panel → Attendance → Today
+
+Student Panel → Attendance stats (Present, %)
+
+Student should appear as:
+
+Status: Present
+Marked via: live_class
+
+🔍 What We Already Know (Confirmed)
+
+Attendance record IS being written (success message proves it)
+
+But dashboards do not read it
+
+This indicates a schema / query mismatch, not a UI issue
+
+Previously fixed:
+
+student_id → person_id
+
+Added: person_name, type, class_id
+
+Still NOT visible
+
+⚠️ Strong Suspicion (Please Verify)
+
+One or more of the following is still wrong:
+
+Date mismatch
+
+Attendance saved in UTC
+
+Admin dashboard filtering by local date (Asia/Dhaka)
+
+Collection mismatch
+
+Attendance saved in attendance
+
+Dashboard reading from different collection or filter
+
+Missing required filter fields
+Admin attendance query expects:
+
+type = "student"
+
+class_id
+
+date
+
+tenant_id
+One of these is still not matching exactly
+
+Dashboard aggregation cache
+
+Stats (Present / Absent / %) not recalculated after live join
+
+✅ What We Need Now (Action Items)
+
+Please do all of the following:
+
+Log the exact attendance document created when joining live class
+
+Compare it with a manually marked attendance (from Admin panel)
+
+Ensure both documents are 100% identical in structure
+
+Fix dashboard queries to include:
+
+marked_via = "live_class"
+
+Force refresh / recalc attendance stats after join
+
+🚨 This Is a Blocking Issue
+
+This feature is core to the system:
+
+Live Class → Attendance automation is a key selling point
+
+Currently it looks successful but is functionally broken
+
+Please do not mark this as resolved until:
+
+Student joins live class
+
+Admin dashboard shows student as Present
+
+Student dashboard updates stats immediately
+
+Waiting for a final confirmed fix, not partial updates.
+
+Thanks,
+Farid
+(MaxTech BD)

@@ -548,19 +548,22 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             if current_time >= start and current_time <= end:
                 today = now.strftime("%Y-%m-%d")
                 
-                existing_attendance = await db.live_class_attendance.find_one({
+                # Get student name and class for display
+                student_name = student.get("name") or student.get("full_name") or "Unknown"
+                student_class_name = student.get("class_name") or student.get("class") or ""
+                student_class_id = student.get("class_id") or ""
+                
+                logger.info(f"Join class: Marking attendance for {student_name} ({student_id}) on {today}")
+                
+                # Check if already in live_class_attendance (for duplicate prevention)
+                existing_lc_attendance = await db.live_class_attendance.find_one({
                     "tenant_id": tenant_id,
                     "student_id": student_id,
                     "class_id": class_id,
                     "date": today
                 })
                 
-                if not existing_attendance:
-                    # Get student name and class for display
-                    student_name = student.get("name") or student.get("full_name") or "Unknown"
-                    student_class_name = student.get("class_name") or student.get("class") or ""
-                    student_class_id = student.get("class_id") or ""
-                    
+                if not existing_lc_attendance:
                     # Record in live_class_attendance collection (detailed tracking)
                     attendance_record = {
                         "tenant_id": tenant_id,
@@ -576,41 +579,41 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                     }
                     await db.live_class_attendance.insert_one(attendance_record)
                     logger.info(f"Live class attendance recorded: student={student_name}, class={live_class.get('class_name')}, date={today}")
-                    
-                    # Also upsert to main attendance collection for admin visibility
-                    # CRITICAL: Use person_id (not student_id) - this is what admin/student dashboards query
-                    # Include all required fields: type, person_id, person_name for dashboard filtering
-                    await db.attendance.update_one(
-                        {
+                
+                # ALWAYS upsert to main attendance collection for admin/student dashboard visibility
+                # This runs regardless of existing_lc_attendance to ensure dashboards see the record
+                # CRITICAL: Use person_id (not student_id) - this is what admin/student dashboards query
+                upsert_result = await db.attendance.update_one(
+                    {
+                        "tenant_id": tenant_id,
+                        "person_id": student_id,  # Use person_id for dashboard compatibility
+                        "date": today,
+                        "type": "student"
+                    },
+                    {
+                        "$set": {
+                            "status": "present",
+                            "marked_via": "live_class",
+                            "live_class_id": class_id,
+                            "live_class_name": live_class.get("class_name"),
+                            "updated_at": datetime.utcnow()
+                        },
+                        "$setOnInsert": {
                             "tenant_id": tenant_id,
-                            "person_id": student_id,  # Use person_id for dashboard compatibility
+                            "person_id": student_id,
+                            "person_name": student_name,
+                            "name": student_name,
+                            "type": "student",
+                            "class_id": student_class_id,
+                            "class_name": student_class_name,
+                            "subject": live_class.get("class_name", ""),
                             "date": today,
-                            "type": "student"
-                        },
-                        {
-                            "$set": {
-                                "status": "present",
-                                "marked_via": "live_class",
-                                "live_class_id": class_id,
-                                "live_class_name": live_class.get("class_name"),
-                                "updated_at": datetime.utcnow()  # Use UTC for consistency with other records
-                            },
-                            "$setOnInsert": {
-                                "tenant_id": tenant_id,
-                                "person_id": student_id,  # Use person_id for dashboard compatibility
-                                "person_name": student_name,  # person_name is what admin view displays
-                                "name": student_name,  # Also include name as fallback
-                                "type": "student",
-                                "class_id": student_class_id,  # Student's enrolled class ID for filtering
-                                "class_name": student_class_name,
-                                "subject": live_class.get("class_name", ""),
-                                "date": today,
-                                "created_at": datetime.utcnow()  # Use UTC for consistency
-                            }
-                        },
-                        upsert=True
-                    )
-                    logger.info(f"Main attendance upserted: person_id={student_id}, type=student, date={today}")
+                            "created_at": datetime.utcnow()
+                        }
+                    },
+                    upsert=True
+                )
+                logger.info(f"Main attendance upserted: person_id={student_id}, type=student, date={today}, matched={upsert_result.matched_count}, modified={upsert_result.modified_count}, upserted_id={upsert_result.upserted_id}")
             
             return {
                 "message": "Joined successfully",
