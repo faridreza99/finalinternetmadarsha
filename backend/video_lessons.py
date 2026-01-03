@@ -142,7 +142,7 @@ async def require_staff(credentials: HTTPAuthorizationCredentials = Depends(secu
 @router.post("/admin/semesters")
 async def create_semester(semester: SemesterCreate, user = Depends(require_admin)):
     """Create a new semester for a class (Admin only)"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     class_doc = await db.classes.find_one({"id": semester.class_id, "tenant_id": user.tenant_id})
@@ -174,7 +174,7 @@ async def create_semester(semester: SemesterCreate, user = Depends(require_admin
 @router.get("/admin/classes/{class_id}/semesters")
 async def get_class_semesters(class_id: str, user = Depends(require_staff)):
     """Get all semesters for a class"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     semesters = await db.semesters.find({
@@ -191,7 +191,7 @@ async def get_class_semesters(class_id: str, user = Depends(require_staff)):
 @router.get("/admin/semesters/{semester_id}")
 async def get_semester(semester_id: str, user = Depends(require_staff)):
     """Get a specific semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     semester = await db.semesters.find_one({"id": semester_id, "tenant_id": user.tenant_id})
@@ -205,7 +205,7 @@ async def get_semester(semester_id: str, user = Depends(require_staff)):
 @router.patch("/admin/semesters/{semester_id}")
 async def update_semester(semester_id: str, update: SemesterUpdate, user = Depends(require_admin)):
     """Update a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     update_data = {k: v for k, v in update.dict().items() if v is not None}
@@ -225,7 +225,7 @@ async def update_semester(semester_id: str, update: SemesterUpdate, user = Depen
 @router.delete("/admin/semesters/{semester_id}")
 async def delete_semester(semester_id: str, user = Depends(require_admin)):
     """Delete a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     lesson_count = await db.video_lessons.count_documents({"semester_id": semester_id, "tenant_id": user.tenant_id})
@@ -244,7 +244,7 @@ async def delete_semester(semester_id: str, user = Depends(require_admin)):
 @router.post("/admin/semesters/{semester_id}/enroll")
 async def enroll_students(semester_id: str, student_ids: List[str], user = Depends(require_admin)):
     """Enroll students in a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     semester = await db.semesters.find_one({"id": semester_id, "tenant_id": user.tenant_id})
@@ -278,7 +278,7 @@ async def enroll_students(semester_id: str, student_ids: List[str], user = Depen
 @router.delete("/admin/semesters/{semester_id}/unenroll/{student_id}")
 async def unenroll_student(semester_id: str, student_id: str, user = Depends(require_admin)):
     """Remove a student from a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     result = await db.student_semester_enrollments.delete_one({
@@ -296,7 +296,7 @@ async def unenroll_student(semester_id: str, student_id: str, user = Depends(req
 @router.get("/admin/semesters/{semester_id}/students")
 async def get_semester_students(semester_id: str, user = Depends(require_staff)):
     """Get all students enrolled in a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     enrollments = await db.student_semester_enrollments.find({
@@ -322,7 +322,7 @@ async def get_semester_students(semester_id: str, user = Depends(require_staff))
 @router.post("/admin/lessons")
 async def create_lesson(lesson: VideoLessonCreate, user = Depends(require_admin)):
     """Create a new video lesson"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     semester = await db.semesters.find_one({"id": lesson.semester_id, "tenant_id": user.tenant_id})
@@ -357,7 +357,7 @@ async def create_lesson(lesson: VideoLessonCreate, user = Depends(require_admin)
 @router.get("/admin/semesters/{semester_id}/lessons")
 async def get_semester_lessons(semester_id: str, user = Depends(require_staff)):
     """Get all lessons for a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     lessons = await db.video_lessons.find({
@@ -379,7 +379,7 @@ async def get_semester_lessons(semester_id: str, user = Depends(require_staff)):
 @router.get("/admin/lessons/{lesson_id}")
 async def get_lesson(lesson_id: str, user = Depends(require_staff)):
     """Get a specific lesson with questions"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     lesson = await db.video_lessons.find_one({"id": lesson_id, "tenant_id": user.tenant_id})
@@ -403,7 +403,7 @@ async def get_lesson(lesson_id: str, user = Depends(require_staff)):
 @router.patch("/admin/lessons/{lesson_id}")
 async def update_lesson(lesson_id: str, update: VideoLessonUpdate, user = Depends(require_admin)):
     """Update a lesson"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     update_data = {k: v for k, v in update.dict().items() if v is not None}
@@ -423,7 +423,7 @@ async def update_lesson(lesson_id: str, update: VideoLessonUpdate, user = Depend
 @router.delete("/admin/lessons/{lesson_id}")
 async def delete_lesson(lesson_id: str, user = Depends(require_admin)):
     """Delete a lesson and its questions"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     await db.assessment_questions.delete_many({"lesson_id": lesson_id, "tenant_id": user.tenant_id})
@@ -440,7 +440,7 @@ async def delete_lesson(lesson_id: str, user = Depends(require_admin)):
 @router.post("/admin/questions")
 async def create_question(question: QuestionCreate, user = Depends(require_admin)):
     """Create a question for a lesson"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     lesson = await db.video_lessons.find_one({"id": question.lesson_id, "tenant_id": user.tenant_id})
@@ -478,7 +478,7 @@ async def create_question(question: QuestionCreate, user = Depends(require_admin
 @router.get("/admin/lessons/{lesson_id}/questions")
 async def get_lesson_questions(lesson_id: str, user = Depends(require_staff)):
     """Get all questions for a lesson"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     questions = await db.assessment_questions.find({
@@ -495,7 +495,7 @@ async def get_lesson_questions(lesson_id: str, user = Depends(require_staff)):
 @router.patch("/admin/questions/{question_id}")
 async def update_question(question_id: str, update: QuestionUpdate, user = Depends(require_admin)):
     """Update a question"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     update_data = {}
@@ -522,7 +522,7 @@ async def update_question(question_id: str, update: QuestionUpdate, user = Depen
 @router.delete("/admin/questions/{question_id}")
 async def delete_question(question_id: str, user = Depends(require_admin)):
     """Delete a question"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     result = await db.assessment_questions.delete_one({"id": question_id, "tenant_id": user.tenant_id})
@@ -537,7 +537,7 @@ async def delete_question(question_id: str, user = Depends(require_admin)):
 @router.get("/student/my-semesters")
 async def get_student_semesters(user = Depends(get_current_user)):
     """Get semesters a student is enrolled in"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
@@ -568,7 +568,7 @@ async def get_student_semesters(user = Depends(get_current_user)):
 @router.get("/student/semesters/{semester_id}/lessons")
 async def get_student_semester_lessons(semester_id: str, user = Depends(get_current_user)):
     """Get lessons for a semester (student view)"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
@@ -607,7 +607,7 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
 @router.get("/student/lessons/{lesson_id}")
 async def get_student_lesson(lesson_id: str, user = Depends(get_current_user)):
     """Get a lesson with questions for student"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
@@ -673,7 +673,7 @@ async def get_student_lesson(lesson_id: str, user = Depends(get_current_user)):
 @router.post("/student/lessons/{lesson_id}/submit")
 async def submit_lesson_answers(lesson_id: str, submission: LessonSubmission, user = Depends(get_current_user)):
     """Submit answers for a lesson"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
@@ -773,7 +773,7 @@ async def submit_lesson_answers(lesson_id: str, submission: LessonSubmission, us
 @router.get("/student/lessons/{lesson_id}/result")
 async def get_lesson_result(lesson_id: str, user = Depends(get_current_user)):
     """Get student's result for a lesson"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
@@ -797,7 +797,7 @@ async def get_lesson_result(lesson_id: str, user = Depends(get_current_user)):
 @router.get("/admin/semesters/{semester_id}/progress")
 async def get_semester_progress(semester_id: str, user = Depends(require_staff)):
     """Get progress report for all students in a semester"""
-    if not db:
+    if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
     enrollments = await db.student_semester_enrollments.find({
