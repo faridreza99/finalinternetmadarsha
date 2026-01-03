@@ -171,6 +171,44 @@ async def create_semester(semester: SemesterCreate, user = Depends(require_admin
     return {"message": "সেমিস্টার সফলভাবে তৈরি হয়েছে", "semester_id": semester_id, "semester": semester_doc}
 
 
+@router.get("/admin/semesters")
+async def get_all_semesters(user = Depends(require_staff)):
+    """Get all semesters for the tenant (for dropdowns)"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    semesters = await db.semesters.find({
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }).sort("order", 1).to_list(500)
+    
+    class_ids = list(set(s.get("class_id") for s in semesters if s.get("class_id")))
+    classes = await db.classes.find({"id": {"$in": class_ids}, "tenant_id": user.tenant_id}).to_list(100)
+    class_map = {c["id"]: c.get("display_name") or c.get("name") for c in classes}
+    
+    for sem in semesters:
+        sem.pop("_id", None)
+        sem["class_name"] = class_map.get(sem.get("class_id"), "")
+    
+    return {"semesters": semesters}
+
+
+@router.get("/admin/students/{student_id}/semesters")
+async def get_student_enrolled_semesters(student_id: str, user = Depends(require_staff)):
+    """Get all semesters a specific student is enrolled in (Admin/Staff)"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    enrollments = await db.student_semester_enrollments.find({
+        "student_id": student_id,
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }).to_list(100)
+    
+    semester_ids = [e["semester_id"] for e in enrollments]
+    return {"semester_ids": semester_ids}
+
+
 @router.get("/admin/classes/{class_id}/semesters")
 async def get_class_semesters(class_id: str, user = Depends(require_staff)):
     """Get all semesters for a class"""

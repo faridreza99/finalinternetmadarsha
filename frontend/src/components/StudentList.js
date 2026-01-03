@@ -140,6 +140,8 @@ const StudentList = () => {
 
   const currentView = getCurrentView();
 
+  const [semesters, setSemesters] = useState([]);
+  const [selectedSemesterIds, setSelectedSemesterIds] = useState([]);
   const [formData, setFormData] = useState({
     admission_no: '',
     roll_no: '',
@@ -186,13 +188,15 @@ const StudentList = () => {
 
   const fetchData = async () => {
     try {
-      const [studentsRes, classesRes] = await Promise.all([
+      const [studentsRes, classesRes, semestersRes] = await Promise.all([
         axios.get(`${API}/students`),
-        axios.get(`${API}/classes`)
+        axios.get(`${API}/classes`),
+        axios.get(`${API}/admin/semesters`).catch(() => ({ data: { semesters: [] } }))
       ]);
       
       setStudents(studentsRes.data);
       setClasses(classesRes.data);
+      setSemesters(semestersRes.data?.semesters || []);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       toast.error('Failed to load data');
@@ -445,6 +449,13 @@ const StudentList = () => {
         });
       }
       
+      if (studentId && selectedSemesterIds.length > 0) {
+        for (const semId of selectedSemesterIds) {
+          axios.post(`${API}/admin/semesters/${semId}/enroll`, [studentId])
+            .catch(err => console.error('Failed to enroll in semester:', err));
+        }
+      }
+      
       if (wasEditing) {
         setIsAddModalOpen(false);
       } else {
@@ -474,7 +485,7 @@ const StudentList = () => {
     }
   };
 
-  const handleEdit = (student) => {
+  const handleEdit = async (student) => {
     setFormData({
       admission_no: student.admission_no,
       roll_no: student.roll_no,
@@ -498,6 +509,13 @@ const StudentList = () => {
     setEditingStudent(student);
     setPhotoFile(null);
     setPhotoPreview(student.photo_url || '');
+    try {
+      const res = await axios.get(`${API}/admin/students/${student.id}/semesters`);
+      setSelectedSemesterIds(res.data?.semester_ids || []);
+    } catch (e) {
+      console.error('Failed to fetch student semesters:', e);
+      setSelectedSemesterIds([]);
+    }
     setIsAddModalOpen(true);
   };
 
@@ -552,6 +570,7 @@ const StudentList = () => {
     setBirthDay('');
     setPhotoFile(null);
     setPhotoPreview('');
+    setSelectedSemesterIds([]);
   };
 
   const handleBulkPhotoUpload = async () => {
@@ -1009,6 +1028,31 @@ const StudentList = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {semesters.length > 0 && (
+                  <div className="col-span-2">
+                    <Label>সেমিস্টার ভর্তি (ভিডিও পাঠের জন্য)</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-800">
+                      {semesters.map((sem) => (
+                        <label key={sem.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedSemesterIds.includes(sem.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSemesterIds([...selectedSemesterIds, sem.id]);
+                              } else {
+                                setSelectedSemesterIds(selectedSemesterIds.filter(id => id !== sem.id));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <span className="text-sm">{sem.title_bn} ({sem.class_name})</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">সেমিস্টারে ভর্তি করলে ছাত্র ভিডিও পাঠ দেখতে পারবে</p>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="phone">ফোন নম্বর *</Label>
                   <Input
@@ -1882,6 +1926,31 @@ const StudentList = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+                {semesters.length > 0 && (
+                  <div>
+                    <Label className="text-base font-semibold">সেমিস্টার ভর্তি</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-800 max-h-40 overflow-y-auto">
+                      {semesters.map((sem) => (
+                        <label key={sem.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedSemesterIds.includes(sem.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSemesterIds([...selectedSemesterIds, sem.id]);
+                              } else {
+                                setSelectedSemesterIds(selectedSemesterIds.filter(id => id !== sem.id));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <span className="text-sm">{sem.title_bn} ({sem.class_name})</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">ভিডিও পাঠ দেখার জন্য সেমিস্টারে ভর্তি করুন</p>
                   </div>
                 )}
                 <div>
@@ -2824,6 +2893,31 @@ const StudentList = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+                {semesters.length > 0 && (
+                  <div>
+                    <Label className="text-base font-semibold">সেমিস্টার ভর্তি</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-800 max-h-40 overflow-y-auto">
+                      {semesters.map((sem) => (
+                        <label key={sem.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedSemesterIds.includes(sem.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSemesterIds([...selectedSemesterIds, sem.id]);
+                              } else {
+                                setSelectedSemesterIds(selectedSemesterIds.filter(id => id !== sem.id));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <span className="text-sm">{sem.title_bn} ({sem.class_name})</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">ভিডিও পাঠ দেখার জন্য সেমিস্টারে ভর্তি করুন</p>
                   </div>
                 )}
                 <div>
