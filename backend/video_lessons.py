@@ -1046,10 +1046,30 @@ async def get_lesson_results(lesson_id: str, user = Depends(require_staff)):
     results = []
     for resp in responses:
         resp.pop("_id", None)
-        student = await db.students.find_one({"id": resp["student_id"], "tenant_id": user.tenant_id})
+        student_id = resp.get("student_id")
+        
+        # Try multiple lookup strategies
+        student = await db.students.find_one({"id": student_id, "tenant_id": user.tenant_id})
+        if not student:
+            # Try by _id (ObjectId string)
+            student = await db.students.find_one({"_id": student_id, "tenant_id": user.tenant_id})
+        if not student:
+            # Try by user_id
+            student = await db.students.find_one({"user_id": student_id, "tenant_id": user.tenant_id})
+        
         if student:
-            resp["student_name"] = student.get("full_name_bn") or student.get("full_name")
-            resp["roll_number"] = student.get("roll_number")
+            resp["student_name"] = student.get("full_name_bn") or student.get("full_name") or student.get("name")
+            resp["roll_number"] = student.get("roll_number") or student.get("roll")
+        else:
+            # Fallback: try to get user info
+            user_doc = await db.users.find_one({"id": student_id, "tenant_id": user.tenant_id})
+            if user_doc:
+                resp["student_name"] = user_doc.get("full_name") or user_doc.get("username")
+                resp["roll_number"] = "-"
+            else:
+                resp["student_name"] = "অজানা ছাত্র"
+                resp["roll_number"] = "-"
+        
         results.append(resp)
     
     # Sort by submission date descending
