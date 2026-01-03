@@ -151,7 +151,7 @@ const schoolLabels = {
   displayName: 'Display Name',
   institutionType: 'Institution Type',
   madrasah: 'Madrasah',
-  school: 'School',
+  school: 'স্কুল',
   totalClasses: 'Total Classes',
   totalSections: 'Total Sections',
   totalSubjects: 'Total Subjects',
@@ -937,7 +937,7 @@ const ClassManagement = () => {
       const token = localStorage.getItem('token');
       Swal.fire({
         title: t('classManagement.initializeClasses') || 'Initialize Classes',
-        text: `${t('classManagement.initializeConfirm') || 'This will add default classes for'} ${institutionType === 'madrasah' ? 'Madrasah' : 'School'}. ${t('classManagement.existingClassesKept') || 'Existing classes will be kept.'}`,
+        text: `${t('classManagement.initializeConfirm') || 'This will add default classes for'} ${institutionType === 'madrasah' ? 'মাদ্রাসা' : 'স্কুল'}. ${t('classManagement.existingClassesKept') || 'Existing classes will be kept.'}`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: t('common.confirm') || 'Confirm',
@@ -969,7 +969,7 @@ const ClassManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setInstitutionType(newType);
-      toast.success(`Institution type changed to ${newType === 'madrasah' ? 'Madrasah' : 'School'}`);
+      toast.success(`প্রতিষ্ঠানের ধরন পরিবর্তন হয়েছে: ${newType === 'madrasah' ? 'মাদ্রাসা' : 'স্কুল'}`);
     } catch (error) {
       console.error('Failed to update institution type:', error);
       setInstitutionType(newType);
