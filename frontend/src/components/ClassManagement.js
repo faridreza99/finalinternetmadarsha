@@ -228,7 +228,7 @@ const ClassManagement = () => {
   const [editingSection, setEditingSection] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
   const [selectedClassFilter, setSelectedClassFilter] = useState('all');
-  const [institutionType, setInstitutionType] = useState('school');
+  const [institutionType, setInstitutionType] = useState('madrasah');
   const [classDefaults, setClassDefaults] = useState(null);
   const [showInactiveClasses, setShowInactiveClasses] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1068,66 +1068,19 @@ const ClassManagement = () => {
             <Download className="h-4 w-4 mr-2" />
             {labels.exportClasses}
           </Button>
+          {classes.length === 0 && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleInitializeDefaults}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {labels.initializeDefaults}
+            </Button>
+          )}
         </div>
       </div>
-
-      {/* Institution Type Toggle */}
-      <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              {institutionType === 'madrasah' ? (
-                <Moon className="h-6 w-6 text-emerald-600" />
-              ) : (
-                <Building2 className="h-6 w-6 text-emerald-600" />
-              )}
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {labels.institutionType}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {institutionType === 'madrasah' ? labels.madrasahDesc : labels.schoolDesc}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-                <button
-                  onClick={() => handleInstitutionTypeChange('school')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    institutionType === 'school'
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <Building2 className="h-4 w-4 inline mr-1" />
-                  {schoolLabels.school}
-                </button>
-                <button
-                  onClick={() => handleInstitutionTypeChange('madrasah')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    institutionType === 'madrasah'
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <Moon className="h-4 w-4 inline mr-1" />
-                  {madrasahLabels.madrasah}
-                </button>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleInitializeDefaults}
-                className="bg-white dark:bg-gray-800"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {labels.initializeDefaults}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Show Inactive Classes Toggle */}
       <div className="flex items-center gap-2">
