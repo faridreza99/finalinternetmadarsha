@@ -338,7 +338,20 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 }
             
             student_gender = (student.get("gender") or "").lower()
-            student_class_id = student.get("class_id") or student.get("class_standard") or student.get("class_name")
+            
+            # Normalize student class_id to string
+            raw_student_class_id = student.get("class_id") or student.get("class_standard") or student.get("class_name")
+            student_class_id = None
+            if raw_student_class_id:
+                if isinstance(raw_student_class_id, dict):
+                    # Handle ObjectId or dict format: {"$oid": "..."} or {"id": "..."}
+                    student_class_id = str(raw_student_class_id.get("$oid") or raw_student_class_id.get("id") or raw_student_class_id.get("_id") or "")
+                elif isinstance(raw_student_class_id, ObjectId):
+                    student_class_id = str(raw_student_class_id)
+                else:
+                    student_class_id = str(raw_student_class_id).strip()
+            
+            logger.info(f"Student class_id raw={raw_student_class_id}, normalized={student_class_id}")
             
             current_date = datetime.utcnow()
             current_month_english = current_date.strftime("%B")
@@ -373,18 +386,42 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             if student_gender in ["male", "female"]:
                 query["gender"] = student_gender
             
-            # Filter by class_id if student has class assignment
-            # Match live_class.class_id to student's class_id OR show classes with no class_id (all classes)
-            if student_class_id:
-                query["$or"] = [
-                    {"class_id": student_class_id},
-                    {"class_id": None},
-                    {"class_id": {"$exists": False}}
-                ]
-            
             logger.info(f"Student live classes query: month={current_month_bengali}, year={current_year}, gender={student_gender}, class_id={student_class_id}")
             
-            raw_classes = await db.live_classes.find(query).to_list(50)
+            # Fetch ALL live classes matching basic criteria first, then filter by class_id in Python
+            # This avoids MongoDB type mismatch issues with class_id comparisons
+            
+            all_classes = await db.live_classes.find(query).to_list(100)
+            logger.info(f"Found {len(all_classes)} classes before class_id filtering")
+            
+            # Filter by class_id in Python to handle type mismatches
+            raw_classes = []
+            for cls in all_classes:
+                # Normalize live class class_id to string
+                raw_live_class_id = cls.get("class_id")
+                live_class_id = None
+                if raw_live_class_id:
+                    if isinstance(raw_live_class_id, dict):
+                        live_class_id = str(raw_live_class_id.get("$oid") or raw_live_class_id.get("id") or raw_live_class_id.get("_id") or "")
+                    elif isinstance(raw_live_class_id, ObjectId):
+                        live_class_id = str(raw_live_class_id)
+                    else:
+                        live_class_id = str(raw_live_class_id).strip()
+                
+                # Include class if:
+                # 1. Live class has no class_id set (broadcast to all) - empty string, None, or doesn't exist
+                # 2. Student has no class_id (show all classes)
+                # 3. class_ids match
+                is_broadcast_class = not live_class_id or live_class_id == ""
+                student_has_no_class = not student_class_id or student_class_id == ""
+                class_ids_match = student_class_id and live_class_id and student_class_id == live_class_id
+                
+                logger.info(f"Live class '{cls.get('class_name')}': raw_class_id={raw_live_class_id}, normalized={live_class_id}, broadcast={is_broadcast_class}, match={class_ids_match}")
+                
+                if is_broadcast_class or student_has_no_class or class_ids_match:
+                    raw_classes.append(cls)
+            
+            logger.info(f"After class_id filtering: {len(raw_classes)} classes")
             
             # Process and normalize response - return only primitive fields
             now = datetime.utcnow()
