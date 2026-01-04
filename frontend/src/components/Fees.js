@@ -1724,10 +1724,18 @@ const Fees = () => {
                                   className="text-purple-600 hover:bg-purple-50 px-2"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Download last receipt for this student
-                                    const lastPayment = recentPayments.find(p => p.student_id === student.id);
-                                    if (lastPayment) {
-                                      window.open(`${API}/fees/receipt/${lastPayment.receipt_no}/pdf`, '_blank');
+                                    // Download last receipt for this student - check by student_id, _id, or name
+                                    const studentId = student.id || student._id;
+                                    const studentName = student.name || student.student_name;
+                                    const lastPayment = recentPayments.find(p => 
+                                      p.student_id === studentId || 
+                                      p.studentId === studentId || 
+                                      p.student_name === studentName ||
+                                      p.studentName === studentName
+                                    );
+                                    if (lastPayment && (lastPayment.receipt_no || lastPayment.receiptNo)) {
+                                      const receiptNo = lastPayment.receipt_no || lastPayment.receiptNo;
+                                      window.open(`${API}/fees/receipt/${receiptNo}/pdf`, '_blank');
                                       toast.success('🧾 রসিদ ডাউনলোড হচ্ছে...');
                                     } else {
                                       toast.info('এই ছাত্রের কোন রসিদ নেই');
