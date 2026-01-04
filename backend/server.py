@@ -27048,23 +27048,36 @@ async def get_student_fees(current_user: User = Depends(get_current_user)):
         }).sort("payment_date", -1).to_list(100)
         logger.info(f"📋 Student fees: Found {len(payments)} payments")
         
-        # Get applicable fee configurations for this student's class
+        # Get applicable fee configurations for this student's class (backward compatible)
         fee_configs = []
         if student.get("class_id"):
             fee_configs = await db.fee_configurations.find({
                 "tenant_id": current_user.tenant_id,
                 "$or": [
                     {"apply_to_classes": student["class_id"]},
-                    {"apply_to_classes": "all"}
+                    {"apply_to_classes": "all"},
+                    {"class_id": student["class_id"]},
+                    {"class_id": None},
+                    {"class_id": ""}
                 ],
                 "is_active": True
             }).to_list(50)
         
-        # Calculate totals from student_fees collection (real-time accurate data)
-        total_fees = sum(sf.get("amount", 0) for sf in student_fees)
-        paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees)
-        pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees)
-        overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees)
+        # Calculate totals from student_fees collection (the source of truth for ERP)
+        # If no student_fees exist, show fallback from fee_configs (read-only, no mutations)
+        if student_fees:
+            total_fees = sum(sf.get("amount", 0) for sf in student_fees)
+            paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees)
+            pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees)
+            overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees)
+        else:
+            # Fallback: Calculate from fee_configs and existing payments (read-only)
+            total_fees = sum(fc.get("amount", 0) for fc in fee_configs)
+            paid_from_payments = sum(p.get("amount", 0) for p in payments)
+            paid_amount = paid_from_payments
+            pending_amount = max(0, total_fees - paid_amount)
+            overdue_amount = 0
+            logger.info(f"📋 No student_fees records for {student['id']}, using fallback from fee_configs")
         
         fee_ledger = {
             "total_fees": total_fees,
@@ -27816,11 +27829,37 @@ async def get_student_dashboard(current_user: User = Depends(get_current_user)):
             "tenant_id": current_user.tenant_id
         }).to_list(100)
         
-        # Calculate totals from student_fees collection (real-time accurate data)
-        total_fees = sum(sf.get("amount", 0) for sf in student_fees_records)
-        paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees_records)
-        pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees_records)
-        overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees_records)
+        # Calculate totals from student_fees collection (the source of truth for ERP)
+        # If no student_fees exist, fallback to fee_configs + payments (read-only, no mutations)
+        if student_fees_records:
+            total_fees = sum(sf.get("amount", 0) for sf in student_fees_records)
+            paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees_records)
+            pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees_records)
+            overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees_records)
+        else:
+            # Fallback for newly admitted students (read-only, no database mutations)
+            student_payments = await db.payments.find({
+                "student_id": student_id,
+                "tenant_id": current_user.tenant_id
+            }).to_list(100)
+            paid_amount = sum(p.get("amount", 0) for p in student_payments)
+            
+            fee_configs = []
+            if student.get("class_id"):
+                fee_configs = await db.fee_configurations.find({
+                    "tenant_id": current_user.tenant_id,
+                    "$or": [
+                        {"apply_to_classes": student["class_id"]},
+                        {"apply_to_classes": "all"},
+                        {"class_id": student["class_id"]},
+                        {"class_id": None},
+                        {"class_id": ""}
+                    ],
+                    "is_active": True
+                }).to_list(50)
+            total_fees = sum(fc.get("amount", 0) for fc in fee_configs)
+            pending_amount = max(0, total_fees - paid_amount)
+            overdue_amount = 0
         balance = pending_amount + overdue_amount
         
         fee_status = {
