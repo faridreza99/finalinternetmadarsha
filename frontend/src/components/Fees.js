@@ -1145,8 +1145,9 @@ const Fees = () => {
       });
       setReceiptPreview(null);
       
-      // Recalculate stats
+      // Recalculate stats and refresh fee data
       setTimeout(calculateCollectionStats, 100);
+      await loadFeeDataFromBackend();
       
     } catch (error) {
       console.error('Payment failed:', error);
@@ -1772,14 +1773,28 @@ const Fees = () => {
                               </div>
                               <Button 
                                 size="lg" 
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6"
+                                className={`font-bold px-6 ${
+                                  studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 
+                                    ? 'bg-green-500 hover:bg-green-600 text-white cursor-default' 
+                                    : studentDue && studentDue.paid_amount > 0 && (studentDue.pending_amount > 0 || studentDue.overdue_amount > 0)
+                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if (studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0) {
+                                    toast.success('✅ এই ছাত্রের সব বেতন পরিশোধিত!');
+                                    return;
+                                  }
                                   setSelectedStudent(student);
                                   setMadrasahWizardStep(2);
                                 }}
                               >
-                                বেতন নিন
+                                {studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 
+                                  ? 'পরিশোধিত' 
+                                  : studentDue && studentDue.paid_amount > 0 && (studentDue.pending_amount > 0 || studentDue.overdue_amount > 0)
+                                  ? 'আংশিক পরিশোধ'
+                                  : 'বেতন নিন'}
                               </Button>
                             </div>
                           </div>
