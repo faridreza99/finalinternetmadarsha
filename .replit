@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "python-3.11", "web", "bash", "postgresql-16"]
+modules = ["nodejs-20", "python-3.11", "web", "bash"]
 [agent]
 expertMode = true
 integrations = ["replitmail:1.0.0", "twilio_send_message:1.0.0"]
@@ -44,16 +44,12 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd frontend && npm start"
+args = "cd frontend && npx craco start"
 waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5001
-externalPort = 3000
 
 [[ports]]
 localPort = 8000
