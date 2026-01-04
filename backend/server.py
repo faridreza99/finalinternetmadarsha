@@ -18651,6 +18651,95 @@ async def send_sms_reminder(phone: str, student_name: str, amount: float):
         raise
 
 # Helper functions
+async def ensure_student_fees_exist(student: dict, tenant_id: str):
+    """Ensure student_fees records exist for a student by creating them from fee_configurations if missing.
+    
+    This function is safe to call in GET handlers:
+    1. Checks for existing student_fees
+    2. Only creates if none exist (new students without fee assignments)
+    3. Creates bare records - payments are handled by apply_payment_to_student_fees
+    4. Uses upsert pattern to prevent duplicates from concurrent requests
+    
+    Note: For students with existing payments, student_fees should already exist via
+    the fee configuration workflow. This is a fallback for edge cases.
+    """
+    try:
+        student_id = student.get("id")
+        class_id = student.get("class_id")
+        
+        if not class_id:
+            return {"status": "skipped", "reason": "no_class_id"}
+        
+        # Check if student_fees already exist
+        existing = await db.student_fees.count_documents({
+            "student_id": student_id,
+            "tenant_id": tenant_id
+        })
+        
+        if existing > 0:
+            return {"status": "exists", "count": existing}
+        
+        # Get applicable fee configurations
+        fee_configs = await db.fee_configurations.find({
+            "tenant_id": tenant_id,
+            "$or": [
+                {"apply_to_classes": class_id},
+                {"apply_to_classes": "all"},
+                {"class_id": class_id},
+                {"class_id": None},
+                {"class_id": ""}
+            ],
+            "is_active": True
+        }).to_list(50)
+        
+        if not fee_configs:
+            return {"status": "no_configs", "count": 0}
+        
+        created = 0
+        for fc in fee_configs:
+            fee_type = fc.get("fee_type", "")
+            amount = fc.get("amount", 0)
+            
+            # Use upsert to prevent duplicates from concurrent requests
+            await db.student_fees.update_one(
+                {
+                    "student_id": student_id,
+                    "tenant_id": tenant_id,
+                    "fee_config_id": fc.get("id")
+                },
+                {
+                    "$setOnInsert": {
+                        "id": str(uuid.uuid4()),
+                        "school_id": student.get("school_id", f"school-{tenant_id}"),
+                        "student_name": student.get("name", ""),
+                        "admission_no": student.get("admission_no", ""),
+                        "class_id": class_id,
+                        "section_id": student.get("section_id"),
+                        "fee_type": fee_type,
+                        "amount": amount,
+                        "paid_amount": 0,
+                        "pending_amount": amount,
+                        "overdue_amount": 0,
+                        "due_date": fc.get("due_date"),
+                        "status": "pending",
+                        "is_active": True,
+                        "created_at": datetime.utcnow()
+                    },
+                    "$set": {
+                        "updated_at": datetime.utcnow()
+                    }
+                },
+                upsert=True
+            )
+            created += 1
+        
+        logging.info(f"📋 Created {created} student_fees for student {student_id}")
+        return {"status": "created", "count": created}
+        
+    except Exception as e:
+        logging.error(f"Error ensuring student fees: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
 async def create_student_fees_from_config(fee_config: FeeConfiguration, current_user: User):
     """Create student fee records based on fee configuration
     
@@ -27063,21 +27152,20 @@ async def get_student_fees(current_user: User = Depends(get_current_user)):
                 "is_active": True
             }).to_list(50)
         
+        # Ensure student_fees exist (creates from fee_configs if missing, reconciles with payments)
+        if not student_fees and student.get("class_id"):
+            await ensure_student_fees_exist(student, current_user.tenant_id)
+            # Refetch after materialization
+            student_fees = await db.student_fees.find({
+                "student_id": student["id"],
+                "tenant_id": current_user.tenant_id
+            }).to_list(100)
+        
         # Calculate totals from student_fees collection (the source of truth for ERP)
-        # If no student_fees exist, show fallback from fee_configs (read-only, no mutations)
-        if student_fees:
-            total_fees = sum(sf.get("amount", 0) for sf in student_fees)
-            paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees)
-            pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees)
-            overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees)
-        else:
-            # Fallback: Calculate from fee_configs and existing payments (read-only)
-            total_fees = sum(fc.get("amount", 0) for fc in fee_configs)
-            paid_from_payments = sum(p.get("amount", 0) for p in payments)
-            paid_amount = paid_from_payments
-            pending_amount = max(0, total_fees - paid_amount)
-            overdue_amount = 0
-            logger.info(f"📋 No student_fees records for {student['id']}, using fallback from fee_configs")
+        total_fees = sum(sf.get("amount", 0) for sf in student_fees)
+        paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees)
+        pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees)
+        overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees)
         
         fee_ledger = {
             "total_fees": total_fees,
@@ -27829,37 +27917,20 @@ async def get_student_dashboard(current_user: User = Depends(get_current_user)):
             "tenant_id": current_user.tenant_id
         }).to_list(100)
         
-        # Calculate totals from student_fees collection (the source of truth for ERP)
-        # If no student_fees exist, fallback to fee_configs + payments (read-only, no mutations)
-        if student_fees_records:
-            total_fees = sum(sf.get("amount", 0) for sf in student_fees_records)
-            paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees_records)
-            pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees_records)
-            overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees_records)
-        else:
-            # Fallback for newly admitted students (read-only, no database mutations)
-            student_payments = await db.payments.find({
+        # Ensure student_fees exist (creates from fee_configs if missing, reconciles with payments)
+        if not student_fees_records and student.get("class_id"):
+            await ensure_student_fees_exist(student, current_user.tenant_id)
+            # Refetch after materialization
+            student_fees_records = await db.student_fees.find({
                 "student_id": student_id,
                 "tenant_id": current_user.tenant_id
             }).to_list(100)
-            paid_amount = sum(p.get("amount", 0) for p in student_payments)
-            
-            fee_configs = []
-            if student.get("class_id"):
-                fee_configs = await db.fee_configurations.find({
-                    "tenant_id": current_user.tenant_id,
-                    "$or": [
-                        {"apply_to_classes": student["class_id"]},
-                        {"apply_to_classes": "all"},
-                        {"class_id": student["class_id"]},
-                        {"class_id": None},
-                        {"class_id": ""}
-                    ],
-                    "is_active": True
-                }).to_list(50)
-            total_fees = sum(fc.get("amount", 0) for fc in fee_configs)
-            pending_amount = max(0, total_fees - paid_amount)
-            overdue_amount = 0
+        
+        # Calculate totals from student_fees collection (the source of truth for ERP)
+        total_fees = sum(sf.get("amount", 0) for sf in student_fees_records)
+        paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees_records)
+        pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees_records)
+        overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees_records)
         balance = pending_amount + overdue_amount
         
         fee_status = {
