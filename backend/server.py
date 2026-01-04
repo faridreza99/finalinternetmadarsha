@@ -15547,7 +15547,7 @@ class FeeConfiguration(BaseModel):
     fee_type: str  # "Tuition Fees", "Transport Fees", "Admission Fees"
     amount: float
     frequency: str  # "monthly", "quarterly", "half-yearly", "yearly", "one-time"
-    due_date: Optional[str] = None
+    due_date: Optional[int] = None
     apply_to_classes: str  # "all", "class1", "class2", etc.
     late_fee: float = 0.0
     discount: float = 0.0
@@ -15560,7 +15560,7 @@ class FeeConfigurationCreate(BaseModel):
     fee_type: str
     amount: float
     frequency: str
-    due_date: Optional[str] = None
+    due_date: Optional[int] = None
     apply_to_classes: str
     late_fee: float = 0.0
     discount: float = 0.0
@@ -15569,10 +15569,11 @@ class FeeConfigurationUpdate(BaseModel):
     fee_type: Optional[str] = None
     amount: Optional[float] = None
     frequency: Optional[str] = None
-    due_date: Optional[str] = None
+    due_date: Optional[int] = None
     apply_to_classes: Optional[str] = None
     late_fee: Optional[float] = None
     discount: Optional[float] = None
+    is_active: Optional[bool] = None
 
 # ========================================
 # 🔒 PROTECTED MODEL - MaxTechBD Fee Engine v3.0-final-stable
@@ -15594,7 +15595,7 @@ class StudentFee(BaseModel):
     paid_amount: float = 0.0
     pending_amount: float
     overdue_amount: float = 0.0
-    due_date: Optional[str] = None
+    due_date: Optional[int] = None
     status: str = "pending"  # "pending", "partial", "paid", "overdue"
     # ⚠️ CRITICAL: is_active field is REQUIRED for fee system to work
     # Removing this will cause GET queries to return 0 records
