@@ -61,6 +61,21 @@ const API = process.env.REACT_APP_API_URL || '/api';
 
 console.log('🔗 API Base URL:', API);
 
+// Helper function to safely extract error messages from API responses
+const getErrorMessage = (error, fallback = 'An error occurred. Please try again.') => {
+  const detail = error?.response?.data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    // Pydantic validation errors are arrays of objects with 'msg' property
+    return detail.map(err => err?.msg || JSON.stringify(err)).join(', ') || fallback;
+  }
+  if (typeof detail === 'object') {
+    return detail.msg || detail.message || JSON.stringify(detail);
+  }
+  return fallback;
+};
+
 const Fees = () => {
   // Currency context for dynamic currency display
   const { formatCurrency, getCurrencySymbol } = useCurrency();
@@ -636,7 +651,7 @@ const Fees = () => {
 
     } catch (error) {
       console.error('Bulk payment failed:', error);
-      const errorMessage = error.response?.data?.detail || 'Unable to process bulk payment. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to process bulk payment. Please try again.');
       toast.error('❌ Bulk Payment Failed', {
         description: errorMessage,
         duration: 4000
@@ -680,7 +695,7 @@ const Fees = () => {
 
     } catch (error) {
       console.error('Send reminders failed:', error);
-      const errorMessage = error.response?.data?.detail || 'Unable to send reminders. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to send reminders. Please try again.');
       toast.error('❌ Failed to Send Reminders', {
         description: errorMessage,
         duration: 4000
@@ -741,8 +756,14 @@ const Fees = () => {
         });
       } else {
         const errorData = await response.json();
+        let errorMsg = 'Failed to generate report.';
+        if (typeof errorData.detail === 'string') {
+          errorMsg = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          errorMsg = errorData.detail.map(err => err?.msg || JSON.stringify(err)).join(', ');
+        }
         toast.error('⚠️ Report Export Failed', {
-          description: errorData.detail || 'Failed to generate report.',
+          description: errorMsg,
           duration: 4000
         });
       }
@@ -820,7 +841,7 @@ const Fees = () => {
       
     } catch (error) {
       console.error('Payment failed:', error);
-      const errorMessage = error.response?.data?.detail || 'Unable to process payment. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to process payment. Please try again.');
       toast.error('❌ Payment Failed', {
         description: errorMessage,
         duration: 4000
@@ -863,7 +884,7 @@ const Fees = () => {
 
     } catch (error) {
       console.error('Failed to delete fee configuration:', error);
-      const errorMessage = error.response?.data?.detail || 'Unable to delete fee configuration. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to delete fee configuration. Please try again.');
       toast.error('❌ Failed to Delete Configuration', {
         description: errorMessage,
         duration: 4000
@@ -1287,7 +1308,7 @@ const Fees = () => {
       console.error('Failed to save fee configuration:', error);
       // Capture edit mode for error message (editingConfig might still be set in catch block)
       const isEditingError = !!editingConfig;
-      const errorMessage = error.response?.data?.detail || 'Unable to save fee configuration. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to save fee configuration. Please try again.');
       toast.error(isEditingError ? '❌ Failed to Update Configuration' : '❌ Failed to Save Configuration', {
         description: errorMessage,
         duration: 4000
@@ -1360,7 +1381,7 @@ const Fees = () => {
 
     } catch (error) {
       console.error('Send reminders failed:', error);
-      const errorMessage = error.response?.data?.detail || 'Unable to send reminders. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to send reminders. Please try again.');
       toast.error('❌ Send Reminders Failed', {
         description: errorMessage,
         duration: 4000
@@ -1435,7 +1456,7 @@ const Fees = () => {
 
     } catch (error) {
       console.error('Bulk payment failed:', error);
-      const errorMessage = error.response?.data?.detail || 'Unable to process bulk payment. Please try again.';
+      const errorMessage = getErrorMessage(error, 'Unable to process bulk payment. Please try again.');
       toast.error('❌ Bulk Payment Failed', {
         description: errorMessage,
         duration: 4000
