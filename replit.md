@@ -3,6 +3,25 @@
 This Cloud School ERP is a **Single Madrasah** management system (fixed tenant: MHAM5678) with comprehensive educational modules and AI capabilities. The system includes student management, attendance tracking, results, ID card generation, fee management, and AI tools. It provides a simplified, Bengali-first interface optimized for Madrasah institutions with professional reporting and scalable architecture supporting 100k+ students.
 
 ## Recent Changes (January 2026)
+- **Fee Setup Module (Single Source of Truth)**: New centralized fee configuration system:
+  - Dedicated Fee Setup page (/fee-setup) for admin to define class-wise fees
+  - Fee types: মাসিক বেতন (Monthly), ভর্তি ফি (Admission), পরীক্ষা ফি (Exam), and more
+  - Class/Marhala-specific or "All Classes" fee configuration
+  - Enable/disable fees per configuration with toggle switch
+  - Frequency options: Monthly, Yearly, One-time, Per Semester
+  - Due date and late fee settings
+  - Fee Collection page now shows fee breakdown from Fee Setup (not hardcoded)
+  - Warning shown if no fees configured for selected student's class
+  - Sidebar updated: আর্থিক → ফি সেটআপ as first item
+  - Backend APIs: GET/POST/PUT/DELETE /fees/configurations
+  - Auto-generates student_fees records when fee config is created
+- **Fee Collection UI Improvements**:
+  - Dashboard summary cards: আজ আদায়, মোট বকেয়া, আজকের রসিদ
+  - Branch filter hidden (data not fully implemented)
+  - Fee breakdown shows configured fees per student's marhala
+  - Quick action buttons: History (📋), Download Receipt (🧾)
+  - Fee status badges: Green (পরিশোধিত), Yellow (আংশিক পরিশোধ), Red (বকেয়া)
+  - Fee type dropdown in payment form
 - **Video Lessons & Semester System**: Complete video-based learning module with:
   - Semester management linked to classes (জামাত) with Bengali titles
   - Video lesson CRUD with YouTube/Cloudinary support

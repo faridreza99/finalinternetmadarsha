@@ -1833,25 +1833,55 @@ const Fees = () => {
                   </div>
                 </div>
 
-                {/* Fee Breakdown Section */}
+                {/* Fee Breakdown Section - From Fee Setup (Single Source of Truth) */}
                 {(() => {
+                  const studentClass = selectedStudent.class || selectedStudent.class_name || selectedStudent.class_id;
                   const studentFeeRecords = dueFees.filter(f => f.student_id === selectedStudent.id);
                   const totalDue = studentFeeRecords.reduce((sum, f) => sum + (f.pending_amount || 0) + (f.overdue_amount || 0), 0);
                   const totalPaid = studentFeeRecords.reduce((sum, f) => sum + (f.paid_amount || 0), 0);
+                  
+                  const getConfiguredFee = (feeType) => {
+                    const configs = feeConfigurations[feeType] || [];
+                    const classConfig = configs.find(c => c.apply_to_classes === studentClass || c.applyToClasses === studentClass);
+                    const allClassConfig = configs.find(c => c.apply_to_classes === 'all' || c.applyToClasses === 'all');
+                    return classConfig || allClassConfig;
+                  };
+                  
+                  const tuitionFee = getConfiguredFee('Tuition Fees');
+                  const admissionFee = getConfiguredFee('Admission Fees');
+                  const examFee = getConfiguredFee('Exam Fees');
+                  
                   return (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <h4 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        ফি বিবরণ (Fee Breakdown)
+                        ফি বিবরণ (ফি সেটআপ থেকে)
                       </h4>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="bg-white p-3 rounded border">
                           <p className="text-gray-500">মাসিক বেতন</p>
-                          <p className="font-bold text-gray-800">৳{feeConfigurations['Tuition Fees']?.[0]?.amount?.toLocaleString() || 'নির্ধারিত নয়'}</p>
+                          <p className="font-bold text-gray-800">
+                            {tuitionFee ? `৳${tuitionFee.amount?.toLocaleString()}` : 
+                              <span className="text-yellow-600 text-xs">ফি সেটআপে নির্ধারণ করুন</span>}
+                          </p>
                         </div>
                         <div className="bg-white p-3 rounded border">
                           <p className="text-gray-500">ভর্তি ফি</p>
-                          <p className="font-bold text-gray-800">৳{feeConfigurations['Admission Fees']?.[0]?.amount?.toLocaleString() || 'প্রযোজ্য নয়'}</p>
+                          <p className="font-bold text-gray-800">
+                            {admissionFee ? `৳${admissionFee.amount?.toLocaleString()}` : 
+                              <span className="text-gray-400 text-xs">প্রযোজ্য নয়</span>}
+                          </p>
+                        </div>
+                        <div className="bg-white p-3 rounded border">
+                          <p className="text-gray-500">পরীক্ষা ফি</p>
+                          <p className="font-bold text-gray-800">
+                            {examFee ? `৳${examFee.amount?.toLocaleString()}` : 
+                              <span className="text-gray-400 text-xs">প্রযোজ্য নয়</span>}
+                          </p>
+                        </div>
+                        <div className="bg-white p-3 rounded border">
+                          <p className="text-gray-500">মারহালা</p>
+                          <p className="font-bold text-gray-800">{getClassName(selectedStudent.class_id) || studentClass || '-'}</p>
                         </div>
                         <div className="bg-green-50 p-3 rounded border border-green-200">
                           <p className="text-green-600">মোট পরিশোধিত</p>
@@ -1862,6 +1892,11 @@ const Fees = () => {
                           <p className="font-bold text-red-700">৳{totalDue.toLocaleString()}</p>
                         </div>
                       </div>
+                      {!tuitionFee && (
+                        <div className="mt-3 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-700 text-sm">
+                          ⚠️ এই মারহালার জন্য ফি সেটআপে কোনো ফি নির্ধারণ করা হয়নি। প্রথমে <a href="/fee-setup" className="underline font-medium">ফি সেটআপ</a> থেকে ফি নির্ধারণ করুন।
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
