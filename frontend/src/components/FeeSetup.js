@@ -48,6 +48,20 @@ import { Switch } from './ui/switch';
 
 const API = process.env.REACT_APP_API_URL || '/api';
 
+// Helper function to safely extract error messages from API responses
+const getErrorMessage = (error, fallback = 'An error occurred. Please try again.') => {
+  const detail = error?.response?.data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map(err => err?.msg || JSON.stringify(err)).join(', ') || fallback;
+  }
+  if (typeof detail === 'object') {
+    return detail.msg || detail.message || JSON.stringify(detail);
+  }
+  return fallback;
+};
+
 const FeeSetup = () => {
   const { formatCurrency } = useCurrency();
   const { isMadrasahSimpleUI, loading: institutionLoading } = useInstitution();
@@ -152,7 +166,7 @@ const FeeSetup = () => {
       fetchFeeConfigs();
     } catch (error) {
       console.error('Error saving fee config:', error);
-      toast.error(error.response?.data?.detail || 'ফি সংরক্ষণ করতে ব্যর্থ');
+      toast.error(getErrorMessage(error, 'ফি সংরক্ষণ করতে ব্যর্থ'));
     }
   };
 
