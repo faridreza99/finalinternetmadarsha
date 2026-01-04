@@ -17817,29 +17817,29 @@ async def get_student_fees(
                 if due_date < datetime.utcnow():
                     days_overdue = (datetime.utcnow() - due_date).days
             
-            # Only include fees with pending or overdue amounts
+            # Include ALL student fees (paid, partial, pending, overdue) for accurate status display
             total_due = fee.get("pending_amount", 0) + fee.get("overdue_amount", 0)
             
-            if total_due > 0:
-                student_fees.append({
-                    "id": fee.get("id"),
-                    "student_id": fee.get("student_id"),
-                    "student_name": fee.get("student_name"),
-                    "admission_no": fee.get("admission_no"),
-                    "class_id": fee.get("class_id"),
-                    "section_id": fee.get("section_id"),
-                    "fee_type": fee.get("fee_type"),
-                    "amount": fee.get("amount", 0),
-                    "paid_amount": fee.get("paid_amount", 0),
-                    "pending_amount": fee.get("pending_amount", 0),
-                    "overdue_amount": fee.get("overdue_amount", 0),
-                    "total_due": total_due,
-                    "due_date": fee.get("due_date"),
-                    "days_overdue": days_overdue,
-                    "status": fee.get("status", "pending")
-                })
+            # Append all fees for accurate status display
+            student_fees.append({
+                "id": fee.get("id"),
+                "student_id": fee.get("student_id"),
+                "student_name": fee.get("student_name"),
+                "admission_no": fee.get("admission_no"),
+                "class_id": fee.get("class_id"),
+                "section_id": fee.get("section_id"),
+                "fee_type": fee.get("fee_type"),
+                "amount": fee.get("amount", 0),
+                "paid_amount": fee.get("paid_amount", 0),
+                "pending_amount": fee.get("pending_amount", 0),
+                "overdue_amount": fee.get("overdue_amount", 0),
+                "total_due": total_due,
+                "due_date": fee.get("due_date"),
+                "days_overdue": days_overdue,
+                "status": fee.get("status", "pending")
+            })
         
-        logging.info(f"📊 Student fees: Returning {len(student_fees)} records with due amounts")
+        logging.info(f"📊 Student fees: Returning {len(student_fees)} ALL records (paid + due)")
         return student_fees
         
     except Exception as e:
