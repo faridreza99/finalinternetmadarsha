@@ -17812,10 +17812,17 @@ async def get_student_fees(
             days_overdue = 0
             if fee.get("due_date"):
                 due_date = fee["due_date"]
-                if isinstance(due_date, str):
-                    due_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
-                if due_date < datetime.utcnow():
-                    days_overdue = (datetime.utcnow() - due_date).days
+                try:
+                    if isinstance(due_date, str):
+                        due_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+                    elif isinstance(due_date, int):
+                        # Skip invalid int due_date values
+                        due_date = None
+                    if due_date and isinstance(due_date, datetime) and due_date < datetime.utcnow():
+                        days_overdue = (datetime.utcnow() - due_date).days
+                except Exception as e:
+                    logging.warning(f"Could not parse due_date for fee {fee.get('id')}: {e}")
+                    days_overdue = 0
             
             # Include ALL student fees (paid, partial, pending, overdue) for accurate status display
             total_due = fee.get("pending_amount", 0) + fee.get("overdue_amount", 0)
