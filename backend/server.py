@@ -27019,7 +27019,7 @@ async def update_student_profile(
 
 @api_router.get("/student/fees")
 async def get_student_fees(current_user: User = Depends(get_current_user)):
-    """Get the current student's fee ledger and payment history"""
+    """Get the current student's fee summary and payment history from student_fees collection"""
     try:
         if current_user.role != "student":
             raise HTTPException(status_code=403, detail="This endpoint is for students only")
@@ -27034,15 +27034,14 @@ async def get_student_fees(current_user: User = Depends(get_current_user)):
         if not student:
             raise HTTPException(status_code=404, detail="Student profile not found")
         
-        # Get fee ledger
-        fee_ledger = await db.fee_ledgers.find_one({
+        # Get student fees from student_fees collection (the source of truth for ERP)
+        student_fees = await db.student_fees.find({
             "student_id": student["id"],
-            "tenant_id": current_user.tenant_id,
-            "is_active": True
-        })
+            "tenant_id": current_user.tenant_id
+        }).to_list(100)
+        logger.info(f"📋 Student fees: Found {len(student_fees)} fee records for student_id={student['id']}")
         
         # Get fee payments
-        logger.info(f"📋 Student fees: Looking for payments for student_id={student['id']}, tenant={current_user.tenant_id}")
         payments = await db.payments.find({
             "student_id": student["id"],
             "tenant_id": current_user.tenant_id
@@ -27055,28 +27054,47 @@ async def get_student_fees(current_user: User = Depends(get_current_user)):
             fee_configs = await db.fee_configurations.find({
                 "tenant_id": current_user.tenant_id,
                 "$or": [
-                    {"class_id": student["class_id"]},
-                    {"class_id": None},
-                    {"class_id": ""}
+                    {"apply_to_classes": student["class_id"]},
+                    {"apply_to_classes": "all"}
                 ],
                 "is_active": True
             }).to_list(50)
         
-        # Calculate totals from fee configurations if no ledger exists
-        if not fee_ledger:
-            total_fees = sum(fc.get("amount", 0) for fc in fee_configs)
-            paid_amount = sum(p.get("amount", 0) for p in payments)
-            fee_ledger = {
-                "total_fees": total_fees,
-                "paid_amount": paid_amount,
-                "balance": total_fees - paid_amount,
-                "payments": []
-            }
+        # Calculate totals from student_fees collection (real-time accurate data)
+        total_fees = sum(sf.get("amount", 0) for sf in student_fees)
+        paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees)
+        pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees)
+        overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees)
+        
+        fee_ledger = {
+            "total_fees": total_fees,
+            "paid_amount": paid_amount,
+            "balance": pending_amount + overdue_amount,
+            "pending_amount": pending_amount,
+            "overdue_amount": overdue_amount,
+            "payments": []
+        }
+        
+        # Transform student_fees to fee breakdown for UI
+        fee_breakdown = []
+        for sf in student_fees:
+            fee_breakdown.append({
+                "id": sf.get("id", ""),
+                "fee_type": sf.get("fee_type", ""),
+                "amount": sf.get("amount", 0),
+                "paid_amount": sf.get("paid_amount", 0),
+                "pending_amount": sf.get("pending_amount", 0),
+                "overdue_amount": sf.get("overdue_amount", 0),
+                "status": sf.get("status", "pending"),
+                "due_date": sf.get("due_date"),
+                "created_at": str(sf.get("created_at", ""))
+            })
         
         return {
             "ledger": sanitize_mongo_data(fee_ledger),
             "payments": [sanitize_mongo_data(p) for p in payments],
             "fee_structure": [sanitize_mongo_data(fc) for fc in fee_configs],
+            "fee_breakdown": fee_breakdown,
             "student_name": student.get("name", ""),
             "admission_no": student.get("admission_no", "")
         }
@@ -27792,49 +27810,27 @@ async def get_student_dashboard(current_user: User = Depends(get_current_user)):
         present_days = len([a for a in attendance_records if a.get("status") == "present"])
         attendance_percentage = round((present_days / total_days) * 100, 1) if total_days > 0 else 0
         
-        # Get fee status - calculate from payments if no ledger exists
-        fee_ledger = await db.fee_ledgers.find_one({
+        # Get fee status from student_fees collection (the source of truth for ERP)
+        student_fees_records = await db.student_fees.find({
             "student_id": student_id,
-            "tenant_id": current_user.tenant_id,
-            "is_active": True
-        })
+            "tenant_id": current_user.tenant_id
+        }).to_list(100)
         
-        # If no ledger, calculate from payments and fee configurations
-        if not fee_ledger:
-            # Get payments for this student
-            student_payments = await db.payments.find({
-                "student_id": student_id,
-                "tenant_id": current_user.tenant_id
-            }).to_list(100)
-            paid_amount = sum(p.get("amount", 0) for p in student_payments)
-            
-            # Get fee configurations for student's class
-            fee_configs = []
-            if student.get("class_id"):
-                fee_configs = await db.fee_configurations.find({
-                    "tenant_id": current_user.tenant_id,
-                    "$or": [
-                        {"class_id": student["class_id"]},
-                        {"class_id": None},
-                        {"class_id": ""}
-                    ],
-                    "is_active": True
-                }).to_list(50)
-            total_fees = sum(fc.get("amount", 0) for fc in fee_configs)
-            
-            fee_status = {
-                "total_fees": total_fees,
-                "paid_amount": paid_amount,
-                "balance": max(0, total_fees - paid_amount),
-                "has_dues": (total_fees - paid_amount) > 0
-            }
-        else:
-            fee_status = {
-                "total_fees": fee_ledger.get("total_fees", 0),
-                "paid_amount": fee_ledger.get("paid_amount", 0),
-                "balance": fee_ledger.get("balance", 0),
-                "has_dues": fee_ledger.get("balance", 0) > 0
-            }
+        # Calculate totals from student_fees collection (real-time accurate data)
+        total_fees = sum(sf.get("amount", 0) for sf in student_fees_records)
+        paid_amount = sum(sf.get("paid_amount", 0) for sf in student_fees_records)
+        pending_amount = sum(sf.get("pending_amount", 0) for sf in student_fees_records)
+        overdue_amount = sum(sf.get("overdue_amount", 0) for sf in student_fees_records)
+        balance = pending_amount + overdue_amount
+        
+        fee_status = {
+            "total_fees": total_fees,
+            "paid_amount": paid_amount,
+            "balance": balance,
+            "pending_amount": pending_amount,
+            "overdue_amount": overdue_amount,
+            "has_dues": balance > 0
+        }
         
         # Get latest result - use status: "published" to match the my-results endpoint
         latest_result = await db.student_results.find_one({
