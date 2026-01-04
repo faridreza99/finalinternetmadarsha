@@ -50,7 +50,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  PieChart
+  PieChart,
+  Eye,
+  History,
+  Printer
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -1519,6 +1522,46 @@ const Fees = () => {
       ) : isMadrasahSimpleUI ? (
         /* ============= MADRASAH SIMPLE FEE WIZARD ============= */
         <div className="space-y-4">
+          {/* Dashboard Summary Section - আজ আদায়, মোট বকেয়া, আজকের রসিদ */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+            <Card className="border-l-4 border-l-emerald-500 bg-emerald-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">আজ আদায়</p>
+                    <p className="text-2xl font-bold text-emerald-600">৳{todaysCollection?.toLocaleString() || 0}</p>
+                    <p className="text-xs text-emerald-500">{paymentsToday || 0} টি পেমেন্ট</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-emerald-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-red-500 bg-red-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">মোট বকেয়া</p>
+                    <p className="text-2xl font-bold text-red-600">৳{(pending + overdue)?.toLocaleString() || 0}</p>
+                    <p className="text-xs text-red-500">আদায় প্রয়োজন</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-blue-500 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">আজকের রসিদ</p>
+                    <p className="text-2xl font-bold text-blue-600">{paymentsToday || 0}</p>
+                    <p className="text-xs text-blue-500">রসিদ প্রদান</p>
+                  </div>
+                  <Receipt className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Wizard Step Indicator */}
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6">
             <div 
@@ -1559,11 +1602,11 @@ const Fees = () => {
                   <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                   ছাত্র নির্বাচন করুন
                 </CardTitle>
-                <p className="text-sm text-emerald-600 mt-1">মারহালা ও শাখা বাছাই করে ছাত্র খুঁজুন</p>
+                <p className="text-sm text-emerald-600 mt-1">মারহালা বাছাই করে ছাত্র খুঁজুন</p>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
-                {/* Class/Section Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                {/* Class Filter Only - Branch filter hidden (not fully implemented) */}
+                <div className="grid grid-cols-1 gap-4 mb-6">
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-2 block">মারহালা নির্বাচন করুন</label>
                     <Select value={selectedClass} onValueChange={(value) => {
@@ -1584,25 +1627,7 @@ const Fees = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">শাখা নির্বাচন করুন</label>
-                    <Select value={selectedSection} onValueChange={(value) => {
-                      setSelectedSection(value);
-                      setSelectedStudent(null);
-                    }}>
-                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500 h-12 text-base">
-                        <SelectValue placeholder="শাখা বাছুন..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">সকল শাখা</SelectItem>
-                        {sections.map((section) => (
-                          <SelectItem key={section.id || section._id || section.name} value={section.name || section.section_name}>
-                            {section.display_name || section.name || section.section_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Branch filter hidden - sections data not fully implemented */}
                 </div>
 
                 {/* Simplified Student List */}
@@ -1666,9 +1691,53 @@ const Fees = () => {
                                   )}
                                 </div>
                               )}
-                              <Badge className={`text-sm px-3 py-1 ${hasDue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                {hasDue ? 'বকেয়া আছে' : 'বকেয়া নেই'}
+                              <Badge className={`text-sm px-3 py-1 ${
+                                !studentDue ? 'bg-gray-100 text-gray-600' :
+                                studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 ? 'bg-green-100 text-green-700' :
+                                studentDue.paid_amount > 0 && hasDue ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {!studentDue ? 'তথ্য নেই' :
+                                 studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 ? 'পরিশোধিত' :
+                                 studentDue.paid_amount > 0 && hasDue ? 'আংশিক পরিশোধ' :
+                                 'বকেয়া আছে'}
                               </Badge>
+                              {/* Quick Action Buttons */}
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  className="text-blue-600 hover:bg-blue-50 px-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedStudent(student);
+                                    fetchStudentFinancials(student.id);
+                                    toast.info('📋 বেতন ইতিহাস দেখা হচ্ছে...');
+                                  }}
+                                  title="বেতন ইতিহাস"
+                                >
+                                  <History className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  className="text-purple-600 hover:bg-purple-50 px-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Download last receipt for this student
+                                    const lastPayment = recentPayments.find(p => p.student_id === student.id);
+                                    if (lastPayment) {
+                                      window.open(`${API}/fees/receipt/${lastPayment.receipt_no}/pdf`, '_blank');
+                                      toast.success('🧾 রসিদ ডাউনলোড হচ্ছে...');
+                                    } else {
+                                      toast.info('এই ছাত্রের কোন রসিদ নেই');
+                                    }
+                                  }}
+                                  title="রসিদ ডাউনলোড"
+                                >
+                                  <Printer className="h-4 w-4" />
+                                </Button>
+                              </div>
                               <Button 
                                 size="lg" 
                                 className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6"
@@ -1756,8 +1825,58 @@ const Fees = () => {
                   </div>
                 </div>
 
-                {/* Simple Fee Form */}
+                {/* Fee Breakdown Section */}
+                {(() => {
+                  const studentFeeRecords = dueFees.filter(f => f.student_id === selectedStudent.id);
+                  const totalDue = studentFeeRecords.reduce((sum, f) => sum + (f.pending_amount || 0) + (f.overdue_amount || 0), 0);
+                  const totalPaid = studentFeeRecords.reduce((sum, f) => sum + (f.paid_amount || 0), 0);
+                  return (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        ফি বিবরণ (Fee Breakdown)
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="bg-white p-3 rounded border">
+                          <p className="text-gray-500">মাসিক বেতন</p>
+                          <p className="font-bold text-gray-800">৳{feeConfigurations['Tuition Fees']?.[0]?.amount?.toLocaleString() || 'নির্ধারিত নয়'}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded border">
+                          <p className="text-gray-500">ভর্তি ফি</p>
+                          <p className="font-bold text-gray-800">৳{feeConfigurations['Admission Fees']?.[0]?.amount?.toLocaleString() || 'প্রযোজ্য নয়'}</p>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded border border-green-200">
+                          <p className="text-green-600">মোট পরিশোধিত</p>
+                          <p className="font-bold text-green-700">৳{totalPaid.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-red-50 p-3 rounded border border-red-200">
+                          <p className="text-red-600">মোট বকেয়া</p>
+                          <p className="font-bold text-red-700">৳{totalDue.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Fee Form */}
                 <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">বেতনের ধরন</label>
+                    <Select 
+                      value={collectionForm.fee_type || 'Tuition Fees'} 
+                      onValueChange={(value) => setCollectionForm({...collectionForm, fee_type: value})}
+                    >
+                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500 h-12">
+                        <SelectValue placeholder="ফি ধরন বাছুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tuition Fees">মাসিক বেতন</SelectItem>
+                        <SelectItem value="Admission Fees">ভর্তি ফি</SelectItem>
+                        <SelectItem value="Exam Fees">পরীক্ষা ফি</SelectItem>
+                        <SelectItem value="Other">অন্যান্য</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-2 block">বেতনের পরিমাণ (টাকা)</label>
                     <Input
@@ -3005,8 +3124,8 @@ const Fees = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
-                {/* Step 1: Class Selection */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                {/* Step 1: Class Selection - Branch filter hidden */}
+                <div className="grid grid-cols-1 gap-4 mb-6">
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-2 block">মারহালা নির্বাচন করুন *</label>
                     <Select value={selectedClass} onValueChange={(value) => {
@@ -3027,25 +3146,7 @@ const Fees = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">শাখা নির্বাচন করুন</label>
-                    <Select value={selectedSection} onValueChange={(value) => {
-                      setSelectedSection(value);
-                      setSelectedStudent(null);
-                    }}>
-                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500">
-                        <SelectValue placeholder="শাখা বাছুন..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">সকল শাখা</SelectItem>
-                        {sections.map((section) => (
-                          <SelectItem key={section.id || section._id || section.name} value={section.name || section.section_name}>
-                            {section.display_name || section.name || section.section_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Branch filter hidden - sections data not fully implemented */}
                 </div>
 
                 {/* Step 2: Student List with Paid/Due Status */}
