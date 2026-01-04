@@ -18668,13 +18668,35 @@ async def create_student_fees_from_config(fee_config: FeeConfiguration, current_
                 "is_active": True
             }).to_list(1000)
         else:
-            # Specific class
-            logging.info(f"Querying students for tenant {current_user.tenant_id}, class_id: {fee_config.apply_to_classes}")
+            # Specific class - support both class ID (UUID) and class name matching
+            logging.info(f"Querying students for tenant {current_user.tenant_id}, apply_to_classes: {fee_config.apply_to_classes}")
+            
+            # First try matching by class_id directly
             students = await db.students.find({
                 "tenant_id": current_user.tenant_id,
                 "class_id": fee_config.apply_to_classes,
                 "is_active": True
             }).to_list(1000)
+            
+            # If no students found, try matching by class name (for backward compatibility)
+            if not students:
+                # Look up class ID from class name
+                class_doc = await db.classes.find_one({
+                    "tenant_id": current_user.tenant_id,
+                    "$or": [
+                        {"name": fee_config.apply_to_classes},
+                        {"display_name": fee_config.apply_to_classes},
+                        {"class_name": fee_config.apply_to_classes}
+                    ]
+                })
+                if class_doc:
+                    class_id = class_doc.get("id")
+                    logging.info(f"Resolved class name '{fee_config.apply_to_classes}' to ID: {class_id}")
+                    students = await db.students.find({
+                        "tenant_id": current_user.tenant_id,
+                        "class_id": class_id,
+                        "is_active": True
+                    }).to_list(1000)
         
         logging.info(f"Found {len(students)} students matching criteria")
         
@@ -18772,7 +18794,34 @@ async def apply_payment_to_student_fees(payment: Payment, current_user: User):
             })
             
             if student:
-                # Create a student_fee record with payment as paid
+                # Look up configured fee amount for this student's class and fee type
+                student_class_id = student.get("class_id")
+                fee_config = await db.fee_configurations.find_one({
+                    "tenant_id": current_user.tenant_id,
+                    "fee_type": payment.fee_type,
+                    "is_active": True,
+                    "$or": [
+                        {"apply_to_classes": "all"},
+                        {"apply_to_classes": student_class_id}
+                    ]
+                })
+                
+                # If we found a fee config, use its amount as the "total fee"
+                # Otherwise fall back to payment amount (legacy behavior)
+                if fee_config:
+                    configured_amount = fee_config.get("amount", payment.amount)
+                    paid_amount = payment.amount
+                    pending_amount = max(0, configured_amount - paid_amount)
+                    config_id = fee_config.get("id")
+                    logging.info(f"Found fee config for {payment.fee_type}: configured={configured_amount}, paid={paid_amount}, pending={pending_amount}")
+                else:
+                    configured_amount = payment.amount
+                    paid_amount = payment.amount
+                    pending_amount = 0
+                    config_id = None
+                    logging.info(f"No fee config found - using payment amount as total fee")
+                
+                # Create a student_fee record with correct amounts
                 student_fee = StudentFee(
                     tenant_id=current_user.tenant_id,
                     school_id=payment.school_id,
@@ -18781,13 +18830,14 @@ async def apply_payment_to_student_fees(payment: Payment, current_user: User):
                     admission_no=payment.admission_no,
                     class_id=student.get("class_id"),
                     section_id=student.get("section_id"),
-                    fee_config_id=None,  # Payment made without pre-configured fee
+                    fee_config_id=config_id,
                     fee_type=payment.fee_type,
-                    amount=payment.amount,
-                    paid_amount=payment.amount,
-                    pending_amount=0,
+                    amount=configured_amount,
+                    paid_amount=paid_amount,
+                    pending_amount=pending_amount,
                     overdue_amount=0,
-                    due_date=None
+                    due_date=None,
+                    status="partial" if pending_amount > 0 else "paid"
                 )
                 
                 await db.student_fees.insert_one(student_fee.dict())

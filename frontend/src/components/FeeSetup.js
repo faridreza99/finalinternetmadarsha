@@ -447,7 +447,7 @@ const FeeSetup = () => {
                 <SelectContent>
                   <SelectItem value="all">{isMadrasahSimpleUI ? 'সকল মারহালা' : 'All Classes'}</SelectItem>
                   {classes.map((cls) => (
-                    <SelectItem key={cls.id || cls._id} value={cls.name || cls.class_name}>
+                    <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
                       {cls.display_name || cls.name || cls.class_name}
                     </SelectItem>
                   ))}
