@@ -371,7 +371,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ["super_admin", "admin"],
       subItems: [
         {
-          title: "Fees",
+          title: "Fee Setup",
+          madrasahTitle: "ফি সেটআপ",
+          path: "/fee-setup",
+          roles: ["super_admin", "admin"],
+        },
+        {
+          title: "Fee Collection",
           madrasahTitle: "ফি আদায়",
           path: "/fees/collection",
           roles: ["super_admin", "admin"],

@@ -31,6 +31,7 @@ const ClassManagement = lazy(() => import("./components/ClassManagement"));
 const AdmissionSummary = lazy(() => import("./components/AdmissionSummary"));
 const HSS = lazy(() => import("./components/HSS"));
 const Fees = lazy(() => import("./components/Fees"));
+const FeeSetup = lazy(() => import("./components/FeeSetup"));
 const Accounts = lazy(() => import("./components/Accounts"));
 const Certificates = lazy(() => import("./components/Certificates"));
 const Vehicle = lazy(() => import("./components/Vehicle"));
@@ -608,6 +609,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Fees />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/fee-setup"
+                  element={
+                    <ProtectedRoute>
+                      <FeeSetup />
                     </ProtectedRoute>
                   }
                 />
