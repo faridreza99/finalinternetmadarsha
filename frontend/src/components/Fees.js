@@ -243,13 +243,16 @@ const Fees = () => {
         })
       ]);
 
-      // Transform backend configs to frontend format
-      const backendConfigs = configsRes.data;
-      const transformedConfigs = {
-        'Tuition Fees': backendConfigs.filter(c => c.fee_type === 'Tuition Fees'),
-        'Transport Fees': backendConfigs.filter(c => c.fee_type === 'Transport Fees'),
-        'Admission Fees': backendConfigs.filter(c => c.fee_type === 'Admission Fees')
-      };
+      // Transform backend configs to frontend format - dynamically group by fee_type
+      const backendConfigs = configsRes.data || [];
+      const transformedConfigs = {};
+      backendConfigs.forEach(config => {
+        const feeType = config.fee_type || 'Other';
+        if (!transformedConfigs[feeType]) {
+          transformedConfigs[feeType] = [];
+        }
+        transformedConfigs[feeType].push(config);
+      });
       
       setFeeConfigurations(transformedConfigs);
       
@@ -1892,7 +1895,7 @@ const Fees = () => {
                           <p className="font-bold text-red-700">৳{totalDue.toLocaleString()}</p>
                         </div>
                       </div>
-                      {!tuitionFee && (
+                      {!tuitionFee && !admissionFee && !examFee && (
                         <div className="mt-3 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-700 text-sm">
                           ⚠️ এই মারহালার জন্য ফি সেটআপে কোনো ফি নির্ধারণ করা হয়নি। প্রথমে <a href="/fee-setup" className="underline font-medium">ফি সেটআপ</a> থেকে ফি নির্ধারণ করুন।
                         </div>
