@@ -816,12 +816,24 @@ const Fees = () => {
         setTodaysCollection(paymentResult.dashboard_stats.todays_collection);
       }
       
+      // Use updated_student_fees from response to update dueFees state directly
+      // This fixes the partial payment status button not updating issue
+      if (paymentResult.updated_student_fees && paymentResult.updated_student_fees.length > 0) {
+        console.log('📋 Updating dueFees with fresh student_fees data from payment response');
+        setDueFees(prevDueFees => {
+          // Remove old entries for this student and add new ones
+          const otherStudentsFees = prevDueFees.filter(f => f.student_id !== paymentData.student_id);
+          return [...otherStudentsFees, ...paymentResult.updated_student_fees];
+        });
+      }
+      
       // Also refresh student financials and full dashboard data in background
       console.log('🔄 payment ok → refreshing student financials...');
       await Promise.all([
         loadFeeDataFromBackend(), // Background refresh for recent payments list
         fetchStudentFinancials(paymentResult?.student_id ?? paymentData.student_id)
       ]);
+      console.log('✅ refresh complete');
       console.log('✅ refresh complete');
       
       // Auto-generate and download receipt immediately after payment

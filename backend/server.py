@@ -17993,9 +17993,35 @@ async def create_payment(
             parent_email=parent_email
         ))
         
-        # Return payment with dashboard stats
+        # Fetch updated student_fees for this student to include in response
+        # This allows frontend to update UI instantly without stale cache issues
+        updated_student_fees = await db.student_fees.find({
+            "student_id": payment_data.student_id,
+            "tenant_id": current_user.tenant_id,
+            "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]
+        }).to_list(100)
+        
+        # Format student fees for response
+        student_fees_list = []
+        for fee in updated_student_fees:
+            student_fees_list.append({
+                "id": fee.get("id"),
+                "student_id": fee.get("student_id"),
+                "student_name": fee.get("student_name"),
+                "fee_type": fee.get("fee_type"),
+                "amount": fee.get("amount", 0),
+                "paid_amount": fee.get("paid_amount", 0),
+                "pending_amount": fee.get("pending_amount", 0),
+                "overdue_amount": fee.get("overdue_amount", 0),
+                "status": fee.get("status", "pending")
+            })
+        
+        logging.info(f"📊 Returning updated student_fees for {payment_data.student_id}: {len(student_fees_list)} records")
+        
+        # Return payment with dashboard stats AND updated student fees
         response = payment.dict()
         response["dashboard_stats"] = dashboard_stats
+        response["updated_student_fees"] = student_fees_list
         return response
         
     except Exception as e:
