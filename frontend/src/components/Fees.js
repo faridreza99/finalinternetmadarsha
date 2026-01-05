@@ -175,6 +175,10 @@ const Fees = () => {
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [configToDelete, setConfigToDelete] = useState(null);
   
+  // Detailed Payment Modal state
+  const [showDetailedPaymentModal, setShowDetailedPaymentModal] = useState(false);
+  const [detailedPaymentData, setDetailedPaymentData] = useState(null);
+  
   // Edit mode state
   const [editingConfig, setEditingConfig] = useState(null);
 
@@ -490,6 +494,103 @@ const Fees = () => {
   const handleStudentSelect = (student) => {
     setSelectedStudent(student);
     fetchStudentFinancials(student.id);
+  };
+
+  // Open detailed payment modal for a student
+  const openDetailedPaymentModal = async (student, feeData) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('❌ অনুগ্রহ করে লগইন করুন');
+        return;
+      }
+
+      // Fetch all payment records for this student
+      const [feesRes, paymentsRes] = await Promise.all([
+        axios.get(`${API}/fees/student/${student.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API}/fees/payments?student_id=${student.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      const studentFees = feesRes.data || [];
+      const payments = paymentsRes.data || [];
+
+      // Calculate totals
+      const totalFees = studentFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+      const paidAmount = studentFees.reduce((sum, fee) => sum + (fee.paid_amount || 0), 0);
+      const pendingAmount = studentFees.reduce((sum, fee) => sum + (fee.pending_amount || 0), 0);
+      const overdueAmount = studentFees.reduce((sum, fee) => sum + (fee.overdue_amount || 0), 0);
+
+      // Group payments by type
+      const paymentsByType = {};
+      payments.forEach(p => {
+        const type = p.fee_type || 'অন্যান্য';
+        if (!paymentsByType[type]) {
+          paymentsByType[type] = [];
+        }
+        paymentsByType[type].push({
+          id: p.id,
+          receipt_no: p.receipt_no,
+          amount: p.amount,
+          date: p.payment_date?.split('T')[0] || p.created_at?.split('T')[0],
+          payment_method: p.payment_mode || p.payment_method,
+          month: p.month || ''
+        });
+      });
+
+      // Group fees by type
+      const feesByType = {};
+      studentFees.forEach(f => {
+        const type = f.fee_type || 'অন্যান্য';
+        if (!feesByType[type]) {
+          feesByType[type] = { amount: 0, paid: 0, pending: 0, overdue: 0 };
+        }
+        feesByType[type].amount += f.amount || 0;
+        feesByType[type].paid += f.paid_amount || 0;
+        feesByType[type].pending += f.pending_amount || 0;
+        feesByType[type].overdue += f.overdue_amount || 0;
+      });
+
+      setDetailedPaymentData({
+        student: {
+          id: student.id,
+          name: student.name || student.student_name,
+          roll: student.roll_no || student.roll,
+          class: student.class_name || student.class || getClassName(student.class_id),
+          admission_no: student.admission_no
+        },
+        summary: {
+          totalFees,
+          paidAmount,
+          pendingAmount,
+          overdueAmount,
+          balance: pendingAmount + overdueAmount
+        },
+        payments: payments.map(p => ({
+          id: p.id,
+          receipt_no: p.receipt_no,
+          amount: p.amount,
+          fee_type: p.fee_type,
+          date: p.payment_date?.split('T')[0] || p.created_at?.split('T')[0],
+          payment_method: p.payment_mode || p.payment_method,
+          month: p.month || ''
+        })),
+        feesByType,
+        paymentsByType
+      });
+
+      setShowDetailedPaymentModal(true);
+      toast.success('📋 বিস্তারিত পেমেন্ট তথ্য লোড হয়েছে');
+    } catch (error) {
+      console.error('Error fetching detailed payment data:', error);
+      toast.error('❌ পেমেন্ট তথ্য লোড করতে সমস্যা হয়েছে');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredStudents = students.filter(student => {
@@ -1747,11 +1848,9 @@ const Fees = () => {
                                   className="text-blue-600 hover:bg-blue-50 px-2"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setSelectedStudent(student);
-                                    fetchStudentFinancials(student.id);
-                                    toast.info('📋 বেতন ইতিহাস দেখা হচ্ছে...');
+                                    openDetailedPaymentModal(student, studentDue);
                                   }}
-                                  title="বেতন ইতিহাস"
+                                  title="বিস্তারিত পেমেন্ট দেখুন"
                                 >
                                   <History className="h-4 w-4" />
                                 </Button>
@@ -4327,6 +4426,150 @@ const Fees = () => {
                 >
                   {loading ? 'Sending...' : 'Send Reminders'}
                 </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Detailed Payment Modal */}
+          <Dialog open={showDetailedPaymentModal} onOpenChange={setShowDetailedPaymentModal}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <FileText className="h-6 w-6 text-emerald-500" />
+                  বিস্তারিত পেমেন্ট তথ্য
+                </DialogTitle>
+                <DialogDescription>
+                  {detailedPaymentData?.student?.name} - {detailedPaymentData?.student?.class}
+                </DialogDescription>
+              </DialogHeader>
+
+              {detailedPaymentData && (
+                <div className="space-y-6">
+                  {/* Student Info */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-16 w-16">
+                        <AvatarFallback className="bg-emerald-100 text-emerald-700 text-2xl font-bold">
+                          {(detailedPaymentData.student?.name || 'ছ').charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{detailedPaymentData.student?.name}</h3>
+                        <p className="text-sm text-gray-600">রোল: {detailedPaymentData.student?.roll || '-'} | ভর্তি নং: {detailedPaymentData.student?.admission_no || '-'}</p>
+                        <p className="text-sm text-gray-600">মারহালা: {detailedPaymentData.student?.class}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                      <p className="text-sm text-blue-600 mb-1">মোট ফি</p>
+                      <p className="text-2xl font-bold text-blue-700">৳{detailedPaymentData.summary?.totalFees?.toLocaleString() || 0}</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                      <p className="text-sm text-green-600 mb-1">পরিশোধিত</p>
+                      <p className="text-2xl font-bold text-green-700">৳{detailedPaymentData.summary?.paidAmount?.toLocaleString() || 0}</p>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                      <p className="text-sm text-yellow-600 mb-1">বকেয়া</p>
+                      <p className="text-2xl font-bold text-yellow-700">৳{detailedPaymentData.summary?.pendingAmount?.toLocaleString() || 0}</p>
+                    </div>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                      <p className="text-sm text-red-600 mb-1">মোট বাকি</p>
+                      <p className="text-2xl font-bold text-red-700">৳{detailedPaymentData.summary?.balance?.toLocaleString() || 0}</p>
+                    </div>
+                  </div>
+
+                  {/* Fee Breakdown by Type */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="bg-gray-100 px-4 py-3 border-b">
+                      <h4 className="font-semibold text-gray-800">ফি ধরন অনুযায়ী বিভাজন</h4>
+                    </div>
+                    <div className="divide-y">
+                      {Object.entries(detailedPaymentData.feesByType || {}).map(([type, data]) => (
+                        <div key={type} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                          <div>
+                            <p className="font-medium text-gray-900">{type}</p>
+                            <p className="text-sm text-gray-500">মোট: ৳{data.amount?.toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-green-600 text-sm">পেইড: ৳{data.paid?.toLocaleString() || 0}</p>
+                            {(data.pending > 0 || data.overdue > 0) && (
+                              <p className="text-red-600 text-sm font-medium">বাকি: ৳{((data.pending || 0) + (data.overdue || 0)).toLocaleString()}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {Object.keys(detailedPaymentData.feesByType || {}).length === 0 && (
+                        <div className="p-4 text-center text-gray-500">কোনো ফি রেকর্ড নেই</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Payment History */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="bg-emerald-50 px-4 py-3 border-b flex items-center justify-between">
+                      <h4 className="font-semibold text-emerald-800">পেমেন্ট ইতিহাস</h4>
+                      <Badge className="bg-emerald-100 text-emerald-700">{detailedPaymentData.payments?.length || 0} টি পেমেন্ট</Badge>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto divide-y">
+                      {detailedPaymentData.payments?.length > 0 ? (
+                        detailedPaymentData.payments.map((payment, idx) => (
+                          <div key={payment.id || idx} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <Check className="h-5 w-5 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{payment.fee_type || 'পেমেন্ট'}</p>
+                                <p className="text-sm text-gray-500">
+                                  {payment.date || 'তারিখ নেই'} {payment.month && `• ${payment.month}`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600">৳{payment.amount?.toLocaleString() || 0}</p>
+                              <p className="text-xs text-gray-500">
+                                {payment.receipt_no && `রসিদ: ${payment.receipt_no}`}
+                                {payment.payment_method && ` • ${payment.payment_method}`}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center text-gray-500">
+                          <AlertTriangle className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                          <p>কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter className="gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDetailedPaymentModal(false)}
+                >
+                  বন্ধ করুন
+                </Button>
+                {detailedPaymentData?.summary?.balance > 0 && (
+                  <Button 
+                    className="bg-emerald-500 hover:bg-emerald-600"
+                    onClick={() => {
+                      setShowDetailedPaymentModal(false);
+                      const student = students.find(s => s.id === detailedPaymentData.student?.id);
+                      if (student) {
+                        setSelectedStudent(student);
+                        setMadrasahWizardStep(2);
+                      }
+                    }}
+                  >
+                    বেতন আদায় করুন
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>

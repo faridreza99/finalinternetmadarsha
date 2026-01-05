@@ -1,0 +1,188 @@
+You are NOT allowed to partially fix, simulate, or UI-mask issues.
+This is a SYSTEM-LEVEL refactor, not cosmetic changes.
+
+This ERP must behave like a REAL accounting system.
+
+Follow EVERY rule strictly.
+If any rule is skipped, the task is FAILED.
+
+====================================================
+NON-NEGOTIABLE GLOBAL PRINCIPLES
+====================================================
+
+1. Fee Setup is the SINGLE SOURCE OF TRUTH
+2. Payment module ONLY records payments, never defines fees
+3. Due & Status are ALWAYS DERIVED, NEVER STORED
+4. Sidebar must NEVER re-render on route change
+5. No manual fee amount input anywhere
+6. Month-wise accounting is mandatory
+
+====================================================
+CRITICAL ARCHITECTURE FIX (SIDEBAR BUG)
+====================================================
+
+ROOT CAUSE:
+Sidebar scroll bug exists because Sidebar is mounted inside route-level components.
+
+MANDATORY FIX (NO ALTERNATIVE):
+
+• Create a persistent DashboardLayout component
+• Sidebar MUST be mounted inside DashboardLayout
+• Sidebar MUST NOT be inside Fees, Settings, or any page component
+• Use <Outlet /> for page rendering
+
+Example (conceptual):
+
+<Route element={<DashboardLayout />}>
+  <Route path="/fees/*" element={<Fees />} />
+  <Route path="/settings/*" element={<Settings />} />
+</Route>
+
+If Sidebar unmounts on route change → TASK FAILED.
+
+useRef scroll preservation is OPTIONAL.
+Layout persistence is MANDATORY.
+
+====================================================
+FEE SETUP (SOURCE OF TRUTH)
+====================================================
+
+Fee Setup MUST define:
+• Marhala
+• Monthly Fee
+• Admission Fee
+• Academic Year
+• Active / Inactive
+
+NO other module may define fee amounts.
+
+====================================================
+PAYMENT MODULE (STRICT RULES)
+====================================================
+
+Payment module MUST:
+
+• Auto-load fee amount from Fee Setup using Student.marhala
+• Amount field MUST be read-only
+• NEVER accept manual amount input
+
+IF Fee Setup NOT FOUND for student.marhala:
+• Disable payment form
+• Disable submit button
+• Show this EXACT Bangla message:
+
+"এই মারহালার জন্য ফি সেটআপ করা হয়নি।
+অনুগ্রহ করে আগে Fee Setup সম্পন্ন করুন।"
+
+Payment must be completely BLOCKED.
+
+====================================================
+ADMISSION FEE (ONE-TIME GATEKEEPER)
+====================================================
+
+Rules:
+
+• Admission Fee comes ONLY from Fee Setup
+• Admission Fee is ONE-TIME per student
+• Track via payments.type = "admission"
+
+IF admission fee NOT PAID:
+• Monthly payment MUST be BLOCKED
+• Show message:
+  "ভর্তি ফি আগে পরিশোধ করুন"
+
+NO bypass allowed.
+
+====================================================
+MONTHLY PAYMENT (MONTH-WISE ACCOUNTING)
+====================================================
+
+Monthly payment MUST be month-aware.
+
+Rules:
+
+• Admin selects one or more UNPAID months
+• System auto-calculates total:
+  monthly_fee × selected_months
+
+BACKEND REQUIREMENT (MANDATORY):
+
+• Create ONE payment record PER MONTH
+• Each record MUST include:
+  - payment.type = "monthly"
+  - payment_month = YYYY-MM
+
+DO NOT:
+• Store lump-sum monthly payments
+• Allow paying same month twice
+
+====================================================
+DUE & STATUS CALCULATION (DERIVED ONLY)
+====================================================
+
+DO NOT store:
+• due_amount
+• fee_status
+
+Calculate dynamically:
+
+due = (monthly_fee × total_expected_months) − total_paid
+
+Status:
+• due > 0  → "বকেয়া আছে"
+• due ≤ 0  → "বকেয়া নেই"
+
+====================================================
+REMOVE WRONG LOGIC
+====================================================
+
+• Completely remove “মারহালা ফি অবস্থা” from all payment UIs
+• Remove all static fee values
+• Remove guessed or cached due values
+
+====================================================
+STRICT FAILURE CONDITIONS
+====================================================
+
+The task is FAILED if ANY of the following is true:
+
+❌ Sidebar scrolls to top after route change
+❌ Sidebar unmounts on navigation
+❌ Payment works without Fee Setup
+❌ Monthly payment allowed before admission fee
+❌ Manual amount input exists
+❌ Advance payment does not track months
+❌ Due amount is static or stored
+
+====================================================
+MANDATORY VERIFICATION STEPS
+====================================================
+
+1. Scroll sidebar to bottom
+2. Click Settings
+3. Sidebar position MUST remain unchanged
+
+4. Remove Fee Setup for a Marhala
+5. Try payment → MUST be blocked with alert
+
+6. Add Fee Setup
+7. Payment amount MUST auto-load and be read-only
+
+8. Pay admission fee
+9. Monthly payment becomes enabled
+
+10. Select 3 months
+11. System creates 3 payment records
+
+ONLY after ALL pass, the task is complete.
+
+====================================================
+FINAL INSTRUCTION
+====================================================
+
+Do NOT say "fixed" unless ALL rules pass.
+Explain clearly:
+• Where Sidebar is mounted
+• How fees are sourced
+• How months are tracked
+• How due is calculated
