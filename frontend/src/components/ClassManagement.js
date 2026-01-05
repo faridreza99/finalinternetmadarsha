@@ -1053,56 +1053,53 @@ const ClassManagement = () => {
       const usage = usageRes.data;
 
       if (usage.has_data) {
-        Swal.fire({
-          title: t("classManagement.cannotDelete") || "Cannot Delete Class",
+        const disableResult = await Swal.fire({
+          title: "জামাত মুছা যাচ্ছে না",
           html: `
             <div class="text-left">
-              <p>${t("classManagement.classHasData") || "This class has associated data:"}</p>
+              <p>এই জামাতে ডাটা আছে:</p>
               <ul class="list-disc ml-4 mt-2">
-                <li>${t("classManagement.students") || "Students"}: ${usage.usage.students}</li>
-                <li>${t("classManagement.attendance") || "Attendance Records"}: ${usage.usage.attendance}</li>
-                <li>${t("classManagement.exams") || "Exams"}: ${usage.usage.exams}</li>
-                <li>${t("classManagement.results") || "Results"}: ${usage.usage.results}</li>
+                <li>শিক্ষার্থী: ${usage.usage.students}</li>
+                <li>উপস্থিতি রেকর্ড: ${usage.usage.attendance}</li>
+                <li>পরীক্ষা: ${usage.usage.exams}</li>
+                <li>ফলাফল: ${usage.usage.results}</li>
               </ul>
-              <p class="mt-3">${t("classManagement.disableInstead") || "Consider disabling the class instead."}</p>
+              <p class="mt-3">পরিবর্তে জামাত নিষ্ক্রিয় করুন।</p>
             </div>
           `,
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText:
-            t("classManagement.disableClass") || "Disable Class",
-          cancelButtonText: t("common.cancel") || "Cancel",
+          confirmButtonText: "নিষ্ক্রিয় করুন",
+          cancelButtonText: "বাতিল",
           confirmButtonColor: "#f59e0b",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            handleToggleClassStatus(cls);
-          }
         });
+        
+        if (disableResult.isConfirmed) {
+          await handleToggleClassStatus(cls);
+        }
       } else {
-        Swal.fire({
-          title: t("classManagement.deleteClass") || "Delete Class",
-          text: `${t("classManagement.confirmDelete") || "Are you sure you want to permanently delete"} "${getDisplayName(cls)}"?`,
+        const deleteResult = await Swal.fire({
+          title: "জামাত মুছুন",
+          text: `"${getDisplayName(cls)}" স্থায়ীভাবে মুছে ফেলতে চান?`,
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText: t("common.delete") || "Delete",
-          cancelButtonText: t("common.cancel") || "Cancel",
+          confirmButtonText: "হ্যাঁ, মুছুন!",
+          cancelButtonText: "বাতিল",
           confirmButtonColor: "#ef4444",
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            await axios.delete(`${API}/classes/${cls.id}/permanent`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            toast.success(
-              `Class "${getDisplayName(cls)}" deleted successfully`,
-            );
-            fetchData();
-          }
         });
+        
+        if (deleteResult.isConfirmed) {
+          await axios.delete(`${API}/classes/${cls.id}/permanent`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          toast.success(`"${getDisplayName(cls)}" সফলভাবে মুছে ফেলা হয়েছে`);
+          await fetchData();
+        }
       }
     } catch (error) {
       console.error("Failed to check class usage:", error);
       toast.error(
-        error.response?.data?.detail || "Failed to check class usage",
+        error.response?.data?.detail || "জামাত ব্যবহার যাচাই করতে সমস্যা হয়েছে",
       );
     }
   };
