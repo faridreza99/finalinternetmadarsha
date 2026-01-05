@@ -2099,13 +2099,14 @@ const Fees = () => {
                       setLoading(true);
                       try {
                         const token = localStorage.getItem('token');
+                        const selectedFeeType = collectionForm.fee_type || 'Tuition Fees';
                         const response = await axios.post(`${API}/fees/payments`, {
                           student_id: selectedStudent.id,
                           student_name: selectedStudent.name || selectedStudent.student_name,
-                          fee_type: 'Tuition Fees',
+                          fee_type: selectedFeeType,
                           amount: parseFloat(collectionForm.amount),
                           payment_mode: 'Cash',
-                          remarks: collectionForm.remarks || 'মাসিক বেতন',
+                          remarks: collectionForm.remarks || (selectedFeeType === 'Admission Fees' ? 'ভর্তি ফি' : 'মাসিক বেতন'),
                           class_id: selectedStudent.class_id,
                           section_id: selectedStudent.section_id
                         }, {
@@ -2117,9 +2118,9 @@ const Fees = () => {
                           amount: parseFloat(collectionForm.amount),
                           date: new Date().toLocaleDateString('bn-BD'),
                           // Fallbacks only used if backend doesn't provide these
-                          fee_type: 'Tuition Fees',
+                          fee_type: selectedFeeType,
                           payment_mode: 'Cash',
-                          remarks: collectionForm.remarks || 'মাসিক বেতন',
+                          remarks: collectionForm.remarks || (selectedFeeType === 'Admission Fees' ? 'ভর্তি ফি' : 'মাসিক বেতন'),
                           status: 'Paid',
                           // Backend response takes priority (spread after fallbacks)
                           ...response.data
