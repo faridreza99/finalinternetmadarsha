@@ -32493,49 +32493,48 @@ async def export_financial_summary_excel(current_user: User = Depends(get_curren
 
 @api_router.get("/reports/financial-summary/export/pdf")
 async def export_financial_summary_pdf(current_user: User = Depends(get_current_user)):
-    """Export financial summary as PDF"""
+    """Export financial summary as PDF using WeasyPrint"""
     try:
         summary = await get_financial_summary(current_user)
+        branding = await get_school_branding_for_reports(current_user.tenant_id)
         
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib import colors
-        from io import BytesIO
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
+        school_address = branding.get("address", "")
+        phone = branding.get("phone", "")
+        email = branding.get("email", "")
+        school_contact = f"Phone: {phone} | Email: {email}" if phone or email else ""
+        logo_path = branding.get("logo_path")
         
-        output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-        
-        elements.append(Paragraph("Financial Summary Report", styles['Heading1']))
-        elements.append(Spacer(1, 20))
-        
-        data = [
-            ["Category", "Amount"],
-            ["Total Admission Fees", f"Tk. {summary['totalAdmissionFees']:,.0f}"],
-            ["Total Monthly Fees", f"Tk. {summary['totalMonthlyFees']:,.0f}"],
-            ["Total Donations", f"Tk. {summary['totalDonations']:,.0f}"],
-            ["Today's Collection", f"Tk. {summary['todayCollection']:,.0f}"],
-            ["Total Dues", f"Tk. {summary['totalDues']:,.0f}"],
-            ["This Month Collection", f"Tk. {summary['thisMonthCollection']:,.0f}"],
-            ["This Year Collection", f"Tk. {summary['thisYearCollection']:,.0f}"],
+        headers = ["Category", "Amount"]
+        data_rows = [
+            ["Total Admission Fees / মোট ভর্তি ফি", f"৳ {summary['totalAdmissionFees']:,.0f}"],
+            ["Total Monthly Fees / মোট মাসিক ফি", f"৳ {summary['totalMonthlyFees']:,.0f}"],
+            ["Total Donations / মোট দান", f"৳ {summary['totalDonations']:,.0f}"],
+            ["Today's Collection / আজকের আদায়", f"৳ {summary['todayCollection']:,.0f}"],
+            ["Total Dues / মোট বকেয়া", f"৳ {summary['totalDues']:,.0f}"],
+            ["This Month Collection / এই মাসে আদায়", f"৳ {summary['thisMonthCollection']:,.0f}"],
+            ["This Year Collection / এই বছর আদায়", f"৳ {summary['thisYearCollection']:,.0f}"],
         ]
         
-        table = Table(data, colWidths=[250, 150])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.green),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ]))
+        summary_data = {
+            "Total Collection / মোট আদায়": f"৳ {summary['totalAdmissionFees'] + summary['totalMonthlyFees'] + summary['totalDonations']:,.0f}",
+            "Total Dues / মোট বকেয়া": f"৳ {summary['totalDues']:,.0f}"
+        }
         
-        elements.append(table)
-        doc.build(elements)
-        output.seek(0)
+        output = generate_pdf_report(
+            title="Financial Summary Report / আর্থিক সারসংক্ষেপ",
+            headers=headers,
+            data_rows=data_rows,
+            summary_data=summary_data,
+            school_name=school_name,
+            school_address=school_address,
+            school_contact=school_contact,
+            logo_path=logo_path,
+            primary_color=branding.get("primary_color", "#1e3a8a"),
+            secondary_color=branding.get("secondary_color", "#059669"),
+            generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+            details_title="FINANCIAL DETAILS / আর্থিক বিবরণ"
+        )
         
         return Response(
             content=output.getvalue(),
@@ -32595,51 +32594,52 @@ async def export_admission_fees_pdf(
     date_to: str = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Export admission fees as PDF"""
+    """Export admission fees as PDF using WeasyPrint"""
     try:
         tenant_id = current_user.tenant_id
         fees = await db.admission_fees.find({"tenant_id": tenant_id}).to_list(None)
+        branding = await get_school_branding_for_reports(tenant_id)
         
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib import colors
-        from io import BytesIO
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
+        school_address = branding.get("address", "")
+        phone = branding.get("phone", "")
+        email = branding.get("email", "")
+        school_contact = f"Phone: {phone} | Email: {email}" if phone or email else ""
+        logo_path = branding.get("logo_path")
         
-        output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-        
-        elements.append(Paragraph("Admission Fee Report", styles['Heading1']))
-        elements.append(Spacer(1, 20))
-        
-        data = [["SL", "Receipt No", "Student", "Class", "Amount"]]
+        headers = ["SL / ক্রম", "Receipt No / রসিদ নং", "Student / শিক্ষার্থী", "Class / শ্রেণি", "Amount / পরিমাণ"]
+        data_rows = []
         for i, f in enumerate(fees, 1):
-            data.append([
+            data_rows.append([
                 str(i),
                 f.get("receipt_no", ""),
-                f.get("student_name", "")[:20],
+                f.get("student_name", "")[:25],
                 f.get("class_name", ""),
-                f"Tk. {f.get('amount', 0):,.0f}"
+                f"৳ {f.get('amount', 0):,.0f}"
             ])
         
         total = sum(f.get("amount", 0) for f in fees)
-        data.append(["", "", "", "Total:", f"Tk. {total:,.0f}"])
+        data_rows.append(["", "", "", "মোট Total:", f"৳ {total:,.0f}"])
         
-        table = Table(data, colWidths=[30, 80, 120, 80, 80])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.green),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ]))
+        summary_data = {
+            "Total Records / মোট রেকর্ড": str(len(fees)),
+            "Total Amount / মোট পরিমাণ": f"৳ {total:,.0f}"
+        }
         
-        elements.append(table)
-        doc.build(elements)
-        output.seek(0)
+        output = generate_pdf_report(
+            title="Admission Fee Report / ভর্তি ফি রিপোর্ট",
+            headers=headers,
+            data_rows=data_rows,
+            summary_data=summary_data,
+            school_name=school_name,
+            school_address=school_address,
+            school_contact=school_contact,
+            logo_path=logo_path,
+            primary_color=branding.get("primary_color", "#1e3a8a"),
+            secondary_color=branding.get("secondary_color", "#059669"),
+            generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+            details_title="FEE DETAILS / ফি বিবরণ"
+        )
         
         return Response(
             content=output.getvalue(),
@@ -32694,51 +32694,52 @@ async def export_monthly_fees_pdf(
     month: str = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Export monthly fees as PDF"""
+    """Export monthly fees as PDF using WeasyPrint"""
     try:
         tenant_id = current_user.tenant_id
         payments = await db.fee_payments.find({"tenant_id": tenant_id}).to_list(None)
+        branding = await get_school_branding_for_reports(tenant_id)
         
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib import colors
-        from io import BytesIO
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
+        school_address = branding.get("address", "")
+        phone = branding.get("phone", "")
+        email = branding.get("email", "")
+        school_contact = f"Phone: {phone} | Email: {email}" if phone or email else ""
+        logo_path = branding.get("logo_path")
         
-        output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-        
-        elements.append(Paragraph("Monthly Fee Report", styles['Heading1']))
-        elements.append(Spacer(1, 20))
-        
-        data = [["SL", "Receipt No", "Student", "Fee Type", "Amount"]]
+        headers = ["SL / ক্রম", "Receipt No / রসিদ নং", "Student / শিক্ষার্থী", "Fee Type / ফি ধরন", "Amount / পরিমাণ"]
+        data_rows = []
         for i, p in enumerate(payments, 1):
-            data.append([
+            data_rows.append([
                 str(i),
                 p.get("receipt_no", "-"),
-                p.get("student_name", "")[:20],
+                p.get("student_name", "")[:25],
                 p.get("fee_type", ""),
-                f"Tk. {p.get('amount', 0):,.0f}"
+                f"৳ {p.get('amount', 0):,.0f}"
             ])
         
         total = sum(p.get("amount", 0) for p in payments)
-        data.append(["", "", "", "Total:", f"Tk. {total:,.0f}"])
+        data_rows.append(["", "", "", "মোট Total:", f"৳ {total:,.0f}"])
         
-        table = Table(data, colWidths=[30, 80, 120, 80, 80])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.green),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ]))
+        summary_data = {
+            "Total Records / মোট রেকর্ড": str(len(payments)),
+            "Total Amount / মোট পরিমাণ": f"৳ {total:,.0f}"
+        }
         
-        elements.append(table)
-        doc.build(elements)
-        output.seek(0)
+        output = generate_pdf_report(
+            title="Monthly Fee Report / মাসিক ফি রিপোর্ট",
+            headers=headers,
+            data_rows=data_rows,
+            summary_data=summary_data,
+            school_name=school_name,
+            school_address=school_address,
+            school_contact=school_contact,
+            logo_path=logo_path,
+            primary_color=branding.get("primary_color", "#1e3a8a"),
+            secondary_color=branding.get("secondary_color", "#059669"),
+            generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+            details_title="PAYMENT DETAILS / পেমেন্ট বিবরণ"
+        )
         
         return Response(
             content=output.getvalue(),
@@ -32792,55 +32793,60 @@ async def export_donations_pdf(
     type: str = "donations",
     current_user: User = Depends(get_current_user)
 ):
-    """Export donations/committees/donors as PDF"""
+    """Export donations/committees/donors as PDF using WeasyPrint"""
     try:
         tenant_id = current_user.tenant_id
+        branding = await get_school_branding_for_reports(tenant_id)
         
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib import colors
-        from io import BytesIO
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
+        school_address = branding.get("address", "")
+        phone = branding.get("phone", "")
+        email = branding.get("email", "")
+        school_contact = f"Phone: {phone} | Email: {email}" if phone or email else ""
+        logo_path = branding.get("logo_path")
         
-        output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-        
-        title = {"donations": "Donation Report", "committees": "Committee Report", "donors": "Donor Report"}.get(type, "Report")
-        elements.append(Paragraph(title, styles['Heading1']))
-        elements.append(Spacer(1, 20))
+        title_map = {"donations": "Donation Report / দান রিপোর্ট", "committees": "Committee Report / কমিটি রিপোর্ট", "donors": "Donor Report / দাতা রিপোর্ট"}
+        title = title_map.get(type, "Report")
         
         if type == "donations":
             items = await db.donation_payments.find({"tenant_id": tenant_id}).to_list(None)
-            data = [["SL", "Donor", "Committee", "Amount"]]
+            headers = ["SL / ক্রম", "Donor / দাতা", "Committee / কমিটি", "Amount / পরিমাণ"]
+            data_rows = []
             for i, item in enumerate(items, 1):
-                data.append([str(i), item.get("donor_name", "")[:20], item.get("committee_name", "")[:15], f"Tk. {item.get('amount', 0):,.0f}"])
+                data_rows.append([str(i), item.get("donor_name", "")[:25], item.get("committee_name", "")[:20], f"৳ {item.get('amount', 0):,.0f}"])
             total = sum(i.get("amount", 0) for i in items)
-            data.append(["", "", "Total:", f"Tk. {total:,.0f}"])
+            data_rows.append(["", "", "মোট Total:", f"৳ {total:,.0f}"])
+            summary_data = {"Total Donations / মোট দান": str(len(items)), "Total Amount / মোট পরিমাণ": f"৳ {total:,.0f}"}
         elif type == "committees":
             items = await db.committees.find({"tenant_id": tenant_id}).to_list(None)
-            data = [["SL", "Committee Name", "Members", "Total Collected"]]
+            headers = ["SL / ক্রম", "Committee / কমিটি", "Members / সদস্য", "Total Collected / মোট আদায়"]
+            data_rows = []
             for i, item in enumerate(items, 1):
-                data.append([str(i), item.get("name", ""), str(item.get("active_members", 0)), f"Tk. {item.get('total_collected', 0):,.0f}"])
+                data_rows.append([str(i), item.get("name", ""), str(item.get("active_members", 0)), f"৳ {item.get('total_collected', 0):,.0f}"])
+            total = sum(i.get("total_collected", 0) for i in items)
+            summary_data = {"Total Committees / মোট কমিটি": str(len(items)), "Total Collected / মোট আদায়": f"৳ {total:,.0f}"}
         else:
             items = await db.donors.find({"tenant_id": tenant_id}).to_list(None)
-            data = [["SL", "Donor Name", "Phone", "Fixed Amount"]]
+            headers = ["SL / ক্রম", "Donor / দাতা", "Phone / ফোন", "Fixed Amount / নির্ধারিত"]
+            data_rows = []
             for i, item in enumerate(items, 1):
-                data.append([str(i), item.get("name", "")[:20], item.get("phone", ""), f"Tk. {item.get('fixed_amount', 0):,.0f}"])
+                data_rows.append([str(i), item.get("name", "")[:25], item.get("phone", ""), f"৳ {item.get('fixed_amount', 0):,.0f}"])
+            summary_data = {"Total Donors / মোট দাতা": str(len(items)), "": ""}
         
-        table = Table(data, colWidths=[30, 120, 100, 100])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.purple),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ]))
-        
-        elements.append(table)
-        doc.build(elements)
-        output.seek(0)
+        output = generate_pdf_report(
+            title=title,
+            headers=headers,
+            data_rows=data_rows,
+            summary_data=summary_data,
+            school_name=school_name,
+            school_address=school_address,
+            school_contact=school_contact,
+            logo_path=logo_path,
+            primary_color=branding.get("primary_color", "#1e3a8a"),
+            secondary_color=branding.get("secondary_color", "#059669"),
+            generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+            details_title="DETAILS / বিবরণ"
+        )
         
         return Response(
             content=output.getvalue(),
@@ -32895,51 +32901,51 @@ async def export_date_wise_pdf(
     date_to: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Export date-wise report as PDF"""
+    """Export date-wise report as PDF using WeasyPrint"""
     try:
         report = await get_date_wise_report(date_from, date_to, current_user)
+        branding = await get_school_branding_for_reports(current_user.tenant_id)
         
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib import colors
-        from io import BytesIO
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
+        school_address = branding.get("address", "")
+        phone = branding.get("phone", "")
+        email = branding.get("email", "")
+        school_contact = f"Phone: {phone} | Email: {email}" if phone or email else ""
+        logo_path = branding.get("logo_path")
         
-        output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-        
-        elements.append(Paragraph(f"Date-wise Report: {date_from} to {date_to}", styles['Heading1']))
-        elements.append(Spacer(1, 20))
-        
-        # Summary
         total_admission = sum(f.get("amount", 0) for f in report["admission_fees"])
         total_monthly = sum(f.get("amount", 0) for f in report["monthly_fees"])
         total_donations = sum(d.get("amount", 0) for d in report["donations"])
+        grand_total = total_admission + total_monthly + total_donations
         
-        summary_data = [
-            ["Category", "Amount"],
-            ["Admission Fees", f"Tk. {total_admission:,.0f}"],
-            ["Monthly Fees", f"Tk. {total_monthly:,.0f}"],
-            ["Donations", f"Tk. {total_donations:,.0f}"],
-            ["Grand Total", f"Tk. {total_admission + total_monthly + total_donations:,.0f}"]
+        headers = ["Category / বিভাগ", "Amount / পরিমাণ"]
+        data_rows = [
+            ["Admission Fees / ভর্তি ফি", f"৳ {total_admission:,.0f}"],
+            ["Monthly Fees / মাসিক ফি", f"৳ {total_monthly:,.0f}"],
+            ["Donations / দান", f"৳ {total_donations:,.0f}"],
+            ["মোট Grand Total", f"৳ {grand_total:,.0f}"]
         ]
         
-        table = Table(summary_data, colWidths=[200, 150])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.green),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
-        ]))
+        summary_data = {
+            "Date Range / তারিখ পরিসীমা": f"{date_from} to {date_to}",
+            "Grand Total / সর্বমোট": f"৳ {grand_total:,.0f}"
+        }
         
-        elements.append(table)
-        doc.build(elements)
-        output.seek(0)
+        output = generate_pdf_report(
+            title=f"Date-wise Report / তারিখভিত্তিক রিপোর্ট",
+            headers=headers,
+            data_rows=data_rows,
+            summary_data=summary_data,
+            school_name=school_name,
+            school_address=school_address,
+            school_contact=school_contact,
+            logo_path=logo_path,
+            primary_color=branding.get("primary_color", "#1e3a8a"),
+            secondary_color=branding.get("secondary_color", "#059669"),
+            generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+            filter_text=f"Date: {date_from} to {date_to}",
+            details_title="COLLECTION SUMMARY / আদায় সারসংক্ষেপ"
+        )
         
         return Response(
             content=output.getvalue(),
