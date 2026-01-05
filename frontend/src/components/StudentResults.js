@@ -92,8 +92,18 @@ const StudentResults = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      <div className="space-y-6 p-6">
+        <div className="flex justify-between items-center animate-pulse">
+          <div><div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div><div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1,2,3].map(i => (<div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse"><div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div><div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div></div>))}
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden animate-pulse">
+          <div className="p-4 space-y-3">
+            {[1,2,3,4].map(i => (<div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>))}
+          </div>
+        </div>
       </div>
     );
   }

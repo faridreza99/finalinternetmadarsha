@@ -136,10 +136,28 @@ const MadrasahDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">ড্যাশবোর্ড লোড হচ্ছে...</p>
+      <div className="space-y-6 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse">
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+              </div>
+              <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+              <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse">
+            <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+            <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse">
+            <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+            <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
         </div>
       </div>
     );

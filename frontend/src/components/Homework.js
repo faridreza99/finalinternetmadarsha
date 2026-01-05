@@ -267,8 +267,13 @@ const Homework = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+        <div className="flex justify-between items-center animate-pulse">
+          <div><div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div><div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+        </div>
+        <div className="space-y-4">
+          {[1,2,3,4].map(i => (<div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse"><div className="flex justify-between mb-4"><div className="h-5 w-1/3 bg-gray-200 dark:bg-gray-700 rounded"></div><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></div><div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-2"></div><div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded"></div></div>))}
+        </div>
       </div>
     );
   }

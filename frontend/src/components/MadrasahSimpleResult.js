@@ -238,8 +238,24 @@ const MadrasahSimpleResult = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <div className="p-4 md:p-6 space-y-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border animate-pulse">
+          <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6 rounded-t-lg">
+            <div className="h-8 w-48 bg-white/20 rounded"></div>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
