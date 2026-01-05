@@ -57,9 +57,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const [allowedModules, setAllowedModules] = useState(null);
   const [modulesLoaded, setModulesLoaded] = useState(false);
   const [schoolBranding, setSchoolBranding] = useState({
-    school_name: 'School ERP',
+    school_name: "School ERP",
     logo_url: null,
-    primary_color: '#10B981'
+    primary_color: "#10B981",
   });
 
   useEffect(() => {
@@ -73,41 +73,44 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        
+
         const [brandingRes, institutionRes] = await Promise.all([
           fetch("/api/school-branding", {
             headers: { Authorization: `Bearer ${token}` },
           }).catch(() => null),
           fetch("/api/institution", {
             headers: { Authorization: `Bearer ${token}` },
-          }).catch(() => null)
+          }).catch(() => null),
         ]);
-        
-        let schoolName = 'School ERP';
+
+        let schoolName = "School ERP";
         let logoUrl = null;
-        let primaryColor = '#10B981';
-        
+        let primaryColor = "#10B981";
+
         if (brandingRes?.ok) {
           const brandingData = await brandingRes.json();
-          schoolName = brandingData.school_name || brandingData.site_title || schoolName;
+          schoolName =
+            brandingData.school_name || brandingData.site_title || schoolName;
           logoUrl = brandingData.logo_url || logoUrl;
           primaryColor = brandingData.primary_color || primaryColor;
         }
-        
+
         if (institutionRes?.ok) {
           const institutionData = await institutionRes.json();
           if (institutionData.school_name || institutionData.name) {
-            schoolName = institutionData.school_name || institutionData.name || schoolName;
+            schoolName =
+              institutionData.school_name || institutionData.name || schoolName;
           }
           if (institutionData.logo_url || institutionData.logo) {
-            logoUrl = institutionData.logo_url || institutionData.logo || logoUrl;
+            logoUrl =
+              institutionData.logo_url || institutionData.logo || logoUrl;
           }
         }
-        
+
         setSchoolBranding({
           school_name: schoolName,
           logo_url: logoUrl,
-          primary_color: primaryColor
+          primary_color: primaryColor,
         });
       } catch (error) {
         console.error("Error fetching branding:", error);
@@ -378,12 +381,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           title: "Staff ID Cards",
           madrasahTitle: "শিক্ষক আইডি কার্ড",
           path: "/staff/id-cards",
-          roles: ["super_admin", "admin"],
-        },
-        {
-          title: "Add Staff",
-          madrasahTitle: "নতুন শিক্ষক",
-          path: "/staff/add",
           roles: ["super_admin", "admin"],
         },
       ],
@@ -693,18 +690,49 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const moduleKeyMapping = {
     home: ["home", "dashboard"],
     student_portal: ["student_portal"], // Always allowed for students via role check
-    academic: ["attendance", "results", "timetable", "calendar", "class", "classes"],
+    academic: [
+      "attendance",
+      "results",
+      "timetable",
+      "calendar",
+      "class",
+      "classes",
+    ],
     students: ["students", "admission-summary", "admission_summary"],
     staff: ["staff"],
     finance: ["fees", "accounts", "certificates", "payroll"],
     content: ["cms", "academic_cms", "academic-cms"],
-    "ai-tools": ["cms", "academic_cms", "ai-assistant", "ai_assistant", "quiz-tool", "quiz_tool", "test-generator", "test_generator", "ai-summary", "ai_summary", "ai-notes", "ai_notes"],
+    "ai-tools": [
+      "cms",
+      "academic_cms",
+      "ai-assistant",
+      "ai_assistant",
+      "quiz-tool",
+      "quiz_tool",
+      "test-generator",
+      "test_generator",
+      "ai-summary",
+      "ai_summary",
+      "ai-notes",
+      "ai_notes",
+    ],
     reports: ["reports"],
     certificates: ["certificates"],
     communication: ["communication", "notifications"],
-    settings: ["settings", "vehicle", "vehicle_transport", "biometric", "biometric_devices", "online-admission", "online_admission", "hss-module", "hss_module", "tenant_management"],
+    settings: [
+      "settings",
+      "vehicle",
+      "vehicle_transport",
+      "biometric",
+      "biometric_devices",
+      "online-admission",
+      "online_admission",
+      "hss-module",
+      "hss_module",
+      "tenant_management",
+    ],
   };
-  
+
   // Keys that bypass module restrictions (shown based on role only)
   const bypassModuleRestrictions = ["student_portal", "home", "teacher-portal"];
 
@@ -723,7 +751,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     "/hss/students": ["hss-module", "hss_module"],
     "/transport/routes": ["vehicle", "vehicle_transport", "vehicle-transport"],
     "/certificates": ["certificates"],
-    "/students/attendance": ["student-attendance", "student_attendance", "attendance"],
+    "/students/attendance": [
+      "student-attendance",
+      "student_attendance",
+      "attendance",
+    ],
     "/attendance": ["staff-attendance", "staff_attendance", "attendance"],
   };
 
@@ -736,7 +768,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     // Check if this sub-item has module restrictions
     const requiredModules = subItemModuleMapping[subItemPath];
     if (!requiredModules) return true; // No mapping = always show
-    return requiredModules.some(mod => allowedModules.includes(mod));
+    return requiredModules.some((mod) => allowedModules.includes(mod));
   };
 
   // Don't show any menu items until modules are loaded (except for super_admin who sees all)
@@ -765,8 +797,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
     // Check if any of the mapped modules for this menu item are allowed
     const mappedModules = moduleKeyMapping[item.key] || [item.key];
-    const hasAllowedModule = mappedModules.some(mod => allowedModules.includes(mod));
-    
+    const hasAllowedModule = mappedModules.some((mod) =>
+      allowedModules.includes(mod),
+    );
+
     return hasRole && hasAllowedModule;
   });
 
@@ -804,18 +838,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center space-x-3">
           {schoolBranding.logo_url ? (
-            <img 
-              src={schoolBranding.logo_url} 
-              alt={schoolBranding.school_name} 
+            <img
+              src={schoolBranding.logo_url}
+              alt={schoolBranding.school_name}
               className="h-10 w-10 object-contain rounded-lg bg-white p-1"
             />
           ) : (
-            <div className="p-2 rounded-lg" style={{ backgroundColor: schoolBranding.primary_color }}>
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: schoolBranding.primary_color }}
+            >
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-white font-bold text-lg truncate">{schoolBranding.school_name}</h1>
+            <h1 className="text-white font-bold text-lg truncate">
+              {schoolBranding.school_name}
+            </h1>
             <p className="text-gray-300 text-xs truncate">{user?.full_name}</p>
           </div>
         </div>
@@ -846,7 +885,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     >
                       <div className="flex items-center space-x-3">
                         <Icon className="h-5 w-5" />
-                        <span className="font-medium">{isMadrasahSimpleUI && item.madrasahTitle ? item.madrasahTitle : item.title}</span>
+                        <span className="font-medium">
+                          {isMadrasahSimpleUI && item.madrasahTitle
+                            ? item.madrasahTitle
+                            : item.title}
+                        </span>
                       </div>
                       {isOpen ? (
                         <ChevronDown className="h-4 w-4" />
@@ -859,9 +902,19 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     {item.subItems
                       .filter(
                         (subItem) =>
-                          (!subItem.roles || subItem.roles.includes(user?.role)) &&
+                          (!subItem.roles ||
+                            subItem.roles.includes(user?.role)) &&
                           isSubItemAllowed(subItem.path) &&
-                          !(isMadrasahSimpleUI && ['/fees/structure', '/fees/reports', '/accounts', '/results', '/settings/timetable'].includes(subItem.path)) &&
+                          !(
+                            isMadrasahSimpleUI &&
+                            [
+                              "/fees/structure",
+                              "/fees/reports",
+                              "/accounts",
+                              "/results",
+                              "/settings/timetable",
+                            ].includes(subItem.path)
+                          ) &&
                           (subItem.madrasahOnly ? isMadrasahSimpleUI : true) &&
                           !(isMadrasahSimpleUI && subItem.hideInMadrasah),
                       )
@@ -875,7 +928,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                               : "text-gray-400 hover:text-white"
                           }`}
                         >
-                          {isMadrasahSimpleUI && subItem.madrasahTitle ? subItem.madrasahTitle : subItem.title}
+                          {isMadrasahSimpleUI && subItem.madrasahTitle
+                            ? subItem.madrasahTitle
+                            : subItem.title}
                         </button>
                       ))}
                   </CollapsibleContent>
@@ -894,7 +949,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 }`}
               >
                 <Icon className="h-5 w-5" />
-                <span className="font-medium">{isMadrasahSimpleUI && item.madrasahTitle ? item.madrasahTitle : item.title}</span>
+                <span className="font-medium">
+                  {isMadrasahSimpleUI && item.madrasahTitle
+                    ? item.madrasahTitle
+                    : item.title}
+                </span>
               </button>
             );
           })}
