@@ -1,27 +1,60 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
-import { useAuth } from '../App';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Input } from './ui/input';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import axios from "axios";
+import { useAuth } from "../App";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
 import {
   GraduationCap,
   Users,
   Printer,
   Save,
   CheckCircle,
-  Search
-} from 'lucide-react';
-import { toast } from 'sonner';
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
 
 const MADRASAH_GRADES = [
-  { value: 'mumtaz', label: 'মুমতাজ', labelEn: 'Mumtaz (Excellent)', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' },
-  { value: 'jayyid_jiddan', label: 'জায়্যিদ জিদ্দান', labelEn: 'Jayyid Jiddan (Very Good)', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-  { value: 'jayyid', label: 'জায়্যিদ', labelEn: 'Jayyid (Good)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-  { value: 'maqbul', label: 'মাকবুল', labelEn: 'Maqbul (Pass)', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-  { value: 'rasib', label: 'রাসেব (ফেল)', labelEn: 'Rasib (Fail)', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }
+  {
+    value: "mumtaz",
+    label: "মুমতাজ",
+    labelEn: "Mumtaz (Excellent)",
+    color:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+  },
+  {
+    value: "jayyid_jiddan",
+    label: "জায়্যিদ জিদ্দান",
+    labelEn: "Jayyid Jiddan (Very Good)",
+    color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  },
+  {
+    value: "jayyid",
+    label: "জায়্যিদ",
+    labelEn: "Jayyid (Good)",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  },
+  {
+    value: "maqbul",
+    label: "মাকবুল",
+    labelEn: "Maqbul (Pass)",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  },
+  {
+    value: "rasib",
+    label: "রাসেব (ফেল)",
+    labelEn: "Rasib (Fail)",
+    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
 ];
 
 const MadrasahSimpleResult = () => {
@@ -31,24 +64,35 @@ const MadrasahSimpleResult = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSession, setSelectedSession] = useState(new Date().getFullYear().toString());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [schoolBranding, setSchoolBranding] = useState({ name: '', address: '', logo_url: '' });
+  const [selectedClass, setSelectedClass] = useState("");
+  const [selectedSession, setSelectedSession] = useState(
+    new Date().getFullYear().toString(),
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [schoolBranding, setSchoolBranding] = useState({
+    name: "",
+    address: "",
+    logo_url: "",
+  });
   const printRef = useRef();
 
-  const canEdit = ['super_admin', 'admin', 'principal', 'teacher'].includes(user?.role);
+  const canEdit = ["super_admin", "admin", "principal", "teacher"].includes(
+    user?.role,
+  );
 
   const fetchClasses = useCallback(async () => {
     try {
-      const response = await axios.get('/api/classes');
-      const madrasahClasses = response.data.filter(c => 
-        c.institution_type === 'madrasah' || c.display_name?.includes('ইবতেদায়ী') || 
-        c.display_name?.includes('দাখিল') || c.display_name?.includes('আলিম')
+      const response = await axios.get("/api/classes");
+      const madrasahClasses = response.data.filter(
+        (c) =>
+          c.institution_type === "madrasah" ||
+          c.display_name?.includes("ইবতেদায়ী") ||
+          c.display_name?.includes("দাখিল") ||
+          c.display_name?.includes("আলিম"),
       );
       setClasses(madrasahClasses.length > 0 ? madrasahClasses : response.data);
     } catch (error) {
-      console.error('Error fetching classes:', error);
+      console.error("Error fetching classes:", error);
     }
   }, []);
 
@@ -58,21 +102,25 @@ const MadrasahSimpleResult = () => {
       return;
     }
     try {
-      const response = await axios.get(`/api/students?class_id=${selectedClass}`);
+      const response = await axios.get(
+        `/api/students?class_id=${selectedClass}`,
+      );
       setStudents(response.data.students || response.data || []);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error("Error fetching students:", error);
     }
   }, [selectedClass]);
 
   const fetchResults = useCallback(async () => {
     if (!selectedClass) return;
     try {
-      const response = await axios.get(`/api/madrasah/simple-results?class_id=${selectedClass}&session=${selectedSession}`);
+      const response = await axios.get(
+        `/api/madrasah/simple-results?class_id=${selectedClass}&session=${selectedSession}`,
+      );
       setResults(response.data || []);
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error('Error fetching results:', error);
+        console.error("Error fetching results:", error);
       }
       setResults([]);
     }
@@ -80,16 +128,16 @@ const MadrasahSimpleResult = () => {
 
   const fetchSchoolBranding = useCallback(async () => {
     try {
-      const response = await axios.get('/api/institution');
+      const response = await axios.get("/api/institution");
       if (response.data) {
         setSchoolBranding({
-          name: response.data.school_name || response.data.name || '',
-          address: response.data.address || '',
-          logo_url: response.data.logo_url || ''
+          name: response.data.school_name || response.data.name || "",
+          address: response.data.address || "",
+          logo_url: response.data.logo_url || "",
         });
       }
     } catch (error) {
-      console.error('Error fetching branding:', error);
+      console.error("Error fetching branding:", error);
     }
   }, []);
 
@@ -110,46 +158,48 @@ const MadrasahSimpleResult = () => {
   }, [selectedClass, selectedSession, fetchStudents, fetchResults]);
 
   const getStudentResult = (studentId) => {
-    return results.find(r => r.student_id === studentId);
+    return results.find((r) => r.student_id === studentId);
   };
 
   const handleGradeChange = async (studentId, grade) => {
     if (!canEdit) return;
-    
-    const student = students.find(s => s.id === studentId);
+
+    const student = students.find((s) => s.id === studentId);
     if (!student) return;
 
     const existingResult = getStudentResult(studentId);
-    
+
     try {
       if (existingResult) {
         await axios.put(`/api/madrasah/simple-results/${existingResult.id}`, {
           grade,
-          session: selectedSession
+          session: selectedSession,
         });
       } else {
-        await axios.post('/api/madrasah/simple-results', {
+        await axios.post("/api/madrasah/simple-results", {
           student_id: studentId,
           student_name: student.name,
           class_id: selectedClass,
-          class_name: classes.find(c => c.id === selectedClass)?.display_name || classes.find(c => c.id === selectedClass)?.name,
+          class_name:
+            classes.find((c) => c.id === selectedClass)?.display_name ||
+            classes.find((c) => c.id === selectedClass)?.name,
           grade,
-          session: selectedSession
+          session: selectedSession,
         });
       }
-      
+
       await fetchResults();
-      toast.success('ফলাফল সংরক্ষণ হয়েছে');
+      toast.success("ফলাফল সংরক্ষণ হয়েছে");
     } catch (error) {
-      console.error('Error saving result:', error);
-      toast.error('ফলাফল সংরক্ষণ করতে সমস্যা হয়েছে');
+      console.error("Error saving result:", error);
+      toast.error("ফলাফল সংরক্ষণ করতে সমস্যা হয়েছে");
     }
   };
 
   const handlePrint = () => {
     const printContent = printRef.current;
-    const printWindow = window.open('', '_blank');
-    
+    const printWindow = window.open("", "_blank");
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -179,11 +229,11 @@ const MadrasahSimpleResult = () => {
       </head>
       <body>
         <div class="header">
-          ${schoolBranding.logo_url ? `<img src="${schoolBranding.logo_url}" class="logo" alt="Logo"/>` : ''}
-          <h1>${schoolBranding.name || 'মাদ্রাসা'}</h1>
-          <p class="info">${schoolBranding.address || ''}</p>
+          ${schoolBranding.logo_url ? `<img src="${schoolBranding.logo_url}" class="logo" alt="Logo"/>` : ""}
+          <h1>${schoolBranding.name || "মাদ্রাসা"}</h1>
+          <p class="info">${schoolBranding.address || ""}</p>
           <h2>বার্ষিক ফলাফল - ${selectedSession}</h2>
-          <p>মারহালা: ${classes.find(c => c.id === selectedClass)?.display_name || ''}</p>
+          <p>মারহালা: ${classes.find((c) => c.id === selectedClass)?.display_name || ""}</p>
         </div>
         <table>
           <thead>
@@ -195,18 +245,22 @@ const MadrasahSimpleResult = () => {
             </tr>
           </thead>
           <tbody>
-            ${filteredStudents.map((student, index) => {
-              const result = getStudentResult(student.id);
-              const gradeInfo = MADRASAH_GRADES.find(g => g.value === result?.grade);
-              return `
+            ${filteredStudents
+              .map((student, index) => {
+                const result = getStudentResult(student.id);
+                const gradeInfo = MADRASAH_GRADES.find(
+                  (g) => g.value === result?.grade,
+                );
+                return `
                 <tr>
                   <td>${index + 1}</td>
                   <td style="text-align: left;">${student.name}</td>
-                  <td>${student.roll_no || '-'}</td>
-                  <td class="grade-${result?.grade || ''}">${gradeInfo?.label || 'মূল্যায়ন হয়নি'}</td>
+                  <td>${student.roll_no || "-"}</td>
+                  <td class="grade-${result?.grade || ""}">${gradeInfo?.label || "মূল্যায়ন হয়নি"}</td>
                 </tr>
               `;
-            }).join('')}
+              })
+              .join("")}
           </tbody>
         </table>
         <div class="signature">
@@ -215,19 +269,20 @@ const MadrasahSimpleResult = () => {
           <div>মুহতামিম</div>
         </div>
         <div class="footer">
-          <p>প্রকাশের তারিখ: ${new Date().toLocaleDateString('bn-BD')}</p>
+          <p>প্রকাশের তারিখ: ${new Date().toLocaleDateString("bn-BD")}</p>
         </div>
       </body>
       </html>
     `);
-    
+
     printWindow.document.close();
     printWindow.print();
   };
 
-  const filteredStudents = students.filter(student =>
-    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.roll_no?.toString().includes(searchTerm)
+  const filteredStudents = students.filter(
+    (student) =>
+      student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.roll_no?.toString().includes(searchTerm),
   );
 
   const sessionOptions = [];
@@ -245,13 +300,19 @@ const MadrasahSimpleResult = () => {
           </div>
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-12 bg-gray-200 dark:bg-gray-700 rounded"
+                ></div>
               ))}
             </div>
             <div className="space-y-3">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-gray-200 dark:bg-gray-700 rounded"
+                ></div>
               ))}
             </div>
           </div>
@@ -268,7 +329,9 @@ const MadrasahSimpleResult = () => {
             <GraduationCap className="h-7 w-7" />
             সহজ ফলাফল সিস্টেম
           </CardTitle>
-          <p className="text-emerald-100 text-sm mt-1">মারহালা নির্বাচন করে ছাত্রদের ফলাফল দিন</p>
+          <p className="text-emerald-100 text-sm mt-1">
+            মারহালা নির্বাচন করে ছাত্রদের ফলাফল দিন
+          </p>
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -281,27 +344,13 @@ const MadrasahSimpleResult = () => {
                   <SelectValue placeholder="মারহালা বাছাই করুন" />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map(cls => (
-                    <SelectItem key={cls.id} value={cls.id} className="text-base py-3">
+                  {classes.map((cls) => (
+                    <SelectItem
+                      key={cls.id}
+                      value={cls.id}
+                      className="text-base py-3"
+                    >
                       {cls.display_name || cls.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                শিক্ষাবর্ষ
-              </label>
-              <Select value={selectedSession} onValueChange={setSelectedSession}>
-                <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder="শিক্ষাবর্ষ বাছুন" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sessionOptions.map(year => (
-                    <SelectItem key={year} value={year} className="text-base py-3">
-                      {year}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -326,7 +375,7 @@ const MadrasahSimpleResult = () => {
 
           {selectedClass && (
             <div className="flex justify-end mb-4">
-              <Button 
+              <Button
                 onClick={handlePrint}
                 size="lg"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
@@ -361,20 +410,35 @@ const MadrasahSimpleResult = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">ক্রম</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">ছাত্রের নাম</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">রোল</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">ফলাফল</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">অবস্থা</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        ক্রম
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        ছাত্রের নাম
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        রোল
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        ফলাফল
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        অবস্থা
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredStudents.map((student, index) => {
                       const result = getStudentResult(student.id);
-                      const gradeInfo = MADRASAH_GRADES.find(g => g.value === result?.grade);
-                      
+                      const gradeInfo = MADRASAH_GRADES.find(
+                        (g) => g.value === result?.grade,
+                      );
+
                       return (
-                        <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <tr
+                          key={student.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        >
                           <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
                             {index + 1}
                           </td>
@@ -383,25 +447,34 @@ const MadrasahSimpleResult = () => {
                               {student.name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {student.father_name && `পিতা: ${student.father_name}`}
+                              {student.father_name &&
+                                `পিতা: ${student.father_name}`}
                             </div>
                           </td>
                           <td className="px-4 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                            {student.roll_no || '-'}
+                            {student.roll_no || "-"}
                           </td>
                           <td className="px-4 py-4">
                             {canEdit ? (
-                              <Select 
-                                value={result?.grade || ''} 
-                                onValueChange={(value) => handleGradeChange(student.id, value)}
+                              <Select
+                                value={result?.grade || ""}
+                                onValueChange={(value) =>
+                                  handleGradeChange(student.id, value)
+                                }
                               >
                                 <SelectTrigger className="h-11 w-48 mx-auto text-base">
                                   <SelectValue placeholder="ফলাফল দিন" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {MADRASAH_GRADES.map(grade => (
-                                    <SelectItem key={grade.value} value={grade.value} className="py-3">
-                                      <span className={`px-2 py-1 rounded ${grade.color}`}>
+                                  {MADRASAH_GRADES.map((grade) => (
+                                    <SelectItem
+                                      key={grade.value}
+                                      value={grade.value}
+                                      className="py-3"
+                                    >
+                                      <span
+                                        className={`px-2 py-1 rounded ${grade.color}`}
+                                      >
                                         {grade.label}
                                       </span>
                                     </SelectItem>
@@ -409,8 +482,10 @@ const MadrasahSimpleResult = () => {
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <Badge className={gradeInfo?.color || 'bg-gray-100'}>
-                                {gradeInfo?.label || 'মূল্যায়ন হয়নি'}
+                              <Badge
+                                className={gradeInfo?.color || "bg-gray-100"}
+                              >
+                                {gradeInfo?.label || "মূল্যায়ন হয়নি"}
                               </Badge>
                             )}
                           </td>
@@ -421,7 +496,10 @@ const MadrasahSimpleResult = () => {
                                 সংরক্ষিত
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-gray-500">
+                              <Badge
+                                variant="outline"
+                                className="text-gray-500"
+                              >
                                 অপেক্ষমাণ
                               </Badge>
                             )}

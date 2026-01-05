@@ -80,11 +80,8 @@ const MadrasahSimpleRoutine = () => {
   const fetchTeachers = useCallback(async () => {
     try {
       const response = await axios.get('/api/staff');
-      const teachersList = (response.data || []).filter(s => 
-        s.designation?.toLowerCase().includes('teacher') || 
-        s.designation?.toLowerCase().includes('শিক্ষক') ||
-        s.department?.toLowerCase().includes('teaching')
-      );
+      // Include all staff - in madrasah, any staff can be a teacher (উস্তাদ, মুদাররিস, etc.)
+      const teachersList = response.data || [];
       setTeachers(teachersList);
     } catch (error) {
       console.error('Error fetching teachers:', error);
