@@ -1027,18 +1027,48 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
     async def get_student_homework(current_user = Depends(get_current_user)):
         try:
             tenant_id = current_user.tenant_id
+            
+            # Try multiple ways to find the student
+            student = None
             student_id = current_user.student_id
             
-            if not student_id:
-                raise HTTPException(status_code=400, detail="Not a student account")
+            # Method 1: By student_id if available
+            if student_id:
+                student = await db.students.find_one({
+                    "student_id": student_id,
+                    "tenant_id": tenant_id
+                })
             
-            student = await db.students.find_one({
-                "student_id": student_id,
-                "tenant_id": tenant_id
-            })
+            # Method 2: By user_id
+            if not student:
+                student = await db.students.find_one({
+                    "user_id": current_user.id,
+                    "tenant_id": tenant_id
+                })
+            
+            # Method 3: By username match
+            if not student:
+                student = await db.students.find_one({
+                    "username": current_user.username,
+                    "tenant_id": tenant_id
+                })
+            
+            # Method 4: By linked_user_id
+            if not student:
+                student = await db.students.find_one({
+                    "linked_user_id": current_user.id,
+                    "tenant_id": tenant_id
+                })
             
             if not student:
-                raise HTTPException(status_code=404, detail="Student not found")
+                return {
+                    "homework": [],
+                    "payment_required": False,
+                    "message": "Student record not found"
+                }
+            
+            # Get student_id from student record
+            student_id = student.get('student_id') or student.get('id') or str(student.get('_id', ''))
             
             current_date = datetime.utcnow()
             current_month = current_date.strftime("%B")
@@ -1053,13 +1083,21 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                     "message": "Payment required to access homework"
                 }
             
-            student_class = student.get("class_standard") or student.get("class_name")
+            # Get class from student record - try multiple field names
+            student_class = student.get("class_standard") or student.get("class_name") or student.get("class_id")
             
-            homework_list = await db.homework.find({
+            # Build more flexible homework query
+            query = {
                 "tenant_id": tenant_id,
-                "class_name": student_class,
-                "is_deleted": {"$ne": True}
-            }).sort("due_date", -1).to_list(50)
+                "is_deleted": {"$ne": True},
+                "$or": [
+                    {"class_name": student_class},
+                    {"class_id": student.get("class_id")},
+                    {"class_ids": {"$in": [student.get("class_id")]}}
+                ]
+            }
+            
+            homework_list = await db.homework.find(query).sort("due_date", -1).to_list(50)
             
             submissions = await db.homework_submissions.find({
                 "tenant_id": tenant_id,
