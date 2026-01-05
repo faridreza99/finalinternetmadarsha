@@ -76,7 +76,22 @@ cloudinary.config(
 )
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+from urllib.parse import urlparse, quote_plus, urlunparse
+
+def fix_mongo_url(url: str) -> str:
+    """Fix MongoDB URL by properly escaping username and password"""
+    parsed = urlparse(url)
+    if parsed.username and parsed.password:
+        escaped_user = quote_plus(parsed.username)
+        escaped_pass = quote_plus(parsed.password)
+        netloc = f"{escaped_user}:{escaped_pass}@{parsed.hostname}"
+        if parsed.port:
+            netloc += f":{parsed.port}"
+        fixed_url = urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+        return fixed_url
+    return url
+
+mongo_url = fix_mongo_url(os.environ['MONGO_URL'])
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
