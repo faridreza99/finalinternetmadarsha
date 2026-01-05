@@ -2189,7 +2189,7 @@ const ClassManagement = () => {
                           <Folder className="h-5 w-5 text-amber-500" />
                         )}
                         <span className="font-semibold text-lg">
-                          {classStd}
+                          {getDisplayNameForStandard(classStd)}
                         </span>
                         <Badge variant="secondary" className="ml-2">
                           {institutionType === "madrasah"
