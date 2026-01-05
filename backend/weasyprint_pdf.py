@@ -65,6 +65,11 @@ def generate_student_list_pdf(
         <meta charset="utf-8">
         <style>
             @font-face {{
+                font-family: 'NotoSans';
+                src: url('file://{FONT_PATH}/NotoSans-Regular.ttf') format('truetype');
+                font-weight: normal;
+            }}
+            @font-face {{
                 font-family: 'NotoSansBengali';
                 src: url('file://{FONT_PATH}/NotoSansBengali-Regular.ttf') format('truetype');
                 font-weight: normal;
@@ -76,7 +81,7 @@ def generate_student_list_pdf(
             }}
             
             * {{
-                font-family: 'NotoSansBengali', 'Noto Sans Bengali', Arial, sans-serif;
+                font-family: 'NotoSans', 'NotoSansBengali', 'Noto Sans Bengali', Arial, sans-serif;
             }}
             
             @page {{
@@ -333,6 +338,11 @@ def generate_generic_report_pdf(
         <meta charset="utf-8">
         <style>
             @font-face {{
+                font-family: 'NotoSans';
+                src: url('file://{FONT_PATH}/NotoSans-Regular.ttf') format('truetype');
+                font-weight: normal;
+            }}
+            @font-face {{
                 font-family: 'NotoSansBengali';
                 src: url('file://{FONT_PATH}/NotoSansBengali-Regular.ttf') format('truetype');
                 font-weight: normal;
@@ -344,7 +354,7 @@ def generate_generic_report_pdf(
             }}
             
             * {{
-                font-family: 'NotoSansBengali', 'Noto Sans Bengali', Arial, sans-serif;
+                font-family: 'NotoSans', 'NotoSansBengali', 'Noto Sans Bengali', Arial, sans-serif;
             }}
             
             @page {{

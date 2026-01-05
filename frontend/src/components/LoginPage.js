@@ -19,8 +19,8 @@ const LoginPage = () => {
   });
   
   const [schoolBranding, setSchoolBranding] = useState({
-    school_name: 'মাহাজামপুর দরবার শরীফ',
-    school_name_en: 'Mahajampur Darbar Sharif',
+    school_name: 'ইন্টারনেট মাদ্রাসা',
+    school_name_en: 'Internet Madrasa',
     tagline: 'আপনার অ্যাকাউন্টে প্রবেশ করুন',
     logo_url: null,
     primary_color: '#10B981'
@@ -46,8 +46,8 @@ const LoginPage = () => {
       const response = await axios.get(`${API_BASE_URL}/school-branding/public/${tenantCode}`);
       if (response.data && response.data.school_name) {
         setSchoolBranding({
-          school_name: response.data.school_name || 'মাহাজামপুর দরবার শরীফ',
-          school_name_en: response.data.school_name_en || 'Mahajampur Darbar Sharif',
+          school_name: response.data.school_name || 'ইন্টারনেট মাদ্রাসা',
+          school_name_en: response.data.school_name_en || 'Internet Madrasa',
           tagline: response.data.tagline || 'আপনার অ্যাকাউন্টে প্রবেশ করুন',
           logo_url: response.data.logo_url,
           primary_color: response.data.primary_color || '#10B981'
