@@ -15181,16 +15181,12 @@ async def download_transfer_certificate_pdf(
     tc_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Download transfer certificate as PDF with school branding"""
+    """Download transfer certificate as PDF with school branding using WeasyPrint"""
     try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-        from reportlab.lib.units import inch
-        from reportlab.lib import colors
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT
-        import tempfile
+        from weasyprint import HTML
         import os
+        
+        FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts')
         
         tc = await db.transfer_certificates.find_one({
             "id": tc_id,
@@ -15202,171 +15198,113 @@ async def download_transfer_certificate_pdf(
         
         branding = await get_school_branding_for_reports(current_user.tenant_id)
         
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-        file_path = temp_file.name
-        temp_file.close()
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
+        school_address = branding.get("address", "")
+        school_phone = branding.get("phone", "")
+        school_email = branding.get("email", "")
+        primary_color = branding.get("primary_color", "#1e3a8a")
+        secondary_color = branding.get("secondary_color", "#059669")
         
-        doc = SimpleDocTemplate(
-            file_path,
-            pagesize=A4,
-            topMargin=0.5*inch,
-            bottomMargin=0.5*inch,
-            leftMargin=0.75*inch,
-            rightMargin=0.75*inch
-        )
-        
-        styles = getSampleStyleSheet()
-        primary_color = colors.HexColor(branding.get("primary_color", "#1E3A8A"))
-        secondary_color = colors.HexColor(branding.get("secondary_color", "#059669"))
-        
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=22,
-            textColor=primary_color,
-            spaceAfter=6,
-            alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
-        )
-        
-        subtitle_style = ParagraphStyle(
-            'CustomSubtitle',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor('#6B7280'),
-            spaceAfter=12,
-            alignment=TA_CENTER
-        )
-        
-        cert_title_style = ParagraphStyle(
-            'CertTitle',
-            parent=styles['Heading1'],
-            fontSize=18,
-            textColor=secondary_color,
-            spaceAfter=20,
-            spaceBefore=10,
-            alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
-        )
-        
-        story = []
-        
-        story.append(Paragraph(branding.get("school_name", "School ERP"), title_style))
-        if branding.get("address"):
-            story.append(Paragraph(branding["address"], subtitle_style))
         contact_info = []
-        if branding.get("phone"):
-            contact_info.append(f"Phone: {branding['phone']}")
-        if branding.get("email"):
-            contact_info.append(f"Email: {branding['email']}")
-        if contact_info:
-            story.append(Paragraph(" | ".join(contact_info), subtitle_style))
+        if school_phone:
+            contact_info.append(f"Phone: {school_phone}")
+        if school_email:
+            contact_info.append(f"Email: {school_email}")
+        contact_text = " | ".join(contact_info)
         
-        story.append(Spacer(1, 0.3*inch))
-        
-        story.append(Paragraph("TRANSFER CERTIFICATE", cert_title_style))
-        story.append(Spacer(1, 0.1*inch))
-        
-        divider_table = Table([['']], colWidths=[6.5*inch])
-        divider_table.setStyle(TableStyle([
-            ('LINEABOVE', (0, 0), (-1, 0), 2, secondary_color),
-        ]))
-        story.append(divider_table)
-        story.append(Spacer(1, 0.3*inch))
-        
-        tc_data = [
-            ['TC Number:', tc.get('tc_number', 'N/A'), 'Issue Date:', tc.get('issue_date', 'N/A')],
-            ['Student Name:', tc.get('student_name', 'N/A'), 'Admission No:', tc.get('admission_no', 'N/A')],
-            ["Father's Name:", tc.get('fathers_name', 'N/A'), "Mother's Name:", tc.get('mothers_name', 'N/A')],
-            ['Date of Birth:', tc.get('date_of_birth', 'N/A'), 'Date of Admission:', tc.get('date_of_admission', 'N/A')],
-            ['Class Admitted:', tc.get('class_admitted', 'N/A'), 'Class Leaving:', tc.get('class_leaving', 'N/A')],
-            ['Date of Leaving:', tc.get('date_of_leaving', 'N/A'), 'Reason:', tc.get('reason_for_leaving', 'N/A')],
-        ]
-        
-        tc_table = Table(tc_data, colWidths=[1.3*inch, 2*inch, 1.3*inch, 2*inch])
-        tc_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#374151')),
-            ('TEXTCOLOR', (2, 0), (2, -1), colors.HexColor('#374151')),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
-            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F9FAFB')),
-            ('BACKGROUND', (2, 0), (2, -1), colors.HexColor('#F9FAFB')),
-        ]))
-        story.append(tc_table)
-        story.append(Spacer(1, 0.3*inch))
-        
-        if tc.get('conduct') or tc.get('character'):
-            conduct_data = [
-                ['Conduct:', tc.get('conduct', 'Good')],
-                ['Character:', tc.get('character', 'Good')],
-            ]
-            if tc.get('remarks'):
-                conduct_data.append(['Remarks:', tc.get('remarks', '')])
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                @font-face {{ font-family: 'NotoSans'; src: url('file://{FONT_PATH}/NotoSans-Regular.ttf') format('truetype'); }}
+                @font-face {{ font-family: 'NotoSansBengali'; src: url('file://{FONT_PATH}/NotoSansBengali-Regular.ttf') format('truetype'); }}
+                @font-face {{ font-family: 'NotoSansBengali'; src: url('file://{FONT_PATH}/NotoSansBengali-Bold.ttf') format('truetype'); font-weight: bold; }}
+                * {{ font-family: 'NotoSans', 'NotoSansBengali', Arial, sans-serif; }}
+                @page {{ size: A4; margin: 1.5cm; }}
+                body {{ font-size: 11pt; line-height: 1.5; color: #333; }}
+                .header {{ text-align: center; margin-bottom: 20px; }}
+                .school-name {{ font-size: 22pt; font-weight: bold; color: {primary_color}; margin-bottom: 5px; }}
+                .school-address {{ font-size: 10pt; color: #6B7280; margin-bottom: 3px; }}
+                .cert-title {{ font-size: 18pt; font-weight: bold; color: {secondary_color}; text-align: center; margin: 20px 0; border-bottom: 2px solid {secondary_color}; padding-bottom: 10px; }}
+                .data-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                .data-table td {{ padding: 10px; border: 1px solid #E5E7EB; }}
+                .data-table .label {{ font-weight: bold; background: #F9FAFB; width: 25%; color: #374151; }}
+                .conduct-section {{ margin: 20px 0; }}
+                .conduct-section .label {{ font-weight: bold; display: inline-block; width: 120px; }}
+                .signature-section {{ margin-top: 60px; display: flex; justify-content: space-between; }}
+                .sig-block {{ text-align: center; width: 40%; }}
+                .sig-line {{ border-top: 1px solid #333; margin-bottom: 5px; }}
+                .footer {{ text-align: center; margin-top: 40px; font-size: 8pt; color: #9CA3AF; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="school-name">{school_name}</div>
+                <div class="school-address">{school_address}</div>
+                <div class="school-address">{contact_text}</div>
+            </div>
             
-            conduct_table = Table(conduct_data, colWidths=[1.5*inch, 5*inch])
-            conduct_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ]))
-            story.append(conduct_table)
-            story.append(Spacer(1, 0.4*inch))
+            <div class="cert-title">TRANSFER CERTIFICATE / স্থানান্তর সনদপত্র</div>
+            
+            <table class="data-table">
+                <tr><td class="label">TC Number / টিসি নং:</td><td>{tc.get('tc_number', 'N/A')}</td><td class="label">Issue Date / ইস্যু তারিখ:</td><td>{tc.get('issue_date', 'N/A')}</td></tr>
+                <tr><td class="label">Student Name / শিক্ষার্থীর নাম:</td><td>{tc.get('student_name', 'N/A')}</td><td class="label">Admission No / ভর্তি নং:</td><td>{tc.get('admission_no', 'N/A')}</td></tr>
+                <tr><td class="label">Father's Name / পিতার নাম:</td><td>{tc.get('fathers_name', 'N/A')}</td><td class="label">Mother's Name / মাতার নাম:</td><td>{tc.get('mothers_name', 'N/A')}</td></tr>
+                <tr><td class="label">Date of Birth / জন্ম তারিখ:</td><td>{tc.get('date_of_birth', 'N/A')}</td><td class="label">Date of Admission / ভর্তির তারিখ:</td><td>{tc.get('date_of_admission', 'N/A')}</td></tr>
+                <tr><td class="label">Class Admitted / ভর্তি শ্রেণি:</td><td>{tc.get('class_admitted', 'N/A')}</td><td class="label">Class Leaving / ছাড়ার শ্রেণি:</td><td>{tc.get('class_leaving', 'N/A')}</td></tr>
+                <tr><td class="label">Date of Leaving / ছাড়ার তারিখ:</td><td>{tc.get('date_of_leaving', 'N/A')}</td><td class="label">Reason / কারণ:</td><td>{tc.get('reason_for_leaving', 'N/A')}</td></tr>
+            </table>
+            
+            <div class="conduct-section">
+                <p><span class="label">Conduct / চরিত্র:</span> {tc.get('conduct', 'Good')}</p>
+                <p><span class="label">Character / আচরণ:</span> {tc.get('character', 'Good')}</p>
+                {"<p><span class='label'>Remarks / মন্তব্য:</span> " + tc.get('remarks', '') + "</p>" if tc.get('remarks') else ""}
+            </div>
+            
+            <div class="signature-section">
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div>Class Teacher / শ্রেণি শিক্ষক</div>
+                    <div style="margin-top: 20px;">Date / তারিখ: ___________</div>
+                </div>
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div>Principal / অধ্যক্ষ</div>
+                    <div style="margin-top: 20px;">School Seal / সিল</div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                This is a computer-generated certificate. | এটি একটি কম্পিউটার-জেনারেটেড সনদপত্র।<br>
+                Certificate ID: {tc.get('id', 'N/A')} | Verified by {school_name}
+            </div>
+        </body>
+        </html>
+        """
         
-        story.append(Spacer(1, 0.5*inch))
-        sig_data = [['', '', ''],
-                    ['_________________', '', '_________________'],
-                    ['Class Teacher', '', 'Principal/Head'],
-                    ['', '', ''],
-                    ['Date: ___________', '', 'School Seal']]
-        sig_table = Table(sig_data, colWidths=[2.5*inch, 1.5*inch, 2.5*inch])
-        sig_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ]))
-        story.append(sig_table)
-        
-        story.append(Spacer(1, 0.4*inch))
-        footer_style = ParagraphStyle(
-            'Footer',
-            parent=styles['Normal'],
-            fontSize=8,
-            textColor=colors.HexColor('#9CA3AF'),
-            alignment=TA_CENTER
-        )
-        story.append(Paragraph(f"This is a computer-generated certificate. | Certificate ID: {tc.get('id', 'N/A')}", footer_style))
-        story.append(Paragraph(f"Verified by {branding.get('school_name', 'School')}", footer_style))
-        
-        doc.build(story)
+        output = io.BytesIO()
+        HTML(string=html_content).write_pdf(output)
+        output.seek(0)
         
         logging.info(f"Transfer certificate PDF generated for {tc.get('student_name')} by {current_user.full_name}")
         
-        with open(file_path, 'rb') as pdf_file:
-            pdf_content = pdf_file.read()
-        
-        os.unlink(file_path)
-        
         return StreamingResponse(
-            io.BytesIO(pdf_content),
+            output,
             media_type="application/pdf",
-            headers={
+            headers={{
                 "Content-Disposition": f"attachment; filename=TC_{tc.get('admission_no', 'certificate')}_{tc.get('student_name', 'student')}.pdf"
-            }
+            }}
         )
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logging.error(f"Failed to download transfer certificate PDF: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to download PDF")
+        logging.error(f"Transfer certificate PDF failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
 
 
-# ===== CONDUCT CERTIFICATES =====
+
 class ConductCertificate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
@@ -15374,17 +15312,17 @@ class ConductCertificate(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
-    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
+    student_identifier: Optional[str] = None
     date_of_admission: Optional[str] = None
     current_class: str
     current_section: str
-    conduct_rating: str = "Excellent"  # Excellent, Good, Fair, Needs Improvement
+    conduct_rating: str = "Excellent"
     character_remarks: str
     behavior_notes: Optional[str] = None
     academic_performance: Optional[str] = None
     extracurricular_activities: Optional[str] = None
     attendance_percentage: Optional[float] = None
-    status: str = "draft"  # draft, pending_approval, issued
+    status: str = "draft"
     issue_date: Optional[str] = None
     valid_until: Optional[str] = None
     created_by: str
@@ -15395,7 +15333,7 @@ class ConductCertificateRequest(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
-    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
+    student_identifier: Optional[str] = None
     date_of_admission: Optional[str] = None
     current_class: str
     current_section: str
@@ -15409,17 +15347,19 @@ class ConductCertificateRequest(BaseModel):
     issue_date: Optional[str] = None
     valid_until: Optional[str] = None
 
+
+
 # ==================== FEE MANAGEMENT MODELS ====================
 
 class FeeConfiguration(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
     school_id: Optional[str] = None
-    fee_type: str  # "Tuition Fees", "Transport Fees", "Admission Fees"
+    fee_type: str
     amount: float
-    frequency: str  # "monthly", "quarterly", "half-yearly", "yearly", "one-time"
+    frequency: str
     due_date: Optional[int] = None
-    apply_to_classes: str  # "all", "class1", "class2", etc.
+    apply_to_classes: str
     late_fee: float = 0.0
     discount: float = 0.0
     is_active: bool = True
@@ -15446,10 +15386,6 @@ class FeeConfigurationUpdate(BaseModel):
     discount: Optional[float] = None
     is_active: Optional[bool] = None
 
-# ========================================
-# 🔒 PROTECTED MODEL - MaxTechBD Fee Engine v3.0-final-stable
-# ⚠️ DO NOT MODIFY without reviewing VERSION file
-# ========================================
 class StudentFee(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
@@ -15457,7 +15393,7 @@ class StudentFee(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
-    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
+    student_identifier: Optional[str] = None
     class_id: Optional[str] = None
     section_id: Optional[str] = None
     fee_config_id: Optional[str] = None
@@ -15467,11 +15403,8 @@ class StudentFee(BaseModel):
     pending_amount: float
     overdue_amount: float = 0.0
     due_date: Optional[int] = None
-    status: str = "pending"  # "pending", "partial", "paid", "overdue"
-    # ⚠️ CRITICAL: is_active field is REQUIRED for fee system to work
-    # Removing this will cause GET queries to return 0 records
-    # and payment updates to fail silently
-    is_active: bool = True  # 🔒 PROTECTED - DO NOT REMOVE
+    status: str = "pending"
+    is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -15482,10 +15415,10 @@ class Payment(BaseModel):
     student_id: str
     student_name: str
     admission_no: str
-    student_identifier: Optional[str] = None  # Clean username identifier (e.g., farid66)
+    student_identifier: Optional[str] = None
     fee_type: str
     amount: float
-    payment_mode: str  # "cash", "card", "upi", "netbanking"
+    payment_mode: str
     transaction_id: Optional[str] = None
     receipt_no: str
     remarks: Optional[str] = None
@@ -15514,7 +15447,6 @@ class FeeDashboard(BaseModel):
     pending: float
     overdue: float
     recent_payments: List[Payment]
-    # Today's specific metrics for Recent Payment Activity
     payments_today: int
     todays_collection: float
     pending_approvals: int
@@ -15526,11 +15458,11 @@ class Transaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
     school_id: Optional[str] = None
-    transaction_type: str  # "Income" or "Expense"
-    category: str  # "Fees", "Salaries", "Utilities", "Donations", etc.
+    transaction_type: str
+    category: str
     description: str
     amount: float
-    payment_method: str  # "Cash", "Bank Transfer", "Card", "UPI"
+    payment_method: str
     transaction_date: datetime = Field(default_factory=datetime.utcnow)
     receipt_no: Optional[str] = None
     reference_no: Optional[str] = None
@@ -15569,6 +15501,7 @@ class AccountsDashboard(BaseModel):
     transactions_count: int
     cash_balance: float
     recent_transactions: List[Transaction]
+
 
 @api_router.post("/conduct-certificates")
 async def create_conduct_certificate(
