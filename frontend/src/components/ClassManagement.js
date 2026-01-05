@@ -541,20 +541,27 @@ const ClassManagement = () => {
       console.log("📤 Sending data to API:", submitData);
 
       if (editingClass) {
-        await withTimeout(
+        const res = await withTimeout(
           axios.put(`${API}/classes/${editingClass.id}`, submitData),
           10000,
         );
+        const updatedClass = res.data?.class || res.data || submitData;
+        setClasses((prev) =>
+          prev.map((cls) =>
+            cls.id === editingClass.id ? { ...cls, ...updatedClass } : cls,
+          ),
+        );
         toast.success("জামাত সফলভাবে আপডেট হয়েছে");
       } else {
-        await withTimeout(axios.post(`${API}/classes`, submitData), 10000);
+        const res = await withTimeout(axios.post(`${API}/classes`, submitData), 10000);
+        const newClass = res.data?.class || res.data;
+        setClasses((prev) => [...prev, newClass]);
         toast.success("জামাত সফলভাবে যোগ হয়েছে");
       }
 
       setIsClassModalOpen(false);
       setEditingClass(null);
       resetClassForm();
-      await fetchData();
     } catch (error) {
       console.error("Failed to save class:", error);
       const errorMessage =
@@ -637,6 +644,12 @@ const ClassManagement = () => {
           10000,
         );
         console.log("✅ Section update response:", response.data);
+        const updatedSection = response.data?.section || response.data;
+        setSections((prev) =>
+          prev.map((s) =>
+            s.id === editingSection.id ? { ...s, ...updatedSection } : s,
+          ),
+        );
         toast.success("শাখা সফলভাবে আপডেট হয়েছে");
       } else {
         const response = await withTimeout(
@@ -644,13 +657,14 @@ const ClassManagement = () => {
           10000,
         );
         console.log("✅ Section create response:", response.data);
+        const newSection = response.data?.section || response.data;
+        setSections((prev) => [...prev, newSection]);
         toast.success("শাখা সফলভাবে যোগ হয়েছে");
       }
 
       setIsSectionModalOpen(false);
       setEditingSection(null);
       resetSectionForm();
-      await fetchData();
     } catch (error) {
       console.error("❌ Failed to save section:", error);
       console.error("❌ Error details:", error.response?.data);
@@ -832,19 +846,26 @@ const ClassManagement = () => {
       console.log("📤 Sending subject data to API:", submitData);
 
       if (editingSubject) {
-        await axios.put(`${API}/subjects/${editingSubject.id}`, submitData, {
+        const res = await axios.put(`${API}/subjects/${editingSubject.id}`, submitData, {
           headers,
         });
+        const updatedSubject = res.data?.subject || res.data || submitData;
+        setSubjects((prev) =>
+          prev.map((s) =>
+            s.id === editingSubject.id ? { ...s, ...updatedSubject } : s,
+          ),
+        );
         toast.success("কিতাব সফলভাবে আপডেট হয়েছে");
       } else {
-        await axios.post(`${API}/subjects`, submitData, { headers });
+        const res = await axios.post(`${API}/subjects`, submitData, { headers });
+        const newSubject = res.data?.subject || res.data;
+        setSubjects((prev) => [...prev, newSubject]);
         toast.success("কিতাব সফলভাবে যোগ হয়েছে");
       }
 
       setIsSubjectModalOpen(false);
       setEditingSubject(null);
       resetSubjectForm();
-      await fetchData();
     } catch (error) {
       console.error("Failed to save subject:", error);
       toast.error(error.response?.data?.detail || "কিতাব সংরক্ষণে সমস্যা হয়েছে");
@@ -1027,6 +1048,16 @@ const ClassManagement = () => {
       }
     }
     return cls.display_name || cls.name || cls.standard;
+  };
+
+  const getDisplayNameForStandard = (std) => {
+    if (institutionType === "madrasah") {
+      const madrasahMatch = madrasahStandards.find((m) => m.standard === std);
+      if (madrasahMatch) {
+        return madrasahMatch.display_name;
+      }
+    }
+    return std;
   };
 
   const handleToggleClassStatus = async (cls) => {
@@ -1920,7 +1951,7 @@ const ClassManagement = () => {
                   {classStandards.length > 0 ? (
                     classStandards.map((std) => (
                       <SelectItem key={std} value={std}>
-                        {std}
+                        {getDisplayNameForStandard(std)}
                       </SelectItem>
                     ))
                   ) : (
@@ -1978,7 +2009,7 @@ const ClassManagement = () => {
                         {classStandards.length > 0 ? (
                           classStandards.map((std) => (
                             <SelectItem key={std} value={std}>
-                              {std}
+                              {getDisplayNameForStandard(std)}
                             </SelectItem>
                           ))
                         ) : (
