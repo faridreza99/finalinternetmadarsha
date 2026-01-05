@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from pathlib import Path
 from id_card_pdf import generate_student_id_card_pdf
-from weasyprint_pdf import generate_student_list_pdf, generate_generic_report_pdf
+from weasyprint_pdf import generate_student_list_pdf, generate_generic_report_pdf, generate_staff_list_pdf, generate_financial_report_pdf, generate_attendance_report_pdf, generate_result_report_pdf, generate_payroll_report_pdf, generate_pdf_report
 from id_card_generator import generate_staff_id_card_pdf
 
 
@@ -5507,82 +5507,20 @@ async def export_staff(
                 'secondary': branding.get("secondary_color", "#059669")
             }
             
-            template = create_professional_pdf_template(school_name, school_colors)
+            # Generate PDF using WeasyPrint for Bengali support
+            filter_text = f"Department: {department}" if department and department != "all_departments" else ""
             
-            # Create PDF document with professional margins
-            doc = SimpleDocTemplate(
-                output, 
-                pagesize=A4, 
-                rightMargin=50, 
-                leftMargin=50, 
-                topMargin=115,
-                bottomMargin=50
+            output = generate_staff_list_pdf(
+                staff_list=staff_list,
+                school_name=school_name,
+                school_address=school_address,
+                school_contact=school_contact,
+                logo_path=logo_path,
+                primary_color=school_colors['primary'],
+                secondary_color=school_colors['secondary'],
+                generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+                filter_text=filter_text
             )
-            
-            elements = []
-            
-            # Report title (removed from elements as it's now in header)
-            elements.append(Spacer(1, 10))
-            
-            # Filter display
-            if department and department != "all_departments":
-                filter_para = Paragraph(
-                    f"<b>Department:</b> {department}", 
-                    template['styles']['FilterText']
-                )
-                elements.append(filter_para)
-                elements.append(Spacer(1, 15))
-            
-            # Summary statistics
-            total_staff = len(staff_list)
-            departments_count = len(set(s.get("department", "") for s in staff_list if s.get("department")))
-            
-            summary_data = {
-                "Total Staff": str(total_staff),
-                "Departments": str(departments_count)
-            }
-            
-            elements.append(Paragraph("SUMMARY STATISTICS", template['styles']['SectionHeading']))
-            summary_table = create_summary_box(summary_data, template)
-            elements.append(summary_table)
-            elements.append(Spacer(1, 20))
-            
-            # Staff data table with professional formatting
-            elements.append(Paragraph("STAFF DETAILS", template['styles']['SectionHeading']))
-            
-            headers = ["Employee ID", "Name", "Designation", "Department", "Phone", "Email"]
-            data_rows = []
-            
-            for staff in staff_list[:100]:  # Limit for PDF performance
-                data_rows.append([
-                    staff.get("employee_id", "")[:12],
-                    staff.get("name", "")[:25],
-                    staff.get("designation", "")[:18],
-                    staff.get("department", "")[:15],
-                    staff.get("phone", "")[:15],
-                    staff.get("email", "")[:25]
-                ])
-            
-            col_widths = [1.0*inch, 1.6*inch, 1.3*inch, 1.1*inch, 1.1*inch, 1.7*inch]
-            staff_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-            elements.append(staff_table)
-            
-            # Build PDF with professional header/footer
-            def add_page_decorations(canvas, doc):
-                add_pdf_header_footer(
-                    canvas, 
-                    doc, 
-                    school_name, 
-                    "Staff Directory Report", 
-                    current_user.name if hasattr(current_user, 'name') else current_user.username,
-                    page_num_text=True,
-                    school_address=school_address,
-                    school_contact=school_contact,
-                    logo_path=logo_path
-                )
-            
-            doc.build(elements, onFirstPage=add_page_decorations, onLaterPages=add_page_decorations)
-            output.seek(0)
             
             return StreamingResponse(
                 output,
