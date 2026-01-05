@@ -720,8 +720,12 @@ const ClassManagement = () => {
         },
       });
 
+      // Real-time update: Remove class from state
+      setClasses((prev) => prev.filter((c) => c.id !== cls.id));
+      // Also remove related sections
+      setSections((prev) => prev.filter((s) => s.class_id !== cls.id));
+      
       toast.success(`"${cls.display_name || cls.name}" সফলভাবে মুছে ফেলা হয়েছে`);
-      await fetchData();
     } catch (error) {
       console.error("Failed to delete class:", error);
       toast.error(error.response?.data?.detail || "জামাত মুছতে সমস্যা হয়েছে");
@@ -755,8 +759,10 @@ const ClassManagement = () => {
         },
       });
 
+      // Real-time update: Remove section from state
+      setSections((prev) => prev.filter((s) => s.id !== section.id));
+      
       toast.success(`"${section.name}" শাখা সফলভাবে মুছে ফেলা হয়েছে`);
-      await fetchData();
     } catch (error) {
       console.error("Failed to delete section:", error);
       toast.error(error.response?.data?.detail || "শাখা মুছতে সমস্যা হয়েছে");
@@ -906,8 +912,10 @@ const ClassManagement = () => {
         },
       });
 
+      // Real-time update: Remove subject from state
+      setSubjects((prev) => prev.filter((s) => s.id !== subject.id));
+      
       toast.success(`"${subject.subject_name}" কিতাব সফলভাবে মুছে ফেলা হয়েছে`);
-      await fetchData();
     } catch (error) {
       console.error("Failed to delete subject:", error);
       toast.error(error.response?.data?.detail || "কিতাব মুছতে সমস্যা হয়েছে");
@@ -1039,67 +1047,6 @@ const ClassManagement = () => {
       console.error("Failed to toggle class status:", error);
       toast.error(
         error.response?.data?.detail || "Failed to toggle class status",
-      );
-    }
-  };
-
-  const handleSafeDeleteClass = async (cls) => {
-    try {
-      const token = localStorage.getItem("token");
-      const usageRes = await axios.get(`${API}/classes/${cls.id}/usage-check`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const usage = usageRes.data;
-
-      if (usage.has_data) {
-        const disableResult = await Swal.fire({
-          title: "জামাত মুছা যাচ্ছে না",
-          html: `
-            <div class="text-left">
-              <p>এই জামাতে ডাটা আছে:</p>
-              <ul class="list-disc ml-4 mt-2">
-                <li>শিক্ষার্থী: ${usage.usage.students}</li>
-                <li>উপস্থিতি রেকর্ড: ${usage.usage.attendance}</li>
-                <li>পরীক্ষা: ${usage.usage.exams}</li>
-                <li>ফলাফল: ${usage.usage.results}</li>
-              </ul>
-              <p class="mt-3">পরিবর্তে জামাত নিষ্ক্রিয় করুন।</p>
-            </div>
-          `,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "নিষ্ক্রিয় করুন",
-          cancelButtonText: "বাতিল",
-          confirmButtonColor: "#f59e0b",
-        });
-        
-        if (disableResult.isConfirmed) {
-          await handleToggleClassStatus(cls);
-        }
-      } else {
-        const deleteResult = await Swal.fire({
-          title: "জামাত মুছুন",
-          text: `"${getDisplayName(cls)}" স্থায়ীভাবে মুছে ফেলতে চান?`,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "হ্যাঁ, মুছুন!",
-          cancelButtonText: "বাতিল",
-          confirmButtonColor: "#ef4444",
-        });
-        
-        if (deleteResult.isConfirmed) {
-          await axios.delete(`${API}/classes/${cls.id}/permanent`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          toast.success(`"${getDisplayName(cls)}" সফলভাবে মুছে ফেলা হয়েছে`);
-          await fetchData();
-        }
-      }
-    } catch (error) {
-      console.error("Failed to check class usage:", error);
-      toast.error(
-        error.response?.data?.detail || "জামাত ব্যবহার যাচাই করতে সমস্যা হয়েছে",
       );
     }
   };
@@ -1694,7 +1641,7 @@ const ClassManagement = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="text-red-600 hover:text-red-700 dark:text-red-400"
-                                onClick={() => handleSafeDeleteClass(cls)}
+                                onClick={() => handleDeleteClass(cls)}
                                 title={t("common.delete") || "Delete"}
                               >
                                 <Trash2 className="h-4 w-4" />
