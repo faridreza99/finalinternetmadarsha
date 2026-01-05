@@ -599,13 +599,27 @@ async def delete_question(question_id: str, user = Depends(require_admin)):
 
 @router.get("/student/my-semesters")
 async def get_student_semesters(user = Depends(get_current_user)):
-    """Get semesters a student is enrolled in"""
+    """Get semesters a student is enrolled in (or auto-enrolled based on class)"""
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
+    # Find student record
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
-    student_id = student["id"] if student else user.id
     
+    # Also try finding by username match
+    if not student:
+        student = await db.students.find_one({"username": user.username, "tenant_id": user.tenant_id})
+    
+    # Also try finding by linked_user_id
+    if not student:
+        student = await db.students.find_one({"linked_user_id": user.id, "tenant_id": user.tenant_id})
+    
+    student_id = student["id"] if student else user.id
+    student_class_id = student.get("class_id") if student else None
+    
+    logging.info(f"STUDENT SEMESTERS: student_id={student_id}, class_id={student_class_id}")
+    
+    # First try explicit enrollments
     enrollments = await db.student_semester_enrollments.find({
         "student_id": student_id,
         "tenant_id": user.tenant_id,
@@ -613,6 +627,27 @@ async def get_student_semesters(user = Depends(get_current_user)):
     }).to_list(50)
     
     semester_ids = [e["semester_id"] for e in enrollments]
+    
+    # If no explicit enrollments but student has a class, auto-enroll in class semesters
+    if not semester_ids and student_class_id:
+        logging.info(f"STUDENT SEMESTERS: No explicit enrollments, checking class semesters for class_id={student_class_id}")
+        # Get all semesters for student's class
+        class_semesters = await db.semesters.find({
+            "class_id": student_class_id,
+            "tenant_id": user.tenant_id,
+            "is_active": True
+        }).sort("order", 1).to_list(50)
+        
+        for sem in class_semesters:
+            sem.pop("_id", None)
+            class_doc = await db.classes.find_one({"id": sem["class_id"], "tenant_id": user.tenant_id})
+            if class_doc:
+                sem["class_name"] = class_doc.get("display_name") or class_doc.get("name")
+        
+        logging.info(f"STUDENT SEMESTERS: Found {len(class_semesters)} semesters for class {student_class_id}")
+        return {"semesters": class_semesters}
+    
+    # Get semesters from explicit enrollments
     semesters = await db.semesters.find({
         "id": {"$in": semester_ids},
         "tenant_id": user.tenant_id,
@@ -634,15 +669,34 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
+    # Find student record using multiple methods
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
-    student_id = student["id"] if student else user.id
+    if not student:
+        student = await db.students.find_one({"username": user.username, "tenant_id": user.tenant_id})
+    if not student:
+        student = await db.students.find_one({"linked_user_id": user.id, "tenant_id": user.tenant_id})
     
+    student_id = student["id"] if student else user.id
+    student_class_id = student.get("class_id") if student else None
+    
+    # Check explicit enrollment first
     enrollment = await db.student_semester_enrollments.find_one({
         "student_id": student_id,
         "semester_id": semester_id,
         "tenant_id": user.tenant_id,
         "is_active": True
     })
+    
+    # If no explicit enrollment, check if student's class matches semester's class (auto-enrollment)
+    if not enrollment and student_class_id:
+        semester = await db.semesters.find_one({
+            "id": semester_id,
+            "tenant_id": user.tenant_id,
+            "is_active": True
+        })
+        if semester and semester.get("class_id") == student_class_id:
+            # Student is auto-enrolled through class match
+            enrollment = {"auto_enrolled": True}
     
     if not enrollment:
         raise HTTPException(status_code=403, detail="এই সেমিস্টারে আপনি ভর্তি নন")
