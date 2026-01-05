@@ -3465,7 +3465,7 @@ async def delete_subscription_plan(plan_id: str, current_user: User = Depends(ge
 
 @api_router.get("/schools", response_model=List[School])
 async def get_schools(current_user: User = Depends(get_current_user)):
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     schools = await db.schools.find(query).to_list(1000)
     return [School(**school) for school in schools]
 
@@ -3766,7 +3766,7 @@ async def get_students(
     if paginate:
         pagination = get_pagination_params(page or 1, limit or 50)
     
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     
     logging.info(f"DEBUG get_students - tenant: {current_user.tenant_id}, class_id: {class_id}, section_id: {section_id}")
     
@@ -4741,7 +4741,7 @@ async def export_students(
     """Export students to CSV, Excel, or PDF format"""
     try:
         # Build query
-        query = {"tenant_id": current_user.tenant_id, "is_active": True}
+        query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
         if class_id and class_id != "all_classes":
             query["class_id"] = class_id
         if section_id:
@@ -4987,7 +4987,7 @@ async def get_tags(
     current_user: User = Depends(get_current_user)
 ):
     """Get list of tags"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     
     if category:
         query["category"] = category
@@ -5218,7 +5218,7 @@ async def remove_tag_from_staff(
 
 @api_router.get("/staff", response_model=List[Staff])
 async def get_staff(current_user: User = Depends(get_current_user)):
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     staff = await db.staff.find(query).to_list(1000)
     return [Staff(**member) for member in staff]
     logging.info(f"DEBUG get_staff: tenant_id={current_user.tenant_id}, found {len(staff)} staff")
@@ -5464,7 +5464,7 @@ async def export_staff(
     """Export staff data to Excel or PDF format"""
     try:
         # Build query
-        query = {"tenant_id": current_user.tenant_id, "is_active": True}
+        query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
         if department and department != "all_departments":
             query["department"] = department
         
@@ -8403,7 +8403,7 @@ async def permanent_delete_class(class_id: str, current_user: User = Depends(get
 @api_router.get("/timetables", response_model=List[Timetable])
 async def get_timetables(current_user: User = Depends(get_current_user)):
     """Get all timetables for the current tenant"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     timetables = await db.timetables.find(query).to_list(1000)
     return [Timetable(**tt) for tt in timetables]
 
@@ -8706,7 +8706,7 @@ async def get_teacher_timetable(teacher_id: str, current_user: User = Depends(ge
 @api_router.get("/grading-scales", response_model=List[GradingScale])
 async def get_grading_scales(current_user: User = Depends(get_current_user)):
     """Get all grading scales for the current tenant"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     
     # Admin can see all, teachers can only see active ones
     if current_user.role not in ["admin", "super_admin"]:
@@ -8826,7 +8826,7 @@ async def delete_grading_scale(scale_id: str, current_user: User = Depends(get_c
 @api_router.get("/assessment-criteria", response_model=List[AssessmentCriteria])
 async def get_assessment_criteria(current_user: User = Depends(get_current_user)):
     """Get all assessment criteria for the current tenant"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     criteria_list = await db.assessment_criteria.find(query).to_list(1000)
     return [AssessmentCriteria(**criteria) for criteria in criteria_list]
 
@@ -8918,7 +8918,7 @@ async def get_subjects(
 ):
     """Get all subjects for the current tenant, optionally filtered by class"""
     import re
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     
     # If class_id is provided, look up the class name and build variations
     if class_id and class_id != "all_classes":
@@ -10473,7 +10473,7 @@ async def get_survey_responses(survey_id: str, current_user: User = Depends(get_
 @api_router.get("/vehicles", response_model=List[Vehicle])
 async def get_vehicles(current_user: User = Depends(get_current_user)):
     """Get all vehicles for the current tenant"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     vehicles = await db.vehicles.find(query).to_list(1000)
     return [Vehicle(**vehicle) for vehicle in vehicles]
 
@@ -10616,7 +10616,7 @@ async def delete_vehicle(vehicle_id: str, current_user: User = Depends(get_curre
 @api_router.get("/routes", response_model=List[Route])
 async def get_routes(current_user: User = Depends(get_current_user)):
     """Get all routes for the current tenant"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     routes = await db.routes.find(query).to_list(1000)
     return [Route(**route) for route in routes]
 
@@ -10824,7 +10824,7 @@ async def generate_admission_summary_report(
     """Generate admission summary report in specified format"""
     try:
         # Build query filters
-        query = {"tenant_id": current_user.tenant_id, "is_active": True}
+        query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
         
         if class_filter != "all_classes":
             query["class_id"] = class_filter
@@ -11026,7 +11026,7 @@ async def generate_student_information_report(
     """Generate comprehensive student information report"""
     try:
         # Build query filters
-        query = {"tenant_id": current_user.tenant_id, "is_active": True}
+        query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
         
         if class_filter != "all_classes":
             query["class_id"] = class_filter
@@ -12631,7 +12631,7 @@ async def generate_consolidated_marksheet(
     """Generate consolidated marksheet report"""
     try:
         # Build query filters
-        query = {"tenant_id": current_user.tenant_id, "is_active": True}
+        query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
         
         if class_filter != "all_classes":
             query["class_id"] = class_filter
@@ -28804,7 +28804,7 @@ async def get_question_papers(
     if current_user.role not in ["super_admin", "admin", "teacher"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     if class_name:
         query["class_name"] = class_name
     if subject:
@@ -30970,7 +30970,7 @@ async def start_bulk_id_card_generation(
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Get student list
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     
     if student_ids:
         id_list = [s.strip() for s in student_ids.split(",")]
@@ -31248,7 +31248,7 @@ async def get_students_for_id_cards(
     if current_user.role not in ["super_admin", "admin", "teacher"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     
     if class_id and class_id != "all":
         query["class_id"] = class_id
@@ -31484,7 +31484,7 @@ async def get_madrasah_simple_routines(
     current_user: User = Depends(get_current_user)
 ):
     """Get simple routines for Madrasah"""
-    query = {"tenant_id": current_user.tenant_id, "is_active": True}
+    query = {"tenant_id": current_user.tenant_id, "$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}
     if class_id:
         query["class_id"] = class_id
     
