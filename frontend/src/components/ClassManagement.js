@@ -475,17 +475,9 @@ const ClassManagement = () => {
       setSections(sectionData);
       setSubjects(subjectData);
 
-      // Filter staff to include teachers and senior positions
-      const teachers = staffData.filter(
-        (s) =>
-          s.designation &&
-          (s.designation.toLowerCase().includes("teacher") ||
-            s.designation.toLowerCase().includes("principal") ||
-            s.designation.toLowerCase().includes("head")),
-      );
-      console.log("✅ Teachers filtered:", teachers);
-
-      setStaff(teachers);
+      // Include all staff as teachers - in madrasah any staff can teach (উস্তাদ, মুদাররিস, etc.)
+      console.log("✅ All staff available for assignment:", staffData);
+      setStaff(staffData);
     } catch (error) {
       console.error("❌ Failed to fetch data:", error);
       toast.error(

@@ -67,7 +67,12 @@ const MarkStudentAttendance = () => {
           is_active: true
         }
       });
-      setStudents(response.data);
+      // Deduplicate students by ID to prevent duplicates
+      const studentData = response.data || [];
+      const uniqueStudents = studentData.filter((student, index, self) =>
+        index === self.findIndex((s) => s.id === student.id)
+      );
+      setStudents(uniqueStudents);
     } catch (error) {
       toast.error('ছাত্র লোড করতে ব্যর্থ');
     } finally {
