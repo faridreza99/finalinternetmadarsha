@@ -58,13 +58,14 @@ const MadrasahDashboard = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [studentsRes, feesRes, attendanceRes, classesRes, paymentsRes, brandingRes] = await Promise.all([
+      const [studentsRes, feesRes, attendanceRes, classesRes, paymentsRes, brandingRes, institutionRes] = await Promise.all([
         axios.get(`${API}/students`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API}/fees/dashboard`, { headers }).catch(() => ({ data: {} })),
         axios.get(`${API}/attendance/summary?type=student`, { headers }).catch(() => ({ data: {} })),
         axios.get(`${API}/classes`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API}/fees/payments/recent?limit=5`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API}/school-branding`, { headers }).catch(() => ({ data: {} })),
+        axios.get(`${API}/institution`, { headers }).catch(() => ({ data: {} })),
       ]);
 
       const studentsRaw = studentsRes.data;
@@ -111,7 +112,13 @@ const MadrasahDashboard = () => {
         weeklyAttendance: Array.isArray(attendance.weekly) ? attendance.weekly : [],
       });
 
-      setSchoolBranding(brandingRes.data || {});
+      const branding = brandingRes.data || {};
+      const institution = institutionRes.data || {};
+      setSchoolBranding({
+        school_name: institution.school_name || institution.name || branding.school_name || branding.site_title || '',
+        logo_url: institution.logo_url || institution.logo || branding.logo_url || '',
+        primary_color: branding.primary_color || '#10B981'
+      });
     } catch (error) {
       console.error("Dashboard fetch error:", error);
       toast.error("ড্যাশবোর্ড ডাটা লোড করতে সমস্যা হয়েছে");
