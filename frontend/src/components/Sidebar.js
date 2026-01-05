@@ -73,17 +73,42 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const response = await fetch("/api/school-branding", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setSchoolBranding({
-            school_name: data.school_name || 'School ERP',
-            logo_url: data.logo_url,
-            primary_color: data.primary_color || '#10B981'
-          });
+        
+        const [brandingRes, institutionRes] = await Promise.all([
+          fetch("/api/school-branding", {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => null),
+          fetch("/api/institution", {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => null)
+        ]);
+        
+        let schoolName = 'School ERP';
+        let logoUrl = null;
+        let primaryColor = '#10B981';
+        
+        if (brandingRes?.ok) {
+          const brandingData = await brandingRes.json();
+          schoolName = brandingData.school_name || brandingData.site_title || schoolName;
+          logoUrl = brandingData.logo_url || logoUrl;
+          primaryColor = brandingData.primary_color || primaryColor;
         }
+        
+        if (institutionRes?.ok) {
+          const institutionData = await institutionRes.json();
+          if (institutionData.school_name || institutionData.name) {
+            schoolName = institutionData.school_name || institutionData.name || schoolName;
+          }
+          if (institutionData.logo_url || institutionData.logo) {
+            logoUrl = institutionData.logo_url || institutionData.logo || logoUrl;
+          }
+        }
+        
+        setSchoolBranding({
+          school_name: schoolName,
+          logo_url: logoUrl,
+          primary_color: primaryColor
+        });
       } catch (error) {
         console.error("Error fetching branding:", error);
       }
