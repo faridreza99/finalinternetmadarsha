@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from pathlib import Path
 from id_card_pdf import generate_student_id_card_pdf
+from weasyprint_pdf import generate_student_list_pdf, generate_generic_report_pdf
 from id_card_generator import generate_staff_id_card_pdf
 
 
@@ -4844,11 +4845,7 @@ async def export_students(
             )
         
         elif format == "pdf":
-            # Create professional PDF with template system
-            from reportlab.lib.units import inch
-            from reportlab.platypus import Paragraph, Spacer
-            
-            output = io.BytesIO()
+            # Use WeasyPrint for Bengali/Unicode support
             
             # Fetch school branding (priority) for reports
             branding = await get_school_branding_for_reports(current_user.tenant_id)
@@ -4869,99 +4866,36 @@ async def export_students(
             logo_path = branding.get("logo_path")
             
             # Get colors from branding
-            school_colors = {
-                'primary': branding.get("primary_color", "#1e3a8a"),
-                'secondary': branding.get("secondary_color", "#059669")
-            }
+            primary_color = branding.get("primary_color", "#1e3a8a")
+            secondary_color = branding.get("secondary_color", "#059669")
             
-            template = create_professional_pdf_template(school_name, school_colors)
-            
-            # Create PDF document with professional margins (increased topMargin for larger header)
-            doc = SimpleDocTemplate(
-                output, 
-                pagesize=A4, 
-                rightMargin=50, 
-                leftMargin=50, 
-                topMargin=115,
-                bottomMargin=50
-            )
-            
-            elements = []
-            
-            # Report title (removed from elements as it's now in header)
-            elements.append(Spacer(1, 10))
-            
-            # Filter display
-            filter_text = []
+            # Build filter text
+            filter_text_parts = []
             if class_id and class_id != "all_classes":
                 class_name = class_map.get(class_id, "")
                 if class_name:
-                    filter_text.append(f"Class: {class_name}")
+                    filter_text_parts.append(f"Class: {class_name}")
             if section_id:
                 section_name = section_map.get(section_id, "")
                 if section_name:
-                    filter_text.append(f"Section: {section_name}")
+                    filter_text_parts.append(f"Section: {section_name}")
+            filter_text = " | ".join(filter_text_parts)
             
-            if filter_text:
-                filter_para = Paragraph(
-                    f"<b>Filters:</b> {' | '.join(filter_text)}", 
-                    template['styles']['FilterText']
-                )
-                elements.append(filter_para)
-                elements.append(Spacer(1, 15))
-            
-            # Summary statistics
-            total_students = len(students)
-            total_male = len([s for s in students if s.get("gender") == "Male"])
-            total_female = len([s for s in students if s.get("gender") == "Female"])
-            
-            summary_data = {
-                "Total Students": str(total_students),
-                "Male": str(total_male),
-                "Female": str(total_female)
-            }
-            
-            elements.append(Paragraph("SUMMARY STATISTICS", template['styles']['SectionHeading']))
-            summary_table = create_summary_box(summary_data, template)
-            elements.append(summary_table)
-            elements.append(Spacer(1, 20))
-            
-            # Student data table with professional formatting
-            elements.append(Paragraph("STUDENT DETAILS", template['styles']['SectionHeading']))
-            
-            headers = ["Admission No", "Name", "Class", "Section", "Guardian", "Phone"]
-            data_rows = []
-            
-            for student in students[:100]:  # Limit for PDF performance
-                data_rows.append([
-                    student.get("admission_no", "")[:15],
-                    student.get("name", "")[:25],
-                    class_map.get(student.get("class_id"), "")[:15],
-                    section_map.get(student.get("section_id"), "")[:10],
-                    student.get("guardian_name", "")[:20],
-                    student.get("guardian_phone", "")[:15]
-                ])
-            
-            col_widths = [1.2*inch, 1.8*inch, 1.2*inch, 0.9*inch, 1.5*inch, 1.2*inch]
-            student_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-            elements.append(student_table)
-            
-            # Build PDF with professional header/footer
-            def add_page_decorations(canvas, doc):
-                add_pdf_header_footer(
-                    canvas, 
-                    doc, 
-                    school_name, 
-                    "Student List Report", 
-                    current_user.name if hasattr(current_user, 'name') else current_user.username,
-                    page_num_text=True,
-                    school_address=school_address,
-                    school_contact=school_contact,
-                    logo_path=logo_path
-                )
-            
-            doc.build(elements, onFirstPage=add_page_decorations, onLaterPages=add_page_decorations)
-            output.seek(0)
+            # Generate PDF with WeasyPrint (Bengali support)
+            output = generate_student_list_pdf(
+                students=students,
+                class_map=class_map,
+                section_map=section_map,
+                school_name=school_name,
+                school_address=school_address,
+                school_contact=school_contact,
+                logo_path=logo_path,
+                primary_color=primary_color,
+                secondary_color=secondary_color,
+                report_title="Student List Report",
+                generated_by=current_user.name if hasattr(current_user, 'name') else current_user.username,
+                filter_text=filter_text
+            )
             
             return StreamingResponse(
                 output,
