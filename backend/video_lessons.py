@@ -739,8 +739,15 @@ async def get_student_lesson(lesson_id: str, user = Depends(get_current_user)):
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
+    # Find student record using multiple methods
     student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
+    if not student:
+        student = await db.students.find_one({"username": user.username, "tenant_id": user.tenant_id})
+    if not student:
+        student = await db.students.find_one({"linked_user_id": user.id, "tenant_id": user.tenant_id})
+    
     student_id = student["id"] if student else user.id
+    student_class_id = student.get("class_id") if student else None
     
     lesson = await db.video_lessons.find_one({
         "id": lesson_id,
@@ -751,12 +758,24 @@ async def get_student_lesson(lesson_id: str, user = Depends(get_current_user)):
     if not lesson:
         raise HTTPException(status_code=404, detail="পাঠ খুঁজে পাওয়া যায়নি")
     
+    # Check explicit enrollment first
     enrollment = await db.student_semester_enrollments.find_one({
         "student_id": student_id,
         "semester_id": lesson["semester_id"],
         "tenant_id": user.tenant_id,
         "is_active": True
     })
+    
+    # If no explicit enrollment, check if student's class matches semester's class (auto-enrollment)
+    if not enrollment and student_class_id:
+        semester = await db.semesters.find_one({
+            "id": lesson["semester_id"],
+            "tenant_id": user.tenant_id,
+            "is_active": True
+        })
+        if semester and semester.get("class_id") == student_class_id:
+            # Student is auto-enrolled through class match
+            enrollment = {"auto_enrolled": True}
     
     if not enrollment:
         raise HTTPException(status_code=403, detail="এই সেমিস্টারে আপনি ভর্তি নন")
