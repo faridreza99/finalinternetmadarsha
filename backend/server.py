@@ -91,8 +91,19 @@ def fix_mongo_url(url: str) -> str:
         return fixed_url
     return url
 
+import certifi
+import ssl
+
 mongo_url = fix_mongo_url(os.environ['MONGO_URL'])
-client = AsyncIOMotorClient(mongo_url)
+# Add SSL options to handle TLS connection issues
+client = AsyncIOMotorClient(
+    mongo_url,
+    tlsCAFile=certifi.where(),
+    tls=True,
+    tlsAllowInvalidCertificates=True,
+    serverSelectionTimeoutMS=30000,
+    connectTimeoutMS=30000
+)
 db = client[os.environ['DB_NAME']]
 
 notification_svc = get_notification_service(db)
