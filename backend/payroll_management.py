@@ -29,6 +29,9 @@ from reportlab.lib.units import inch, mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from weasyprint import HTML
+import os
+import base64
 import calendar
 
 logger = logging.getLogger(__name__)
@@ -583,176 +586,177 @@ async def generate_payslip_pdf(
     employee: dict,
     payroll: dict
 ) -> bytes:
-    """Generate payslip PDF with school branding"""
+    """Generate payslip PDF with school branding using WeasyPrint for Bengali support"""
     
     branding = await get_school_branding_for_reports(db, tenant_id)
-    currency = await get_currency_symbol(db, tenant_id)
+    currency_data = await db.currency_settings.find_one({"tenant_id": tenant_id})
+    currency = currency_data.get("symbol", "৳") if currency_data else "৳"
     
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                            topMargin=30*mm, bottomMargin=20*mm,
-                            leftMargin=15*mm, rightMargin=15*mm)
+    FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts')
     
-    elements = []
-    styles = getSampleStyleSheet()
+    # Get logo as base64
+    logo_base64 = None
+    if branding.get("logo_path") and os.path.exists(branding.get("logo_path")):
+        try:
+            with open(branding.get("logo_path"), 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except:
+            pass
     
-    # Title style
-    title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Heading1'],
-        fontSize=16,
-        alignment=1,
-        spaceAfter=12
-    )
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo">' if logo_base64 else ""
     
-    # Header
-    elements.append(Paragraph(branding["school_name"], title_style))
-    if branding["address"]:
-        elements.append(Paragraph(branding["address"], styles['Normal']))
-    elements.append(Spacer(1, 10*mm))
-    
-    # Payslip title
     month_name = calendar.month_name[payroll.get("month", 1)]
     year = payroll.get("year", datetime.now().year)
-    elements.append(Paragraph(f"PAYSLIP - {month_name} {year}", title_style))
-    elements.append(Spacer(1, 5*mm))
     
-    # Employee details table
-    emp_data = [
-        ["Employee ID:", employee.get("employee_id", "N/A"), "Department:", employee.get("department", "N/A")],
-        ["Name:", employee.get("name", "N/A"), "Designation:", employee.get("designation", "N/A")],
-        ["Bank:", employee.get("bank_name", "N/A"), "Account:", employee.get("bank_account", "N/A")]
-    ]
-    
-    emp_table = Table(emp_data, colWidths=[80, 120, 80, 120])
-    emp_table.setStyle(TableStyle([
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
-    ]))
-    elements.append(emp_table)
-    elements.append(Spacer(1, 5*mm))
-    
-    # Earnings and Deductions
+    # Build earnings rows
     earnings = payroll_item.get("earnings", {})
-    deductions = payroll_item.get("deductions", {})
-    
-    # Create two-column layout
-    earnings_data = [["EARNINGS", "Amount"]]
+    earnings_rows = ""
     for key, value in earnings.items():
         if value > 0:
             label = key.replace("_", " ").title()
-            earnings_data.append([label, f"{currency}{value:,.2f}"])
+            earnings_rows += f"<tr><td>{label}</td><td class='amount'>{currency}{value:,.2f}</td></tr>"
     
-    # Add bonus if any
     bonus = payroll_item.get("bonus_amount", 0)
     if bonus > 0:
-        earnings_data.append([f"Bonus ({payroll_item.get('bonus_type', 'Other')})", f"{currency}{bonus:,.2f}"])
+        earnings_rows += f"<tr><td>Bonus ({payroll_item.get('bonus_type', 'Other')})</td><td class='amount'>{currency}{bonus:,.2f}</td></tr>"
     
-    earnings_data.append(["Gross Salary", f"{currency}{payroll_item.get('gross_salary', 0):,.2f}"])
+    gross_salary = payroll_item.get("gross_salary", 0)
+    earnings_rows += f"<tr class='total-row'><td><strong>Gross Salary / মোট বেতন</strong></td><td class='amount'><strong>{currency}{gross_salary:,.2f}</strong></td></tr>"
     
-    deductions_data = [["DEDUCTIONS", "Amount"]]
+    # Build deductions rows
+    deductions = payroll_item.get("deductions", {})
+    deductions_rows = ""
     for key, value in deductions.items():
         if value > 0:
             label = key.replace("_", " ").title()
-            deductions_data.append([label, f"{currency}{value:,.2f}"])
+            deductions_rows += f"<tr><td>{label}</td><td class='amount'>{currency}{value:,.2f}</td></tr>"
     
-    # Add extra deductions if any
     extra_ded = payroll_item.get("extra_deduction", 0)
     if extra_ded > 0:
-        deductions_data.append([payroll_item.get("extra_deduction_reason", "Other Deduction"), f"{currency}{extra_ded:,.2f}"])
+        deductions_rows += f"<tr><td>{payroll_item.get('extra_deduction_reason', 'Other Deduction')}</td><td class='amount'>{currency}{extra_ded:,.2f}</td></tr>"
     
-    deductions_data.append(["Total Deductions", f"{currency}{payroll_item.get('total_deductions', 0):,.2f}"])
-    
-    # Build tables
-    earn_table = Table(earnings_data, colWidths=[150, 80])
-    earn_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e0e7ff')),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-    ]))
-    
-    ded_table = Table(deductions_data, colWidths=[150, 80])
-    ded_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc2626')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#fee2e2')),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-    ]))
-    
-    # Side by side tables
-    combined = Table([[earn_table, ded_table]], colWidths=[240, 240])
-    elements.append(combined)
-    elements.append(Spacer(1, 5*mm))
+    total_deductions = payroll_item.get("total_deductions", 0)
+    deductions_rows += f"<tr class='total-row'><td><strong>Total Deductions / মোট কর্তন</strong></td><td class='amount'><strong>{currency}{total_deductions:,.2f}</strong></td></tr>"
     
     # Attendance summary
     att = payroll_item.get("attendance_summary", {})
-    att_data = [
-        ["ATTENDANCE SUMMARY"],
-        [f"Working Days: {att.get('total_working_days', 0)} | Present: {att.get('present_days', 0)} | Absent: {att.get('absent_days', 0)} | Late: {att.get('late_days', 0)} | Half-day: {att.get('half_day_count', 0)}"]
-    ]
-    att_table = Table(att_data, colWidths=[460])
-    att_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#374151')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    elements.append(att_table)
-    elements.append(Spacer(1, 5*mm))
-    
-    # Net salary box
     net_salary = payroll_item.get("net_salary", 0)
-    net_data = [
-        ["NET PAYABLE SALARY", f"{currency}{net_salary:,.2f}"]
-    ]
-    net_table = Table(net_data, colWidths=[300, 160])
-    net_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#059669')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 14),
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 10),
-    ]))
-    elements.append(net_table)
-    elements.append(Spacer(1, 10*mm))
     
     # Payment info
     payment = payroll_item.get("payment", {})
+    payment_info = ""
     if payment.get("status") == "paid":
-        pay_info = f"Paid via {payment.get('method', 'N/A')} on {payment.get('date', 'N/A')}"
+        payment_info = f"Paid via {payment.get('method', 'N/A')} on {payment.get('date', 'N/A')}"
         if payment.get("reference"):
-            pay_info += f" (Ref: {payment.get('reference')})"
-        elements.append(Paragraph(pay_info, styles['Normal']))
+            payment_info += f" (Ref: {payment.get('reference')})"
     
-    elements.append(Spacer(1, 10*mm))
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            @font-face {{
+                font-family: 'NotoSans';
+                src: url('file://{FONT_PATH}/NotoSans-Regular.ttf') format('truetype');
+            }}
+            @font-face {{
+                font-family: 'NotoSansBengali';
+                src: url('file://{FONT_PATH}/NotoSansBengali-Regular.ttf') format('truetype');
+            }}
+            @font-face {{
+                font-family: 'NotoSansBengali';
+                src: url('file://{FONT_PATH}/NotoSansBengali-Bold.ttf') format('truetype');
+                font-weight: bold;
+            }}
+            * {{ font-family: 'NotoSans', 'NotoSansBengali', Arial, sans-serif; }}
+            @page {{ size: A4; margin: 1.5cm; }}
+            body {{ font-size: 10pt; line-height: 1.4; color: #333; }}
+            .header {{ background: linear-gradient(135deg, #1e3a8a, #059669); color: white; padding: 15px; margin: -1.5cm -1.5cm 20px -1.5cm; text-align: center; }}
+            .logo {{ width: 60px; height: 60px; margin-bottom: 10px; }}
+            .school-name {{ font-size: 18pt; font-weight: bold; }}
+            .payslip-title {{ font-size: 14pt; font-weight: bold; color: #1e3a8a; text-align: center; margin: 15px 0; }}
+            .emp-table {{ width: 100%; margin-bottom: 15px; }}
+            .emp-table td {{ padding: 5px 10px; }}
+            .emp-table .label {{ font-weight: bold; width: 25%; }}
+            .section {{ margin-bottom: 15px; }}
+            .section-title {{ background: #1e3a8a; color: white; padding: 8px 10px; font-weight: bold; }}
+            .section-title.deductions {{ background: #dc2626; }}
+            .data-table {{ width: 100%; border-collapse: collapse; }}
+            .data-table td {{ padding: 6px 10px; border-bottom: 1px solid #eee; }}
+            .amount {{ text-align: right; }}
+            .total-row {{ background: #f0f0f0; }}
+            .net-salary {{ background: #059669; color: white; padding: 15px; font-size: 14pt; margin-top: 15px; }}
+            .net-salary td {{ padding: 10px; }}
+            .net-label {{ font-weight: bold; }}
+            .net-amount {{ text-align: right; font-weight: bold; font-size: 16pt; }}
+            .attendance-box {{ background: #374151; color: white; padding: 10px; margin-top: 15px; text-align: center; }}
+            .footer {{ text-align: center; font-size: 8pt; color: #666; margin-top: 20px; }}
+            .two-col {{ display: table; width: 100%; }}
+            .col {{ display: table-cell; width: 50%; vertical-align: top; padding-right: 10px; }}
+            .col:last-child {{ padding-right: 0; padding-left: 10px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            {logo_html}
+            <div class="school-name">{branding["school_name"]}</div>
+            <div>{branding.get("address", "")}</div>
+        </div>
+        
+        <div class="payslip-title">PAYSLIP / বেতন স্লিপ - {month_name} {year}</div>
+        
+        <table class="emp-table">
+            <tr><td class="label">Employee ID / কর্মচারী আইডি:</td><td>{employee.get("employee_id", "N/A")}</td><td class="label">Department / বিভাগ:</td><td>{employee.get("department", "N/A")}</td></tr>
+            <tr><td class="label">Name / নাম:</td><td>{employee.get("name", "N/A")}</td><td class="label">Designation / পদবী:</td><td>{employee.get("designation", "N/A")}</td></tr>
+            <tr><td class="label">Bank / ব্যাংক:</td><td>{employee.get("bank_name", "N/A")}</td><td class="label">Account / হিসাব:</td><td>{employee.get("bank_account", "N/A")}</td></tr>
+        </table>
+        
+        <div class="two-col">
+            <div class="col">
+                <div class="section">
+                    <div class="section-title">EARNINGS / আয়</div>
+                    <table class="data-table">
+                        {earnings_rows}
+                    </table>
+                </div>
+            </div>
+            <div class="col">
+                <div class="section">
+                    <div class="section-title deductions">DEDUCTIONS / কর্তন</div>
+                    <table class="data-table">
+                        {deductions_rows}
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="attendance-box">
+            <strong>ATTENDANCE SUMMARY / উপস্থিতি সারসংক্ষেপ</strong><br>
+            Working Days / কর্মদিবস: {att.get('total_working_days', 0)} | Present / উপস্থিত: {att.get('present_days', 0)} | Absent / অনুপস্থিত: {att.get('absent_days', 0)} | Late / দেরি: {att.get('late_days', 0)}
+        </div>
+        
+        <table class="net-salary">
+            <tr>
+                <td class="net-label">NET PAYABLE SALARY / নীট প্রদেয় বেতন</td>
+                <td class="net-amount">{currency}{net_salary:,.2f}</td>
+            </tr>
+        </table>
+        
+        {"<p style='margin-top:10px;'>" + payment_info + "</p>" if payment_info else ""}
+        
+        <div class="footer">
+            This is a computer-generated payslip. No signature required.<br>
+            এটি একটি কম্পিউটার-জেনারেটেড বেতন স্লিপ। স্বাক্ষরের প্রয়োজন নেই।
+        </div>
+    </body>
+    </html>
+    """
     
-    # Footer
-    elements.append(Paragraph("This is a computer-generated payslip. No signature required.", 
-                              ParagraphStyle('Footer', fontSize=8, alignment=1, textColor=colors.grey)))
-    
-    # Build PDF
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer.getvalue()
+    output = io.BytesIO()
+    HTML(string=html_content).write_pdf(output)
+    output.seek(0)
+    return output.getvalue()
 
 
 # ================================

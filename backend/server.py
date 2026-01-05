@@ -14438,13 +14438,13 @@ async def generate_attendance_excel_report(report_type: str, report_data: dict, 
         raise HTTPException(status_code=500, detail="Failed to generate Excel report")
 
 async def generate_attendance_pdf_report(report_type: str, report_data: dict, current_user: User, filename: str) -> str:
-    """Generate professional PDF report for attendance data with school branding"""
+    """Generate professional PDF report for attendance data with school branding using WeasyPrint"""
     try:
         import tempfile
         import os
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-        from reportlab.lib.units import inch
+        from weasyprint import HTML
+        
+        FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts')
         
         # Create temporary file
         temp_dir = tempfile.gettempdir()
@@ -14453,198 +14453,169 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
         # Fetch school branding data
         branding = await get_school_branding_for_reports(current_user.tenant_id)
         
-        school_name = branding.get("school_name", "School ERP System")
+        school_name = branding.get("school_name", "ইন্টারনেট মাদ্রাসা")
         school_address = branding.get("address", "")
         school_phone = branding.get("phone", "")
         school_email = branding.get("email", "")
         school_contact = f"Phone: {school_phone} | Email: {school_email}" if school_phone or school_email else ""
-        logo_url = branding.get("logo_url")
-        logo_path = logo_url  # Use logo_url as logo_path for PDF header
+        primary_color = branding.get("primary_color", "#1e3a8a")
+        secondary_color = branding.get("secondary_color", "#059669")
         
-        template = create_professional_pdf_template(school_name)
+        # Build summary HTML
+        summary_html = ""
+        if report_data.get("summary"):
+            summary_items = ""
+            items = list(report_data["summary"].items())
+            for i in range(0, len(items), 2):
+                row = "<tr>"
+                row += f"<th>{items[i][0]}</th><td>{items[i][1]}</td>"
+                if i + 1 < len(items):
+                    row += f"<th>{items[i+1][0]}</th><td>{items[i+1][1]}</td>"
+                else:
+                    row += "<th></th><td></td>"
+                row += "</tr>"
+                summary_items += row
+            summary_html = f"""
+            <div class="section-title">SUMMARY STATISTICS / সারসংক্ষেপ</div>
+            <table class="summary-table">{summary_items}</table>
+            """
         
-        # Create PDF document with professional margins
-        doc = SimpleDocTemplate(
-            file_path, 
-            pagesize=A4, 
-            rightMargin=50, 
-            leftMargin=50, 
-            topMargin=115,
-            bottomMargin=50
-        )
-        
-        # Build story with professional elements
-        story = []
-        
-        # Report title
-        story.append(Paragraph(report_data["title"], template['styles']['ReportTitle']))
-        story.append(Spacer(1, 10))
-        
-        # Dynamic filters display
+        # Build filter HTML
+        filter_html = ""
         filters = report_data.get("filters", {})
         if filters:
-            filter_para = create_filter_display(filters, template)
-            if filter_para:
-                story.append(filter_para)
-                story.append(Spacer(1, 15))
+            filter_text = ", ".join([f"{k}: {v}" for k, v in filters.items() if v])
+            filter_html = f"<div class='filter-info'><strong>Filters:</strong> {filter_text}</div>"
         
-        # Professional summary box
-        if report_data.get("summary"):
-            story.append(Paragraph("SUMMARY STATISTICS", template['styles']['SectionHeading']))
-            summary_table = create_summary_box(report_data["summary"], template)
-            if summary_table:
-                story.append(summary_table)
-                story.append(Spacer(1, 20))
+        # Build data tables based on report type
+        tables_html = ""
         
-        # Report-specific sections with professional tables
         if report_type == "monthly_summary":
-            # Daily breakdown
             if report_data.get("daily_breakdown"):
-                story.append(Paragraph("DAILY BREAKDOWN", template['styles']['SectionHeading']))
-                headers = ["Date", "Present", "Absent", "Late", "Outpass", "Total", "Rate %"]
-                data_rows = []
-                
-                for daily_record in report_data["daily_breakdown"]:
-                    data_rows.append([
-                        daily_record["date"],
-                        str(daily_record["present"]),
-                        str(daily_record["absent"]),
-                        str(daily_record["late"]),
-                        str(daily_record["outpass"]),
-                        str(daily_record["total"]),
-                        f"{daily_record['attendance_rate']}%"
-                    ])
-                
-                col_widths = [1.2*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch]
-                daily_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-                story.append(daily_table)
-                story.append(Spacer(1, 20))
+                rows = ""
+                for record in report_data["daily_breakdown"]:
+                    rows += f"<tr><td>{record['date']}</td><td>{record['present']}</td><td>{record['absent']}</td><td>{record['late']}</td><td>{record['outpass']}</td><td>{record['total']}</td><td>{record['attendance_rate']}%</td></tr>"
+                tables_html += f"""
+                <div class="section-title">DAILY BREAKDOWN / দৈনিক বিবরণ</div>
+                <table class="data-table">
+                    <thead><tr><th>Date / তারিখ</th><th>Present / উপস্থিত</th><th>Absent / অনুপস্থিত</th><th>Late / দেরি</th><th>Outpass</th><th>Total / মোট</th><th>Rate %</th></tr></thead>
+                    <tbody>{rows}</tbody>
+                </table>
+                """
             
-            # Employee breakdown
             if report_data.get("employee_breakdown"):
-                story.append(Paragraph("EMPLOYEE SUMMARY", template['styles']['SectionHeading']))
-                headers = ["Employee", "Department", "Present", "Absent", "Rate %"]
-                data_rows = []
-                
-                for emp_record in report_data["employee_breakdown"][:50]:  # Show more
-                    data_rows.append([
-                        emp_record["staff_name"][:20],
-                        emp_record["department"][:15],
-                        str(emp_record["present"]),
-                        str(emp_record["absent"]),
-                        f"{emp_record['attendance_rate']}%"
-                    ])
-                
-                col_widths = [2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 1*inch]
-                emp_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-                story.append(emp_table)
-                
+                rows = ""
+                for record in report_data["employee_breakdown"][:50]:
+                    rows += f"<tr><td>{record['staff_name'][:25]}</td><td>{record['department'][:15]}</td><td>{record['present']}</td><td>{record['absent']}</td><td>{record['attendance_rate']}%</td></tr>"
+                tables_html += f"""
+                <div class="section-title">EMPLOYEE SUMMARY / কর্মচারী সারসংক্ষেপ</div>
+                <table class="data-table">
+                    <thead><tr><th>Employee / কর্মচারী</th><th>Department / বিভাগ</th><th>Present / উপস্থিত</th><th>Absent / অনুপস্থিত</th><th>Rate %</th></tr></thead>
+                    <tbody>{rows}</tbody>
+                </table>
+                """
+        
         elif report_type == "staff_attendance":
-            # Staff details
             if report_data.get("staff_details"):
-                story.append(Paragraph("STAFF ATTENDANCE SUMMARY", template['styles']['SectionHeading']))
-                headers = ["Employee", "Department", "Present", "Absent", "Rate %"]
-                data_rows = []
-                
-                for staff_record in report_data["staff_details"][:50]:
-                    # Safe handling for None values
-                    staff_name = staff_record.get("staff_name") or staff_record.get("employee_id", "Unknown")
-                    department = staff_record.get("department") or "N/A"
-                    
-                    data_rows.append([
-                        str(staff_name)[:20],
-                        str(department)[:15],
-                        str(staff_record.get("present", 0)),
-                        str(staff_record.get("absent", 0)),
-                        f"{staff_record.get('attendance_rate', 0)}%"
-                    ])
-                
-                col_widths = [2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 1*inch]
-                staff_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-                story.append(staff_table)
-                story.append(Spacer(1, 20))
+                rows = ""
+                for record in report_data["staff_details"][:50]:
+                    staff_name = record.get("staff_name") or record.get("employee_id", "Unknown")
+                    department = record.get("department") or "N/A"
+                    rows += f"<tr><td>{str(staff_name)[:25]}</td><td>{str(department)[:15]}</td><td>{record.get('present', 0)}</td><td>{record.get('absent', 0)}</td><td>{record.get('attendance_rate', 0)}%</td></tr>"
+                tables_html += f"""
+                <div class="section-title">STAFF ATTENDANCE / কর্মচারী উপস্থিতি</div>
+                <table class="data-table">
+                    <thead><tr><th>Employee / কর্মচারী</th><th>Department / বিভাগ</th><th>Present / উপস্থিত</th><th>Absent / অনুপস্থিত</th><th>Rate %</th></tr></thead>
+                    <tbody>{rows}</tbody>
+                </table>
+                """
             
-            # Department summary
             if report_data.get("department_summary"):
-                story.append(Paragraph("DEPARTMENT SUMMARY", template['styles']['SectionHeading']))
-                headers = ["Department", "Present", "Absent", "Total", "Rate %"]
-                data_rows = []
-                
-                for dept_record in report_data["department_summary"]:
-                    data_rows.append([
-                        str(dept_record.get("department", "N/A")),
-                        str(dept_record.get("present", 0)),
-                        str(dept_record.get("absent", 0)),
-                        str(dept_record.get("total", 0)),
-                        f"{dept_record.get('attendance_rate', 0)}%"
-                    ])
-                
-                col_widths = [2*inch, 1*inch, 1*inch, 1*inch, 1*inch]
-                dept_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-                story.append(dept_table)
+                rows = ""
+                for record in report_data["department_summary"]:
+                    rows += f"<tr><td>{record.get('department', 'N/A')}</td><td>{record.get('present', 0)}</td><td>{record.get('absent', 0)}</td><td>{record.get('total', 0)}</td><td>{record.get('attendance_rate', 0)}%</td></tr>"
+                tables_html += f"""
+                <div class="section-title">DEPARTMENT SUMMARY / বিভাগ সারসংক্ষেপ</div>
+                <table class="data-table">
+                    <thead><tr><th>Department / বিভাগ</th><th>Present / উপস্থিত</th><th>Absent / অনুপস্থিত</th><th>Total / মোট</th><th>Rate %</th></tr></thead>
+                    <tbody>{rows}</tbody>
+                </table>
+                """
         
         elif report_type == "student_attendance":
-            # Student details
             if report_data.get("student_details"):
-                story.append(Paragraph("STUDENT ATTENDANCE DETAILS", template['styles']['SectionHeading']))
-                headers = ["Student ID", "Student Name", "Class", "Section", "Status"]
-                data_rows = []
-                
-                for student_record in report_data["student_details"]:
-                    data_rows.append([
-                        str(student_record["student_id"])[:15],
-                        student_record["student_name"][:25],
-                        student_record.get("class_name", "")[:15],
-                        student_record.get("section_name", "")[:10],
-                        student_record["status"].title()
-                    ])
-                
-                col_widths = [1.2*inch, 2*inch, 1.2*inch, 0.8*inch, 1*inch]
-                student_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-                story.append(student_table)
-                story.append(Spacer(1, 20))
+                rows = ""
+                for record in report_data["student_details"]:
+                    rows += f"<tr><td>{str(record['student_id'])[:15]}</td><td>{record['student_name'][:25]}</td><td>{record.get('class_name', '')[:15]}</td><td>{record.get('section_name', '')[:10]}</td><td>{record['status'].title()}</td></tr>"
+                tables_html += f"""
+                <div class="section-title">STUDENT ATTENDANCE / শিক্ষার্থী উপস্থিতি</div>
+                <table class="data-table">
+                    <thead><tr><th>Student ID / আইডি</th><th>Name / নাম</th><th>Class / শ্রেণি</th><th>Section / শাখা</th><th>Status / অবস্থা</th></tr></thead>
+                    <tbody>{rows}</tbody>
+                </table>
+                """
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                @font-face {{ font-family: 'NotoSans'; src: url('file://{FONT_PATH}/NotoSans-Regular.ttf') format('truetype'); }}
+                @font-face {{ font-family: 'NotoSansBengali'; src: url('file://{FONT_PATH}/NotoSansBengali-Regular.ttf') format('truetype'); }}
+                @font-face {{ font-family: 'NotoSansBengali'; src: url('file://{FONT_PATH}/NotoSansBengali-Bold.ttf') format('truetype'); font-weight: bold; }}
+                * {{ font-family: 'NotoSans', 'NotoSansBengali', Arial, sans-serif; }}
+                @page {{ size: A4; margin: 1.5cm 1cm; }}
+                body {{ font-size: 11pt; line-height: 1.4; color: #333; }}
+                .header {{ background: linear-gradient(135deg, {primary_color}, {secondary_color}); color: white; padding: 15px 20px; margin: -1.5cm -1cm 20px -1cm; }}
+                .school-name {{ font-size: 20pt; font-weight: bold; margin-bottom: 5px; }}
+                .school-address {{ font-size: 10pt; opacity: 0.9; }}
+                .report-title {{ text-align: center; color: {primary_color}; font-size: 16pt; font-weight: bold; margin: 20px 0 15px 0; }}
+                .filter-info {{ background: #f0f0f0; padding: 8px 12px; border-radius: 5px; margin-bottom: 15px; font-size: 10pt; }}
+                .section-title {{ color: {secondary_color}; font-size: 12pt; font-weight: bold; margin: 20px 0 10px 0; border-bottom: 2px solid {secondary_color}; padding-bottom: 5px; }}
+                .summary-table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+                .summary-table th {{ background: {primary_color}; color: white; padding: 10px; text-align: left; font-weight: bold; }}
+                .summary-table td {{ padding: 10px; border: 1px solid #ddd; }}
+                .data-table {{ width: 100%; border-collapse: collapse; font-size: 9pt; }}
+                .data-table th {{ background: {secondary_color}; color: white; padding: 8px 6px; text-align: left; font-weight: bold; }}
+                .data-table td {{ padding: 6px; border: 1px solid #ddd; }}
+                .data-table tr:nth-child(even) td {{ background: #f9f9f9; }}
+                .meta-info {{ text-align: right; font-size: 9pt; color: #666; margin-bottom: 15px; }}
+                .footer {{ position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 9pt; color: #666; padding: 10px; border-top: 1px solid #ddd; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="school-name">{school_name}</div>
+                <div class="school-address">{school_address}</div>
+                <div class="school-address">{school_contact}</div>
+            </div>
             
-            # Class summary
-            if report_data.get("class_summary"):
-                story.append(Paragraph("CLASS-WISE SUMMARY", template['styles']['SectionHeading']))
-                headers = ["Class - Section", "Present", "Absent", "Total", "Rate %"]
-                data_rows = []
-                
-                for class_record in report_data["class_summary"]:
-                    data_rows.append([
-                        class_record["class_section"],
-                        str(class_record["present"]),
-                        str(class_record["absent"]),
-                        str(class_record["total"]),
-                        f"{class_record['attendance_rate']}%"
-                    ])
-                
-                col_widths = [2*inch, 1*inch, 1*inch, 1*inch, 1.2*inch]
-                class_table = create_data_table(headers, data_rows, template, col_widths, repeat_header=True)
-                story.append(class_table)
+            <div class="report-title">{report_data.get("title", "Attendance Report")}</div>
+            
+            <div class="meta-info">
+                Generated: {datetime.utcnow().strftime("%Y-%m-%d %H:%M")} | By: {current_user.name if hasattr(current_user, 'name') else current_user.username}
+            </div>
+            
+            {filter_html}
+            {summary_html}
+            {tables_html}
+            
+            <div class="footer">
+                Powered by School ERP System | {school_name}
+            </div>
+        </body>
+        </html>
+        """
         
-        # Build PDF with professional header/footer
-        def add_page_decorations(canvas, doc):
-            add_pdf_header_footer(
-                canvas, 
-                doc, 
-                school_name, 
-                report_data["title"], 
-                current_user.name if hasattr(current_user, 'name') else current_user.username,
-                page_num_text=True,
-                school_address=school_address,
-                school_contact=school_contact,
-                logo_path=logo_path
-            )
-        
-        doc.build(story, onFirstPage=add_page_decorations, onLaterPages=add_page_decorations)
+        HTML(string=html_content).write_pdf(file_path)
         return file_path
         
     except Exception as e:
-        import traceback
-        logging.error(f"Failed to generate attendance PDF report: {str(e)}")
-        logging.error(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
+        logging.error(f"Failed to generate attendance PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+
 
 async def generate_transport_excel_report(report_type: str, report_data: dict, current_user: User, filename: str) -> str:
     """Generate Excel report for transport data"""
