@@ -1884,6 +1884,28 @@ const StudentList = () => {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="add_guardian_name_simple" className="text-base font-semibold">অভিভাবকের নাম *</Label>
+                  <Input
+                    id="add_guardian_name_simple"
+                    value={formData.guardian_name}
+                    onChange={(e) => setFormData({...formData, guardian_name: e.target.value})}
+                    placeholder="অভিভাবকের নাম লিখুন"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="add_guardian_phone_simple" className="text-base font-semibold">অভিভাবকের ফোন *</Label>
+                  <Input
+                    id="add_guardian_phone_simple"
+                    value={formData.guardian_phone}
+                    onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
+                    placeholder="০১XXXXXXXXX"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+                <div>
                   <Label htmlFor="add_class_id" className="text-base font-semibold">মারহালা / শ্রেণি *</Label>
                   <Select 
                     value={formData.class_id} 

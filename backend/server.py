@@ -4087,12 +4087,14 @@ async def create_student(student_data: StudentCreate, current_user: User = Depen
         existing_user = await db.users.find_one({"username": student_username})
         counter += 1
     
-    # Generate unique password with per-student entropy: {Name}{RandomDigits}@{Year}
+    # Generate unique password with per-student entropy: {RandomString}{RandomDigits}@{Year}
     import random
-    name_part = student_data.name.split()[0].capitalize()[:6] if student_data.name else "Std"
+    import string
+    # Use only English characters for password (avoid Bengali/Unicode issues)
+    random_letters = ''.join(random.choices(string.ascii_letters, k=4))
     random_suffix = str(random.randint(100, 999))  # 3 random digits for uniqueness
     year = datetime.utcnow().year
-    temp_password = f"{name_part}{random_suffix}@{year}"  # e.g., Farid786@2026
+    temp_password = f"{random_letters}{random_suffix}@{year}"  # e.g., AbCd786@2026
     hashed_password = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Create student email if not provided
