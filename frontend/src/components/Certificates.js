@@ -460,12 +460,12 @@ const Certificates = () => {
       if (response.ok) {
         const data = await response.json();
         // API returns students array directly, not wrapped in an object
-        // Filter to ensure only valid student objects with required properties
+        // Filter to ensure only valid student objects - accept either name or student_name
         const validStudents = Array.isArray(data) ? data.filter(student => 
           student && 
           typeof student === 'object' &&
-          typeof student.name === 'string' &&
-          typeof student.admission_no === 'string' &&
+          (student.name || student.student_name) &&
+          (student.admission_no || student.admission_number || student.roll_no) &&
           student.id
         ) : [];
         setAvailableStudents(validStudents);
@@ -2386,11 +2386,11 @@ const Certificates = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  {isMadrasah ? 'এই মাসে' : 'This Month'}
+                  {isMadrasah ? 'মোট ছাত্র' : 'Total Students'}
                 </p>
-                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-blue-600">45</p>
+                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-blue-600">{availableStudents.length}</p>
               </div>
-              <Award className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500" />
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -2399,9 +2399,11 @@ const Certificates = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  {isMadrasah ? 'টেমপ্লেট' : 'Templates'}
+                  {isMadrasah ? 'মোট সনদ' : 'Total Certificates'}
                 </p>
-                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-purple-600">8</p>
+                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-purple-600">
+                  {tcRecords.length + ccRecords.length + prRecords.length + bfRecords.length + appreciationRecords.length + characterRecords.length}
+                </p>
               </div>
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-purple-500" />
             </div>
@@ -5152,33 +5154,45 @@ const Certificates = () => {
                 />
               </div>
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {availableStudents.slice(0, 20).map((student) => (
-                  <div 
-                    key={student.id}
-                    className="p-3 border rounded-lg hover:bg-amber-50 cursor-pointer"
-                    onClick={() => {
-                      setAppreciationFormData({
-                        ...appreciationFormData,
-                        student_id: student.id,
-                        student_name: student.name || student.student_name,
-                        admission_no: student.admission_no || student.admission_number || student.roll_no || '',
-                        class_name: getClassName(student.class_id),
-                        section: student.section || getSectionName(student.section_id, student.class_id) || ''
-                      });
-                      setShowAppreciationModal(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{student.name || student.student_name}</p>
-                        <p className="text-sm text-gray-500">ভর্তি নং: {student.admission_no || student.admission_number}</p>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">ছাত্র লোড হচ্ছে...</p>
+                  </div>
+                ) : availableStudents.length === 0 ? (
+                  <div className="text-center py-8">
+                    <User className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-gray-500 font-medium">কোন ছাত্র নেই</p>
+                    <p className="text-sm text-gray-400 mt-1">প্রথমে ছাত্র যোগ করুন</p>
+                  </div>
+                ) : (
+                  availableStudents.slice(0, 20).map((student) => (
+                    <div 
+                      key={student.id}
+                      className="p-3 border rounded-lg hover:bg-amber-50 cursor-pointer"
+                      onClick={() => {
+                        setAppreciationFormData({
+                          ...appreciationFormData,
+                          student_id: student.id,
+                          student_name: student.name || student.student_name,
+                          admission_no: student.admission_no || student.admission_number || student.roll_no || '',
+                          class_name: getClassName(student.class_id),
+                          section: student.section || getSectionName(student.section_id, student.class_id) || ''
+                        });
+                        setShowAppreciationModal(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{student.name || student.student_name}</p>
+                          <p className="text-sm text-gray-500">ভর্তি নং: {student.admission_no || student.admission_number}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -5205,34 +5219,46 @@ const Certificates = () => {
                 />
               </div>
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {availableStudents.slice(0, 20).map((student) => (
-                  <div 
-                    key={student.id}
-                    className="p-3 border rounded-lg hover:bg-emerald-50 cursor-pointer"
-                    onClick={() => {
-                      setCharacterFormData({
-                        ...characterFormData,
-                        student_id: student.id,
-                        student_name: student.name || student.student_name,
-                        admission_no: student.admission_no || student.admission_number || student.roll_no || '',
-                        father_name: student.father_name || '',
-                        class_name: getClassName(student.class_id),
-                        section: student.section || getSectionName(student.section_id, student.class_id) || ''
-                      });
-                      setShowCharacterModal(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{student.name || student.student_name}</p>
-                        <p className="text-sm text-gray-500">ভর্তি নং: {student.admission_no || student.admission_number}</p>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">ছাত্র লোড হচ্ছে...</p>
+                  </div>
+                ) : availableStudents.length === 0 ? (
+                  <div className="text-center py-8">
+                    <User className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-gray-500 font-medium">কোন ছাত্র নেই</p>
+                    <p className="text-sm text-gray-400 mt-1">প্রথমে ছাত্র যোগ করুন</p>
+                  </div>
+                ) : (
+                  availableStudents.slice(0, 20).map((student) => (
+                    <div 
+                      key={student.id}
+                      className="p-3 border rounded-lg hover:bg-emerald-50 cursor-pointer"
+                      onClick={() => {
+                        setCharacterFormData({
+                          ...characterFormData,
+                          student_id: student.id,
+                          student_name: student.name || student.student_name,
+                          admission_no: student.admission_no || student.admission_number || student.roll_no || '',
+                          father_name: student.father_name || '',
+                          class_name: getClassName(student.class_id),
+                          section: student.section || getSectionName(student.section_id, student.class_id) || ''
+                        });
+                        setShowCharacterModal(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{student.name || student.student_name}</p>
+                          <p className="text-sm text-gray-500">ভর্তি নং: {student.admission_no || student.admission_number}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
