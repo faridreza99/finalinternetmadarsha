@@ -2098,7 +2098,7 @@ async def create_user_direct(
     plain_password = f"{clean_name}{random_digits}@{current_year}"
     
     # Hash password
-    password_hash = pwd_context.hash(plain_password)
+    password_hash = hash_password(plain_password)
     
     # Create user
     user_id = str(uuid.uuid4())
