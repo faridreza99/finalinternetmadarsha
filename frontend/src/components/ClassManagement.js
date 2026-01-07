@@ -623,6 +623,10 @@ const ClassManagement = () => {
         return;
       }
 
+      // Find if the selected marhala is custom
+      const selectedMarhala = allStandards.find(s => s.standard === classFormData.standard);
+      const category = selectedMarhala?.category || null;
+      
       const submitData = {
         ...classFormData,
         max_students: parseInt(classFormData.max_students),
@@ -634,6 +638,7 @@ const ClassManagement = () => {
         internal_standard: classFormData.internal_standard || 0,
         order_index: classFormData.order_index || classes.length,
         institution_type: institutionType,
+        category: category,
       };
 
       console.log("📤 Sending data to API:", submitData);

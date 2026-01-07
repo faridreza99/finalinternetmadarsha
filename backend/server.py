@@ -728,6 +728,7 @@ class Class(BaseModel):
     order_index: int = 0  # For custom ordering
     institution_type: Optional[str] = "school"  # school or madrasah
     ui_mode: Optional[str] = "standard"
+    category: Optional[str] = None  # Custom for custom marhalas
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -743,6 +744,7 @@ class ClassCreate(BaseModel):
     order_index: int = 0
     ui_mode: Optional[str] = "standard"
     institution_type: Optional[str] = "school"
+    category: Optional[str] = None  # Custom for custom marhalas
 
 class ClassUpdate(BaseModel):
     name: Optional[str] = None
@@ -755,6 +757,7 @@ class ClassUpdate(BaseModel):
     max_students: Optional[int] = None
     is_active: Optional[bool] = None  # Enable/disable class
     order_index: Optional[int] = None  # Custom ordering
+    category: Optional[str] = None  # Custom for custom marhalas
 
 class Section(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

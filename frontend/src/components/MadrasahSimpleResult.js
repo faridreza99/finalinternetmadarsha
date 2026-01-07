@@ -83,12 +83,27 @@ const MadrasahSimpleResult = () => {
   const fetchClasses = useCallback(async () => {
     try {
       const response = await axios.get("/api/classes");
+      // Include all classes - custom marhalas and standard madrasah classes
+      // Filter for madrasah institution type, any category (custom marhalas), or known madrasah names
       const madrasahClasses = response.data.filter(
         (c) =>
           c.institution_type === "madrasah" ||
+          (c.category && c.category.toLowerCase().includes("custom")) ||
+          c.category === "Ebtedayee" ||
+          c.category === "Dakhil" ||
+          c.category === "Alim" ||
+          c.category === "Fazil" ||
+          c.category === "Kamil" ||
+          c.category === "Special" ||
           c.display_name?.includes("ইবতেদায়ী") ||
           c.display_name?.includes("দাখিল") ||
-          c.display_name?.includes("আলিম"),
+          c.display_name?.includes("আলিম") ||
+          c.display_name?.includes("ফাজিল") ||
+          c.display_name?.includes("কামিল") ||
+          c.display_name?.includes("তাকমিল") ||
+          c.display_name?.includes("হেফজ") ||
+          c.display_name?.includes("নূরানী") ||
+          c.display_name?.includes("কিতাব"),
       );
       setClasses(madrasahClasses.length > 0 ? madrasahClasses : response.data);
     } catch (error) {
