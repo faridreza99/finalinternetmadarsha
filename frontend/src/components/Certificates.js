@@ -31,6 +31,8 @@ import {
   Star
 } from 'lucide-react';
 
+const API_BASE = process.env.REACT_APP_API_URL || '/api';
+
 const Certificates = () => {
   // Institution Context for Madrasah mode detection
   const { isMadrasah, loading: institutionLoading } = useInstitution();
@@ -292,7 +294,7 @@ const Certificates = () => {
   
   const fetchSchoolBranding = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       
       // Try institution endpoint first
       const response = await fetch(`${API}/institution`, {
@@ -334,7 +336,7 @@ const Certificates = () => {
   
   const fetchClasses = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/classes`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -370,7 +372,7 @@ const Certificates = () => {
 
   const fetchCertificatesData = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       // Fetch real dashboard data
       const dashboardResponse = await fetch(`${API}/certificates/dashboard`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -450,7 +452,7 @@ const Certificates = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/students`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -482,7 +484,7 @@ const Certificates = () => {
 
   const fetchTCRecords = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/transfer-certificates`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -505,7 +507,7 @@ const Certificates = () => {
   const fetchAppreciationCertificates = async () => {
     try {
       setAppreciationLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/appreciation-certificates`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -530,7 +532,7 @@ const Certificates = () => {
   const handleSaveAppreciationCertificate = async () => {
     try {
       setAppreciationLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/appreciation-certificates`, {
         method: 'POST',
         headers: {
@@ -558,7 +560,7 @@ const Certificates = () => {
 
   const fetchCCRecords = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/course-certificates`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -587,7 +589,7 @@ const Certificates = () => {
 
     try {
       setCcLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/course-certificates`, {
         method: 'POST',
         headers: {
@@ -683,7 +685,7 @@ const Certificates = () => {
 
   const handleDownloadCC = async (cc) => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/course-certificates/${cc.id}/pdf`, {
         method: 'GET',
         headers: {
@@ -727,7 +729,7 @@ const Certificates = () => {
   // Progress Report API Functions
   const fetchPRRecords = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/progress-reports`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -755,7 +757,7 @@ const Certificates = () => {
 
     try {
       setPrLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/progress-reports`, {
         method: 'POST',
         headers: {
@@ -1315,7 +1317,7 @@ const Certificates = () => {
   // Bonafide Certificate API Functions
   const fetchBFRecords = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/bonafide-certificates`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1343,7 +1345,7 @@ const Certificates = () => {
 
     try {
       setBfLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/bonafide-certificates`, {
         method: 'POST',
         headers: {
@@ -1442,7 +1444,7 @@ const Certificates = () => {
   // Adhar Extract API Functions
   const fetchAERecords = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/adhar-extracts`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1464,7 +1466,7 @@ const Certificates = () => {
 
   const fetchStaff = async () => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/staff`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1507,7 +1509,7 @@ const Certificates = () => {
 
     try {
       setAeLoading(true);
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/adhar-extracts`, {
         method: 'POST',
         headers: {
@@ -1923,7 +1925,7 @@ const Certificates = () => {
   // TC Action Handlers
   const handleViewTC = async (tcId) => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/transfer-certificates/${tcId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1945,7 +1947,7 @@ const Certificates = () => {
 
   const handlePDFTC = async (tc) => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/transfer-certificates/${tc.id}/pdf`, {
         method: 'GET',
         headers: {
@@ -2133,7 +2135,7 @@ const Certificates = () => {
   // TC Status Change Handlers
   const handleIssueTC = async (tcId) => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/transfer-certificates/${tcId}/status`, {
         method: 'PATCH',
         headers: {
@@ -2159,7 +2161,7 @@ const Certificates = () => {
 
   const handleCancelTC = async (tcId) => {
     try {
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/transfer-certificates/${tcId}/status`, {
         method: 'PATCH',
         headers: {
@@ -2253,7 +2255,7 @@ const Certificates = () => {
 
       console.log('TC Data to submit:', tcData);
       
-      const API = process.env.REACT_APP_API_URL;
+      const API = API_BASE;
       const response = await fetch(`${API}/transfer-certificates`, {
         method: 'POST',
         headers: {
