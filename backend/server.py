@@ -8272,6 +8272,110 @@ async def permanent_delete_class(class_id: str, current_user: User = Depends(get
     return {"message": "Class permanently deleted", "class_id": class_id}
 
 
+
+# ==================== CUSTOM MARHALA MANAGEMENT ====================
+
+@api_router.get("/custom-marhalas")
+async def get_custom_marhalas(current_user: User = Depends(get_current_user)):
+    """Get all custom marhalas for the tenant"""
+    marhalas = await db.custom_marhalas.find({
+        "tenant_id": current_user.tenant_id,
+        "is_active": True
+    }).to_list(100)
+    return [
+        {
+            "id": m.get("id"),
+            "standard": m.get("standard"),
+            "display_name": m.get("display_name"),
+            "internal_standard": m.get("internal_standard", 0),
+            "category": m.get("category", "Custom")
+        }
+        for m in marhalas
+    ]
+
+@api_router.post("/custom-marhalas")
+async def create_custom_marhala(
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new custom marhala"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Check if already exists
+    existing = await db.custom_marhalas.find_one({
+        "tenant_id": current_user.tenant_id,
+        "standard": data.get("standard"),
+        "is_active": True
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="This marhala already exists")
+    
+    marhala_doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": current_user.tenant_id,
+        "standard": data.get("standard"),
+        "display_name": data.get("display_name"),
+        "internal_standard": data.get("internal_standard", 0),
+        "category": data.get("category", "Custom"),
+        "is_active": True,
+        "created_at": datetime.utcnow(),
+        "created_by": current_user.id
+    }
+    
+    await db.custom_marhalas.insert_one(marhala_doc)
+    
+    return {
+        "id": marhala_doc["id"],
+        "standard": marhala_doc["standard"],
+        "display_name": marhala_doc["display_name"],
+        "internal_standard": marhala_doc["internal_standard"],
+        "category": marhala_doc["category"]
+    }
+
+@api_router.delete("/custom-marhalas/{marhala_id}")
+async def delete_custom_marhala(
+    marhala_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a custom marhala - checks if any classes use it first"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # First get the marhala to check its standard
+    marhala = await db.custom_marhalas.find_one({
+        "id": marhala_id,
+        "tenant_id": current_user.tenant_id
+    })
+    
+    if not marhala:
+        raise HTTPException(status_code=404, detail="Marhala not found")
+    
+    # Check if any classes use this standard
+    class_count = await db.classes.count_documents({
+        "tenant_id": current_user.tenant_id,
+        "standard": marhala["standard"],
+        "is_active": True
+    })
+    
+    if class_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete: {class_count} class(es) use this marhala. Remove them first."
+        )
+    
+    # Delete the marhala (soft delete by setting is_active to False)
+    result = await db.custom_marhalas.update_one(
+        {"id": marhala_id, "tenant_id": current_user.tenant_id},
+        {"$set": {"is_active": False, "deleted_at": datetime.utcnow()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Marhala not found or already deleted")
+    
+    return {"message": "Marhala deleted successfully", "id": marhala_id}
+
+
 # ==================== TIMETABLE MANAGEMENT ====================
 
 @api_router.get("/timetables", response_model=List[Timetable])

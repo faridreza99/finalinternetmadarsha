@@ -451,7 +451,7 @@ const ClassManagement = () => {
   // For subject dropdowns, use standards from existing classes
   const classStandards = getUniqueStandards();
 
-  const handleAddNewMarhala = () => {
+  const handleAddNewMarhala = async () => {
     if (!newMarhalaForm.standard || !newMarhalaForm.display_name) {
       toast.error("মারহালার নাম এবং প্রদর্শন নাম প্রয়োজন");
       return;
@@ -463,33 +463,41 @@ const ClassManagement = () => {
       toast.error("এই মারহালা আগে থেকেই আছে");
       return;
     }
-    const newMarhala = {
-      standard: newMarhalaForm.standard,
-      display_name: newMarhalaForm.display_name,
-      internal_standard: parseInt(newMarhalaForm.internal_standard) || 0,
-      category: "Custom",
-    };
-    setCustomMarhalas((prev) => [...prev, newMarhala]);
-    setClassFormData({
-      ...classFormData,
-      standard: newMarhala.standard,
-      display_name: newMarhala.display_name,
-      internal_standard: newMarhala.internal_standard,
-      name: newMarhala.display_name,
-    });
-    setNewMarhalaForm({
-      standard: "",
-      display_name: "",
-      internal_standard: 0,
-      category: "Custom",
-    });
-    setIsMarhalaModalOpen(false);
-    toast.success("নতুন মারহালা যোগ হয়েছে");
+    
+    try {
+      const response = await axios.post(`${API}/custom-marhalas`, {
+        standard: newMarhalaForm.standard,
+        display_name: newMarhalaForm.display_name,
+        internal_standard: parseInt(newMarhalaForm.internal_standard) || 0,
+        category: "Custom",
+      });
+      
+      const newMarhala = response.data;
+      setCustomMarhalas((prev) => [...prev, newMarhala]);
+      setClassFormData({
+        ...classFormData,
+        standard: newMarhala.standard,
+        display_name: newMarhala.display_name,
+        internal_standard: newMarhala.internal_standard,
+        name: newMarhala.display_name,
+      });
+      setNewMarhalaForm({
+        standard: "",
+        display_name: "",
+        internal_standard: 0,
+        category: "Custom",
+      });
+      setIsMarhalaModalOpen(false);
+      toast.success("নতুন মারহালা যোগ হয়েছে");
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "মারহালা যোগ করতে সমস্যা হয়েছে");
+    }
   };
 
   useEffect(() => {
     fetchData();
     fetchInstitutionSettings();
+    fetchCustomMarhalas();
   }, []);
 
   const fetchInstitutionSettings = async () => {
@@ -548,6 +556,42 @@ const ClassManagement = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCustomMarhalas = async () => {
+    try {
+      const response = await axios.get(`${API}/custom-marhalas`);
+      const marhalas = response.data || [];
+      setCustomMarhalas(marhalas);
+    } catch (error) {
+      console.log("No custom marhalas found or error:", error.message);
+    }
+  };
+
+  const handleDeleteCustomMarhala = async (marhalaId, marhalaStandard, e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const result = await Swal.fire({
+      title: 'মারহালা মুছে ফেলুন?',
+      text: `আপনি কি "${marhalaStandard}" মারহালা মুছে ফেলতে চান?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'হ্যাঁ, মুছুন',
+      cancelButtonText: 'বাতিল'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API}/custom-marhalas/${marhalaId}`);
+        setCustomMarhalas((prev) => prev.filter((m) => m.id !== marhalaId));
+        toast.success("মারহালা মুছে ফেলা হয়েছে");
+      } catch (error) {
+        toast.error(error.response?.data?.detail || "মারহালা মুছতে সমস্যা হয়েছে");
+      }
     }
   };
 
@@ -1475,17 +1519,29 @@ const ClassManagement = () => {
                         </SelectItem>
                         {allStandards.map((std) => (
                           <SelectItem key={std.standard} value={std.standard}>
-                            <span className="flex items-center gap-2">
-                              <span>{std.display_name}</span>
-                              {std.display_name !== std.standard && (
-                                <span className="text-xs text-gray-500">
-                                  ({std.standard})
-                                </span>
-                              )}
-                              {std.category === "Custom" && (
-                                <Badge variant="outline" className="text-xs ml-1">
-                                  কাস্টম
-                                </Badge>
+                            <span className="flex items-center gap-2 w-full justify-between">
+                              <span className="flex items-center gap-2">
+                                <span>{std.display_name}</span>
+                                {std.display_name !== std.standard && (
+                                  <span className="text-xs text-gray-500">
+                                    ({std.standard})
+                                  </span>
+                                )}
+                                {std.category === "Custom" && (
+                                  <Badge variant="outline" className="text-xs ml-1">
+                                    কাস্টম
+                                  </Badge>
+                                )}
+                              </span>
+                              {std.category === "Custom" && std.id && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteCustomMarhala(std.id, std.display_name, e)}
+                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                                  title="মুছুন"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
                               )}
                             </span>
                           </SelectItem>
