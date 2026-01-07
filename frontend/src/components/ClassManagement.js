@@ -1580,8 +1580,9 @@ const ClassManagement = () => {
                               {std.category === "Custom" && std.id ? (
                                 <button
                                   type="button"
-                                  onClick={(e) => handleDeleteCustomMarhala(std.id, std.display_name, e)}
-                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteCustomMarhala(std.id, std.display_name, e); }}
+                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 z-50"
                                   title="মুছুন"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -1589,8 +1590,9 @@ const ClassManagement = () => {
                               ) : std.category !== "Custom" && (
                                 <button
                                   type="button"
-                                  onClick={(e) => handleHideSystemMarhala(std.standard, std.display_name, e)}
-                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleHideSystemMarhala(std.standard, std.display_name, e); }}
+                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 z-50"
                                   title="লুকান"
                                 >
                                   <Trash2 className="h-3 w-3" />
