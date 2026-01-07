@@ -404,7 +404,7 @@ const MadrasahSimpleSettings = () => {
       return;
     }
     try {
-      await axios.post(`${API_BASE_URL}/users`, newUserData);
+      await axios.post(`${API_BASE_URL}/admin/users`, newUserData);
       toast.success("ব্যবহারকারী যোগ হয়েছে");
       setNewUserData({ name: "", username: "", password: "", role: "teacher" });
       setIsAddUserModalOpen(false);
