@@ -275,7 +275,7 @@ app.middleware("http")(tenant_resolver_middleware)
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
-    email: str  # Changed from EmailStr to allow placeholder emails like @student.local
+    email: Optional[str] = None  # Made optional to support legacy users without email
     username: str
     full_name: str
     role: str  # super_admin, admin, teacher, student, parent
