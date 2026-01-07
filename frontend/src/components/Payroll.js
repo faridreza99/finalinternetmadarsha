@@ -234,7 +234,7 @@ const Payroll = () => {
   }, [fetchDashboard, fetchPayrolls, fetchEmployees, fetchInstitution]);
 
   useEffect(() => {
-    if (activeTab === 'salary-structures') fetchSalaryStructures();
+    if (activeTab === 'salary-structures' || activeTab === 'payrolls') fetchSalaryStructures();
     if (activeTab === 'bonuses') fetchBonuses();
     if (activeTab === 'advances') fetchAdvances();
     if (activeTab === 'payments') fetchPayments();
@@ -831,57 +831,98 @@ const Payroll = () => {
                   </Table>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>মাস</TableHead>
-                      <TableHead>অবস্থা</TableHead>
-                      <TableHead className="text-right">কর্মচারী</TableHead>
-                      <TableHead className="text-right">মোট আয়</TableHead>
-                      <TableHead className="text-right">নেট বেতন</TableHead>
-                      <TableHead>কার্যক্রম</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
+                <>
+                  {/* Summary Cards from Salary Structures */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <Card className="bg-gray-50 dark:bg-gray-700">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">মোট কর্মচারী</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {salaryStructures.length}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gray-50 dark:bg-gray-700">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">মোট মূল বেতন</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(salaryStructures.reduce((sum, s) => sum + (s.basic_salary || 0), 0))}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gray-50 dark:bg-gray-700">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">মোট বেতন</p>
+                        <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(salaryStructures.reduce((sum, s) => sum + (s.basic_salary || 0) + (s.house_rent_allowance || 0) + (s.food_allowance || 0) + (s.transport_allowance || 0) + (s.medical_allowance || 0) + (s.other_allowances || 0), 0))}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-                        </TableCell>
+                        <TableHead>কর্মচারী</TableHead>
+                        <TableHead>বিভাগ</TableHead>
+                        <TableHead className="text-right">মূল বেতন</TableHead>
+                        <TableHead className="text-right">বাসা ভাড়া</TableHead>
+                        <TableHead className="text-right">খাবার</TableHead>
+                        <TableHead className="text-right">যাতায়াত</TableHead>
+                        <TableHead className="text-right">মোট</TableHead>
+                        <TableHead>অবস্থা</TableHead>
                       </TableRow>
-                    ) : payrolls.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                          {filterYear} সালের কোনো বেতন পাওয়া যায়নি
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      payrolls.map((payroll) => (
-                        <TableRow key={payroll.id}>
-                          <TableCell className="font-medium">
-                            {payroll.month_name} {payroll.year}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(payroll.status)}</TableCell>
-                          <TableCell className="text-right">{payroll.total_employees}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(payroll.total_gross_salary)}</TableCell>
-                          <TableCell className="text-right font-bold text-emerald-600">
-                            {formatCurrency(payroll.total_net_salary)}
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => fetchPayrollDetails(payroll.id)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              দেখুন
-                            </Button>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-400" />
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : salaryStructures.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                            কোনো বেতন কাঠামো পাওয়া যায়নি। প্রথমে বেতন কাঠামো যোগ করুন।
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        salaryStructures.map((struct) => (
+                          <TableRow key={struct.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{struct.employee_name}</p>
+                                <p className="text-sm text-gray-500">{struct.employee_designation}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{struct.employee_department}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(struct.basic_salary)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(struct.house_rent_allowance)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(struct.food_allowance)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(struct.transport_allowance)}</TableCell>
+                            <TableCell className="text-right font-bold text-emerald-600">
+                              {formatCurrency(
+                                (struct.basic_salary || 0) +
+                                (struct.house_rent_allowance || 0) +
+                                (struct.food_allowance || 0) +
+                                (struct.transport_allowance || 0) +
+                                (struct.medical_allowance || 0) +
+                                (struct.other_allowances || 0)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {struct.is_active ? (
+                                <Badge className="bg-green-100 text-green-800">সক্রিয়</Badge>
+                              ) : (
+                                <Badge variant="secondary">নিষ্ক্রিয়</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </>
               )}
             </CardContent>
           </Card>
