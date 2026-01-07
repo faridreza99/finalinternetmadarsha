@@ -22737,7 +22737,8 @@ async def submit_quiz(
     try:
         quiz_id = request.get("quiz_id")
         answers = request.get("answers", [])  # [{question_id, student_answer}, ...]
-        started_at = datetime.fromisoformat(request.get("started_at"))
+        started_at_str = request.get("started_at", "")
+        started_at = datetime.fromisoformat(started_at_str.replace('Z', '+00:00')) if started_at_str else datetime.utcnow()
         
         # Fetch quiz
         quiz = await db.assessments.find_one({"id": quiz_id})
@@ -23553,7 +23554,8 @@ async def submit_test(
     try:
         test_id = request.get("test_id")
         answers = request.get("answers", [])
-        started_at = datetime.fromisoformat(request.get("started_at"))
+        started_at_str = request.get("started_at", "")
+        started_at = datetime.fromisoformat(started_at_str.replace('Z', '+00:00')) if started_at_str else datetime.utcnow()
         
         # Fetch test
         test = await db.assessments.find_one({"id": test_id})
@@ -32894,19 +32896,46 @@ async def export_monthly_fees_excel(
     """Export monthly fees as Excel"""
     try:
         tenant_id = current_user.tenant_id
-        payments = await db.fee_payments.find({"tenant_id": tenant_id}).to_list(None)
+        query = {"tenant_id": tenant_id}
+        
+        # Filter by month if provided (format: YYYY-MM)
+        if month:
+            try:
+                year, month_num = month.split("-")
+                start_date = datetime(int(year), int(month_num), 1)
+                if int(month_num) == 12:
+                    end_date = datetime(int(year) + 1, 1, 1)
+                else:
+                    end_date = datetime(int(year), int(month_num) + 1, 1)
+                query["$or"] = [
+                    {"payment_date": {"$gte": start_date, "$lt": end_date}},
+                    {"created_at": {"$gte": start_date, "$lt": end_date}}
+                ]
+            except:
+                pass
+        
+        payments = await db.fee_payments.find(query).to_list(None)
         
         import pandas as pd
         from io import BytesIO
         
         data = []
         for p in payments:
+            # Format date properly
+            date_val = p.get("payment_date", p.get("created_at", ""))
+            if isinstance(date_val, datetime):
+                date_str = date_val.strftime("%Y-%m-%d")
+            elif date_val:
+                date_str = str(date_val)[:10]
+            else:
+                date_str = ""
+            
             data.append({
                 "Receipt No": p.get("receipt_no", ""),
                 "Student Name": p.get("student_name", ""),
                 "Fee Type": p.get("fee_type", ""),
                 "Amount": p.get("amount", 0),
-                "Date": p.get("payment_date", p.get("created_at", ""))
+                "Date": date_str
             })
         
         df = pd.DataFrame(data)
