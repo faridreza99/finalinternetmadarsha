@@ -10781,11 +10781,13 @@ async def generate_admission_summary_report(
                 "format": "json"
             }
         elif format.lower() == "csv":
-            # Generate CSV file
+            # Generate CSV file with UTF-8 BOM for Excel compatibility
             import csv
             from io import StringIO
             filename = f"admission_summary_{year.replace('-', '_')}"
             output = StringIO()
+            # Add UTF-8 BOM at the start so Excel recognizes Bengali text
+            output.write('\ufeff')
             writer = csv.writer(output)
             writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
             for idx, student in enumerate(students, 1):
@@ -10803,8 +10805,8 @@ async def generate_admission_summary_report(
             output.close()
             from starlette.responses import Response
             return Response(
-                content=csv_content,
-                media_type="text/csv",
+                content=csv_content.encode('utf-8-sig'),
+                media_type="text/csv; charset=utf-8",
                 headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
             )
         elif format.lower() == "excel":

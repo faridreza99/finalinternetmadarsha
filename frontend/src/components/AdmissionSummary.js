@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
+} from "./ui/select";
 import {
   BarChart,
   Bar,
@@ -28,11 +28,11 @@ import {
   AreaChart,
   Legend,
   RadialBarChart,
-  RadialBar
-} from 'recharts';
-import { 
-  Users, 
-  TrendingUp, 
+  RadialBar,
+} from "recharts";
+import {
+  Users,
+  TrendingUp,
   Calendar,
   Download,
   UserPlus,
@@ -42,11 +42,11 @@ import {
   Clock,
   BookOpen,
   Target,
-  Award
-} from 'lucide-react';
-import { toast } from 'sonner';
+  Award,
+} from "lucide-react";
+import { toast } from "sonner";
 
-const API = process.env.REACT_APP_API_URL || '/api';
+const API = process.env.REACT_APP_API_URL || "/api";
 
 const AdmissionSummary = () => {
   const navigate = useNavigate();
@@ -54,13 +54,13 @@ const AdmissionSummary = () => {
     total_students: 0,
     new_admissions_this_month: 0,
     pending_applications: 0,
-    total_classes: 0
+    total_classes: 0,
   });
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState('2025-26');
-  
+  const [selectedYear, setSelectedYear] = useState("2025-26");
+
   const [classWiseData, setClassWiseData] = useState([]);
   const [genderDistribution, setGenderDistribution] = useState([]);
   const [monthlyAdmissions, setMonthlyAdmissions] = useState([]);
@@ -75,19 +75,21 @@ const AdmissionSummary = () => {
       const [statsRes, studentsRes, classesRes] = await Promise.all([
         axios.get(`${API}/dashboard/stats?year=${selectedYear}`),
         axios.get(`${API}/students?year=${selectedYear}`),
-        axios.get(`${API}/classes`)
+        axios.get(`${API}/classes`),
       ]);
-      
+
       setStats(statsRes.data);
-      const studentsData = Array.isArray(studentsRes.data) ? studentsRes.data : (studentsRes.data?.items || []);
+      const studentsData = Array.isArray(studentsRes.data)
+        ? studentsRes.data
+        : studentsRes.data?.items || [];
       const classesData = Array.isArray(classesRes.data) ? classesRes.data : [];
       setStudents(studentsData);
       setClasses(classesData);
-      
+
       calculateChartData(studentsData, classesData);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
-      toast.error('তথ্য লোড করতে সমস্যা হয়েছে');
+      console.error("Failed to fetch data:", error);
+      toast.error("তথ্য লোড করতে সমস্যা হয়েছে");
     } finally {
       setLoading(false);
     }
@@ -96,51 +98,87 @@ const AdmissionSummary = () => {
   const calculateChartData = (studentsData, classesData) => {
     // 1. Class-wise Distribution with Bengali names
     const classCount = {};
-    studentsData.forEach(student => {
+    studentsData.forEach((student) => {
       const classId = student.class_id;
       classCount[classId] = (classCount[classId] || 0) + 1;
     });
 
-    const classWise = classesData.map(cls => ({
+    const classWise = classesData.map((cls) => ({
       name: cls.name,
       ছাত্র: classCount[cls.id] || 0,
-      ধারণক্ষমতা: cls.capacity || 40
+      ধারণক্ষমতা: cls.capacity || 40,
     }));
     setClassWiseData(classWise);
 
     // 2. Gender Distribution with Bengali
     const genderCount = { পুরুষ: 0, মহিলা: 0 };
-    studentsData.forEach(student => {
+    studentsData.forEach((student) => {
       if (student.gender) {
         const g = student.gender.toLowerCase();
-        if (g === 'male' || g === 'পুরুষ') genderCount['পুরুষ']++;
-        else if (g === 'female' || g === 'মহিলা') genderCount['মহিলা']++;
+        if (g === "male" || g === "পুরুষ") genderCount["পুরুষ"]++;
+        else if (g === "female" || g === "মহিলা") genderCount["মহিলা"]++;
       }
     });
 
     const genderDist = [
-      { name: 'পুরুষ', value: genderCount['পুরুষ'], color: '#3B82F6', fill: '#3B82F6' },
-      { name: 'মহিলা', value: genderCount['মহিলা'], color: '#EC4899', fill: '#EC4899' }
-    ].filter(g => g.value > 0);
+      {
+        name: "পুরুষ",
+        value: genderCount["পুরুষ"],
+        color: "#3B82F6",
+        fill: "#3B82F6",
+      },
+      {
+        name: "মহিলা",
+        value: genderCount["মহিলা"],
+        color: "#EC4899",
+        fill: "#EC4899",
+      },
+    ].filter((g) => g.value > 0);
     setGenderDistribution(genderDist);
 
     // 3. Monthly Admissions with Bengali months
     const bengaliMonths = {
-      'Jan': 'জানু', 'Feb': 'ফেব্রু', 'Mar': 'মার্চ', 'Apr': 'এপ্রি',
-      'May': 'মে', 'Jun': 'জুন', 'Jul': 'জুলা', 'Aug': 'আগ',
-      'Sep': 'সেপ্টে', 'Oct': 'অক্টো', 'Nov': 'নভে', 'Dec': 'ডিসে'
+      Jan: "জানু",
+      Feb: "ফেব্রু",
+      Mar: "মার্চ",
+      Apr: "এপ্রি",
+      May: "মে",
+      Jun: "জুন",
+      Jul: "জুলা",
+      Aug: "আগ",
+      Sep: "সেপ্টে",
+      Oct: "অক্টো",
+      Nov: "নভে",
+      Dec: "ডিসে",
     };
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const currentDate = new Date();
     const monthCounts = {};
-    
+
     for (let i = 5; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i,
+        1,
+      );
       const monthKey = monthNames[date.getMonth()];
       monthCounts[monthKey] = 0;
     }
-    
-    studentsData.forEach(student => {
+
+    studentsData.forEach((student) => {
       if (student.created_at) {
         const admissionDate = new Date(student.created_at);
         const monthKey = monthNames[admissionDate.getMonth()];
@@ -150,50 +188,61 @@ const AdmissionSummary = () => {
       }
     });
 
-    const monthlyAdm = Object.keys(monthCounts).map(month => ({
+    const monthlyAdm = Object.keys(monthCounts).map((month) => ({
       মাস: bengaliMonths[month] || month,
-      ভর্তি: monthCounts[month]
+      ভর্তি: monthCounts[month],
     }));
     setMonthlyAdmissions(monthlyAdm);
 
     // 4. Age Distribution
-    const ageGroups = { '৫-১০ বছর': 0, '১১-১৫ বছর': 0, '১৬-২০ বছর': 0, '২০+ বছর': 0 };
-    studentsData.forEach(student => {
+    const ageGroups = {
+      "৫-১০ বছর": 0,
+      "১১-১৫ বছর": 0,
+      "১৬-২০ বছর": 0,
+      "২০+ বছর": 0,
+    };
+    studentsData.forEach((student) => {
       if (student.date_of_birth) {
         const birthDate = new Date(student.date_of_birth);
-        const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-        if (age >= 5 && age <= 10) ageGroups['৫-১০ বছর']++;
-        else if (age >= 11 && age <= 15) ageGroups['১১-১৫ বছর']++;
-        else if (age >= 16 && age <= 20) ageGroups['১৬-২০ বছর']++;
-        else if (age > 20) ageGroups['২০+ বছর']++;
+        const age = Math.floor(
+          (new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000),
+        );
+        if (age >= 5 && age <= 10) ageGroups["৫-১০ বছর"]++;
+        else if (age >= 11 && age <= 15) ageGroups["১১-১৫ বছর"]++;
+        else if (age >= 16 && age <= 20) ageGroups["১৬-২০ বছর"]++;
+        else if (age > 20) ageGroups["২০+ বছর"]++;
       }
     });
 
-    const ageDist = Object.entries(ageGroups).map(([name, value], index) => ({
-      name,
-      value,
-      fill: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'][index]
-    })).filter(a => a.value > 0);
+    const ageDist = Object.entries(ageGroups)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        fill: ["#10B981", "#3B82F6", "#F59E0B", "#EF4444"][index],
+      }))
+      .filter((a) => a.value > 0);
     setAgeDistribution(ageDist);
   };
 
   const handleExport = async () => {
     try {
       const response = await axios.get(`${API}/reports/admission-summary`, {
-        params: { format: 'csv', year: selectedYear },
-        responseType: 'blob'
+        params: { format: "csv", year: selectedYear },
+        responseType: "blob",
       });
 
-      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([response.data], {
+        type: "text/csv;charset=utf-8;",
+      });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `ভর্তি-সারাংশ-${selectedYear}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      toast.success('রিপোর্ট ডাউনলোড সম্পন্ন');
+
+      toast.success("রিপোর্ট ডাউনলোড সম্পন্ন");
     } catch (error) {
       generateCSVFallback();
     }
@@ -202,43 +251,59 @@ const AdmissionSummary = () => {
   const generateCSVFallback = () => {
     try {
       const csvData = [
-        ['ছাত্রের নাম', 'ভর্তি নম্বর', 'মারহালা', 'পিতার নাম', 'মোবাইল', 'ভর্তির তারিখ'],
-        ...students.map(student => [
+        [
+          "ছাত্রের নাম",
+          "ভর্তি নম্বর",
+          "মারহালা",
+          "পিতার নাম",
+          "মোবাইল",
+          "ভর্তির তারিখ",
+        ],
+        ...students.map((student) => [
           student.name,
           student.admission_no,
           getClassName(student.class_id),
           student.father_name,
           student.phone,
-          student.created_at ? new Date(student.created_at).toLocaleDateString('bn-BD') : ''
-        ])
+          student.created_at
+            ? new Date(student.created_at).toLocaleDateString("bn-BD")
+            : "",
+        ]),
       ];
 
-      const BOM = '\uFEFF';
-      const csvContent = BOM + csvData.map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const BOM = "\uFEFF";
+      const csvContent = BOM + csvData.map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `ভর্তি-সারাংশ-${selectedYear}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      toast.success('রিপোর্ট তৈরি সম্পন্ন');
+
+      toast.success("রিপোর্ট তৈরি সম্পন্ন");
     } catch (error) {
-      toast.error('রিপোর্ট তৈরি করতে সমস্যা হয়েছে');
+      toast.error("রিপোর্ট তৈরি করতে সমস্যা হয়েছে");
     }
   };
 
   const getClassName = (classId) => {
-    const cls = classes.find(c => c.id === classId);
-    return cls ? cls.name : 'অজানা';
+    const cls = classes.find((c) => c.id === classId);
+    return cls ? cls.name : "অজানা";
   };
 
   const handleYearChange = (year) => {
     setSelectedYear(year);
   };
 
-  const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+  const COLORS = [
+    "#10B981",
+    "#3B82F6",
+    "#F59E0B",
+    "#EF4444",
+    "#8B5CF6",
+    "#EC4899",
+  ];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -263,12 +328,18 @@ const AdmissionSummary = () => {
           <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              ></div>
             ))}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-80 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              <div
+                key={i}
+                className="h-80 bg-gray-200 dark:bg-gray-700 rounded-xl"
+              ></div>
             ))}
           </div>
         </div>
@@ -276,8 +347,10 @@ const AdmissionSummary = () => {
     );
   }
 
-  const maleCount = genderDistribution.find(g => g.name === 'পুরুষ')?.value || 0;
-  const femaleCount = genderDistribution.find(g => g.name === 'মহিলা')?.value || 0;
+  const maleCount =
+    genderDistribution.find((g) => g.name === "পুরুষ")?.value || 0;
+  const femaleCount =
+    genderDistribution.find((g) => g.name === "মহিলা")?.value || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 sm:p-6">
@@ -292,26 +365,18 @@ const AdmissionSummary = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={selectedYear} onValueChange={handleYearChange}>
-            <SelectTrigger className="w-44 bg-white dark:bg-gray-800 border-emerald-200">
-              <Calendar className="h-4 w-4 mr-2 text-emerald-600" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2025-26">শিক্ষাবর্ষ ২০২৫-২৬</SelectItem>
-              <SelectItem value="2024-25">শিক্ষাবর্ষ ২০২৪-২৫</SelectItem>
-              <SelectItem value="2023-24">শিক্ষাবর্ষ ২০২৩-২৪</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button variant="outline" onClick={handleExport} className="border-emerald-200 hover:bg-emerald-50">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            className="border-emerald-200 hover:bg-emerald-50"
+          >
             <Download className="h-4 w-4 mr-2 text-emerald-600" />
             রিপোর্ট ডাউনলোড
           </Button>
-          
-          <Button 
+
+          <Button
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg"
-            onClick={() => navigate('/students')}
+            onClick={() => navigate("/students")}
           >
             <UserPlus className="h-4 w-4 mr-2" />
             নতুন ভর্তি
@@ -326,7 +391,9 @@ const AdmissionSummary = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-emerald-100 text-sm">মোট ছাত্র</p>
-                <p className="text-3xl sm:text-4xl font-bold mt-1">{stats.total_students || students.length}</p>
+                <p className="text-3xl sm:text-4xl font-bold mt-1">
+                  {stats.total_students || students.length}
+                </p>
               </div>
               <div className="bg-white/20 p-3 rounded-full">
                 <Users className="h-6 w-6 sm:h-8 sm:w-8" />
@@ -344,7 +411,9 @@ const AdmissionSummary = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm">এই মাসে ভর্তি</p>
-                <p className="text-3xl sm:text-4xl font-bold mt-1">{stats.new_admissions_this_month || 0}</p>
+                <p className="text-3xl sm:text-4xl font-bold mt-1">
+                  {stats.new_admissions_this_month || 0}
+                </p>
               </div>
               <div className="bg-white/20 p-3 rounded-full">
                 <UserCheck className="h-6 w-6 sm:h-8 sm:w-8" />
@@ -362,7 +431,9 @@ const AdmissionSummary = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-purple-100 text-sm">মোট মারহালা</p>
-                <p className="text-3xl sm:text-4xl font-bold mt-1">{classes.length}</p>
+                <p className="text-3xl sm:text-4xl font-bold mt-1">
+                  {classes.length}
+                </p>
               </div>
               <div className="bg-white/20 p-3 rounded-full">
                 <BookOpen className="h-6 w-6 sm:h-8 sm:w-8" />
@@ -381,7 +452,9 @@ const AdmissionSummary = () => {
               <div>
                 <p className="text-amber-100 text-sm">গড় ছাত্র/শ্রেণী</p>
                 <p className="text-3xl sm:text-4xl font-bold mt-1">
-                  {classes.length > 0 ? Math.round(students.length / classes.length) : 0}
+                  {classes.length > 0
+                    ? Math.round(students.length / classes.length)
+                    : 0}
                 </p>
               </div>
               <div className="bg-white/20 p-3 rounded-full">
@@ -409,20 +482,27 @@ const AdmissionSummary = () => {
           <CardContent>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={classWiseData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <BarChart
+                  data={classWiseData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontSize: 11, fill: '#6B7280' }}
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: "#6B7280" }}
                     angle={-45}
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
                   <Bar dataKey="ছাত্র" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="ধারণক্ষমতা" fill="#E5E7EB" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="ধারণক্ষমতা"
+                    fill="#E5E7EB"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -450,7 +530,9 @@ const AdmissionSummary = () => {
                       outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
                     >
                       {genderDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -471,13 +553,21 @@ const AdmissionSummary = () => {
               <div className="flex justify-center gap-8 mt-4">
                 <div className="text-center">
                   <div className="w-4 h-4 bg-blue-500 rounded-full mx-auto mb-1"></div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">পুরুষ</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{maleCount}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    পুরুষ
+                  </p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {maleCount}
+                  </p>
                 </div>
                 <div className="text-center">
                   <div className="w-4 h-4 bg-pink-500 rounded-full mx-auto mb-1"></div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">মহিলা</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{femaleCount}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    মহিলা
+                  </p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {femaleCount}
+                  </p>
                 </div>
               </div>
             )}
@@ -495,24 +585,40 @@ const AdmissionSummary = () => {
           <CardContent>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyAdmissions} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <AreaChart
+                  data={monthlyAdmissions}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
                   <defs>
-                    <linearGradient id="colorAdmission" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
+                    <linearGradient
+                      id="colorAdmission"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                      <stop
+                        offset="95%"
+                        stopColor="#8B5CF6"
+                        stopOpacity={0.1}
+                      />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="মাস" tick={{ fontSize: 12, fill: '#6B7280' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <XAxis
+                    dataKey="মাস"
+                    tick={{ fontSize: 12, fill: "#6B7280" }}
+                  />
+                  <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="ভর্তি" 
-                    stroke="#8B5CF6" 
+                  <Area
+                    type="monotone"
+                    dataKey="ভর্তি"
+                    stroke="#8B5CF6"
                     strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorAdmission)" 
+                    fillOpacity={1}
+                    fill="url(#colorAdmission)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -532,26 +638,30 @@ const AdmissionSummary = () => {
             <div className="h-72">
               {ageDistribution.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadialBarChart 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius="20%" 
-                    outerRadius="90%" 
+                  <RadialBarChart
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="20%"
+                    outerRadius="90%"
                     data={ageDistribution}
                     startAngle={180}
                     endAngle={0}
                   >
                     <RadialBar
                       minAngle={15}
-                      label={{ position: 'insideStart', fill: '#fff', fontSize: 12 }}
+                      label={{
+                        position: "insideStart",
+                        fill: "#fff",
+                        fontSize: 12,
+                      }}
                       background
                       clockWise
                       dataKey="value"
                     />
-                    <Legend 
-                      iconSize={10} 
-                      layout="horizontal" 
-                      verticalAlign="bottom" 
+                    <Legend
+                      iconSize={10}
+                      layout="horizontal"
+                      verticalAlign="bottom"
                       align="center"
                     />
                     <Tooltip />
@@ -583,33 +693,59 @@ const AdmissionSummary = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">ছাত্রের নাম</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">ভর্তি নম্বর</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">মারহালা</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">অভিভাবক</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">তারিখ</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    ছাত্রের নাম
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    ভর্তি নম্বর
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    মারহালা
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    অভিভাবক
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    তারিখ
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {students.slice(0, 5).map((student, index) => (
-                  <tr key={student.id || index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <tr
+                    key={student.id || index}
+                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
                     <td className="py-3 px-4">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3">
-                          {student.name?.charAt(0) || '?'}
+                          {student.name?.charAt(0) || "?"}
                         </div>
-                        <span className="font-medium text-gray-800 dark:text-white">{student.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-white">
+                          {student.name}
+                        </span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      <Badge
+                        variant="outline"
+                        className="bg-emerald-50 text-emerald-700 border-emerald-200"
+                      >
                         {student.admission_no}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{getClassName(student.class_id)}</td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{student.father_name || student.guardian_name || '-'}</td>
+                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                      {getClassName(student.class_id)}
+                    </td>
+                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                      {student.father_name || student.guardian_name || "-"}
+                    </td>
                     <td className="py-3 px-4 text-gray-500 dark:text-gray-500 text-sm">
-                      {student.created_at ? new Date(student.created_at).toLocaleDateString('bn-BD') : '-'}
+                      {student.created_at
+                        ? new Date(student.created_at).toLocaleDateString(
+                            "bn-BD",
+                          )
+                        : "-"}
                     </td>
                   </tr>
                 ))}
@@ -626,9 +762,9 @@ const AdmissionSummary = () => {
           </div>
           {students.length > 5 && (
             <div className="mt-4 text-center">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/students')}
+              <Button
+                variant="outline"
+                onClick={() => navigate("/students")}
                 className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
               >
                 সকল ছাত্র দেখুন ({students.length})
