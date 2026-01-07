@@ -404,7 +404,15 @@ const MadrasahSimpleSettings = () => {
       return;
     }
     try {
-      await axios.post(`${API_BASE_URL}/admin/users`, newUserData);
+      // Map frontend fields to backend expected fields
+      const userData = {
+        full_name: newUserData.name,
+        username: newUserData.username,
+        password: newUserData.password,
+        role: newUserData.role || "teacher",
+        email: `${newUserData.username}@madrasah.local`
+      };
+      await axios.post(`${API_BASE_URL}/admin/users`, userData);
       toast.success("ব্যবহারকারী যোগ হয়েছে");
       setNewUserData({ name: "", username: "", password: "", role: "teacher" });
       setIsAddUserModalOpen(false);
