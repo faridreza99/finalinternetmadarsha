@@ -8379,6 +8379,75 @@ async def delete_custom_marhala(
     return {"message": "Marhala deleted successfully", "id": marhala_id}
 
 
+@api_router.get("/hidden-marhalas")
+async def get_hidden_marhalas(current_user: User = Depends(get_current_user)):
+    """Get list of hidden system marhalas for the tenant"""
+    hidden = await db.hidden_marhalas.find({
+        "tenant_id": current_user.tenant_id,
+        "is_hidden": True
+    }).to_list(100)
+    return [m.get("standard") for m in hidden]
+
+@api_router.post("/hidden-marhalas")
+async def hide_marhala(
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Hide a system marhala so it doesn't appear in dropdowns"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    standard = data.get("standard")
+    if not standard:
+        raise HTTPException(status_code=400, detail="Standard is required")
+    
+    # Check if any classes use this marhala
+    class_count = await db.classes.count_documents({
+        "tenant_id": current_user.tenant_id,
+        "standard": standard,
+        "is_active": True
+    })
+    
+    if class_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot hide: {class_count} class(es) use this marhala. Remove them first."
+        )
+    
+    # Upsert hidden marhala record
+    await db.hidden_marhalas.update_one(
+        {"tenant_id": current_user.tenant_id, "standard": standard},
+        {
+            "$set": {
+                "tenant_id": current_user.tenant_id,
+                "standard": standard,
+                "is_hidden": True,
+                "hidden_at": datetime.utcnow(),
+                "hidden_by": current_user.id
+            }
+        },
+        upsert=True
+    )
+    
+    return {"message": "Marhala hidden successfully", "standard": standard}
+
+@api_router.delete("/hidden-marhalas/{standard}")
+async def unhide_marhala(
+    standard: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Unhide a previously hidden system marhala"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    result = await db.hidden_marhalas.delete_one({
+        "tenant_id": current_user.tenant_id,
+        "standard": standard
+    })
+    
+    return {"message": "Marhala restored", "standard": standard}
+
+
 # ==================== TIMETABLE MANAGEMENT ====================
 
 @api_router.get("/timetables", response_model=List[Timetable])

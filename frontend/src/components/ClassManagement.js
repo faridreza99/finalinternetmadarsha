@@ -257,6 +257,7 @@ const ClassManagement = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [customMarhalas, setCustomMarhalas] = useState([]);
+  const [hiddenMarhalas, setHiddenMarhalas] = useState([]);
   const [isMarhalaModalOpen, setIsMarhalaModalOpen] = useState(false);
   const [newMarhalaForm, setNewMarhalaForm] = useState({
     standard: "",
@@ -446,7 +447,9 @@ const ClassManagement = () => {
   const defaultStandards =
     institutionType === "madrasah" ? madrasahStandards : schoolStandards;
 
-  const allStandards = [...defaultStandards, ...customMarhalas];
+  // Filter out hidden marhalas from the list
+  const visibleDefaultStandards = defaultStandards.filter(s => !hiddenMarhalas.includes(s.standard));
+  const allStandards = [...visibleDefaultStandards, ...customMarhalas];
 
   // For subject dropdowns, use standards from existing classes
   const classStandards = getUniqueStandards();
@@ -498,6 +501,7 @@ const ClassManagement = () => {
     fetchData();
     fetchInstitutionSettings();
     fetchCustomMarhalas();
+    fetchHiddenMarhalas();
   }, []);
 
   const fetchInstitutionSettings = async () => {
@@ -566,6 +570,41 @@ const ClassManagement = () => {
       setCustomMarhalas(marhalas);
     } catch (error) {
       console.log("No custom marhalas found or error:", error.message);
+    }
+  };
+
+  const fetchHiddenMarhalas = async () => {
+    try {
+      const response = await axios.get(`${API}/hidden-marhalas`);
+      setHiddenMarhalas(response.data || []);
+    } catch (error) {
+      console.log("No hidden marhalas found or error:", error.message);
+    }
+  };
+
+  const handleHideSystemMarhala = async (marhalaStandard, displayName, e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const result = await Swal.fire({
+      title: 'মারহালা লুকান?',
+      text: `আপনি কি "${displayName}" মারহালা লুকাতে চান? এটি ড্রপডাউন থেকে সরিয়ে দেওয়া হবে।`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'হ্যাঁ, লুকান',
+      cancelButtonText: 'বাতিল'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.post(`${API}/hidden-marhalas`, { standard: marhalaStandard });
+        setHiddenMarhalas((prev) => [...prev, marhalaStandard]);
+        toast.success("মারহালা লুকানো হয়েছে");
+      } catch (error) {
+        toast.error(error.response?.data?.detail || "মারহালা লুকাতে সমস্যা হয়েছে");
+      }
     }
   };
 
@@ -1538,12 +1577,21 @@ const ClassManagement = () => {
                                   </Badge>
                                 )}
                               </span>
-                              {std.category === "Custom" && std.id && (
+                              {std.category === "Custom" && std.id ? (
                                 <button
                                   type="button"
                                   onClick={(e) => handleDeleteCustomMarhala(std.id, std.display_name, e)}
                                   className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900"
                                   title="মুছুন"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              ) : std.category !== "Custom" && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleHideSystemMarhala(std.standard, std.display_name, e)}
+                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900"
+                                  title="লুকান"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </button>
