@@ -594,7 +594,9 @@ const ClassManagement = () => {
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'হ্যাঁ, লুকান',
-      cancelButtonText: 'বাতিল'
+      cancelButtonText: 'বাতিল',
+      customClass: { popup: 'swal-high-zindex' },
+      backdrop: 'rgba(0,0,0,0.8)'
     });
 
     if (result.isConfirmed) {
@@ -620,7 +622,9 @@ const ClassManagement = () => {
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'হ্যাঁ, মুছুন',
-      cancelButtonText: 'বাতিল'
+      cancelButtonText: 'বাতিল',
+      customClass: { popup: 'swal-high-zindex' },
+      backdrop: 'rgba(0,0,0,0.8)'
     });
 
     if (result.isConfirmed) {

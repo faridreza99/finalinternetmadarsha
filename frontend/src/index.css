@@ -84,3 +84,11 @@ code {
     @apply bg-background text-foreground;
     }
 }
+
+/* SweetAlert high z-index for dialogs */
+.swal-high-zindex {
+  z-index: 99999 !important;
+}
+.swal2-container {
+  z-index: 99998 !important;
+}
