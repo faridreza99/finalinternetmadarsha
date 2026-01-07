@@ -2501,18 +2501,11 @@ const Settings = () => {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Class 1">Class 1</SelectItem>
-                      <SelectItem value="Class 2">Class 2</SelectItem>
-                      <SelectItem value="Class 3">Class 3</SelectItem>
-                      <SelectItem value="Class 4">Class 4</SelectItem>
-                      <SelectItem value="Class 5">Class 5</SelectItem>
-                      <SelectItem value="Class 6">Class 6</SelectItem>
-                      <SelectItem value="Class 7">Class 7</SelectItem>
-                      <SelectItem value="Class 8">Class 8</SelectItem>
-                      <SelectItem value="Class 9">Class 9</SelectItem>
-                      <SelectItem value="Class 10">Class 10</SelectItem>
-                      <SelectItem value="Class 11">Class 11</SelectItem>
-                      <SelectItem value="Class 12">Class 12</SelectItem>
+                      {classes.filter(c => c.is_active !== false).map((cls) => (
+                        <SelectItem key={cls.id} value={cls.class_standard || cls.name}>
+                          {cls.display_name || cls.class_standard || cls.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

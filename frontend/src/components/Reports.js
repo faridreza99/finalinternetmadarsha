@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -123,6 +124,24 @@ const Reports = () => {
     status: 'all_statuses',
     search: ''
   });
+  
+  const [classes, setClasses] = useState([]);
+  
+  const fetchClasses = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/classes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setClasses(response.data || []);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+    }
+  }, [API]);
+  
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
   
   // Cross Counting Report state
   const [crossCountData, setCrossCountData] = useState([]);
@@ -1209,9 +1228,11 @@ const Reports = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all_classes">All Classes</SelectItem>
-                        <SelectItem value="class_1">Class 1</SelectItem>
-                        <SelectItem value="class_2">Class 2</SelectItem>
-                        <SelectItem value="class_3">Class 3</SelectItem>
+                        {classes.filter(c => c.is_active !== false).map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.display_name || cls.class_standard || cls.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1494,11 +1515,11 @@ const Reports = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all_classes">All Classes</SelectItem>
-                        <SelectItem value="class_1">Class 1</SelectItem>
-                        <SelectItem value="class_2">Class 2</SelectItem>
-                        <SelectItem value="class_3">Class 3</SelectItem>
-                        <SelectItem value="class_4">Class 4</SelectItem>
-                        <SelectItem value="class_5">Class 5</SelectItem>
+                        {classes.filter(c => c.is_active !== false).map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.display_name || cls.class_standard || cls.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1709,9 +1730,11 @@ const Reports = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all_classes">All Classes</SelectItem>
-                        <SelectItem value="class_1">Class 1</SelectItem>
-                        <SelectItem value="class_2">Class 2</SelectItem>
-                        <SelectItem value="class_3">Class 3</SelectItem>
+                        {classes.filter(c => c.is_active !== false).map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.display_name || cls.class_standard || cls.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

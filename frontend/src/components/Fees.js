@@ -4133,8 +4133,11 @@ const Fees = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Classes</SelectItem>
-                        <SelectItem value="class1">Class 1</SelectItem>
-                        <SelectItem value="class2">Class 2</SelectItem>
+                        {classes.filter(c => c.is_active !== false).map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.display_name || cls.class_standard || cls.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
