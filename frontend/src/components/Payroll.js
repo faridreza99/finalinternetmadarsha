@@ -37,6 +37,8 @@ import {
   RefreshCw,
   Building2,
   Printer,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -78,6 +80,9 @@ const Payroll = () => {
   const [showSettingsForm, setShowSettingsForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [editingSalaryStructure, setEditingSalaryStructure] = useState(null);
+  const [editingBonus, setEditingBonus] = useState(null);
+  const [editingAdvance, setEditingAdvance] = useState(null);
 
   const formatCurrency = useCallback((amount) => {
     const symbol = currencySymbols[currency] || currency + ' ';
@@ -344,6 +349,111 @@ const Payroll = () => {
       setShowPaymentForm(false);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'পেমেন্ট রেকর্ড ব্যর্থ');
+    }
+  };
+
+  // Delete salary structure
+  const handleDeleteSalaryStructure = async (structureId) => {
+    if (!window.confirm('আপনি কি নিশ্চিত যে এই বেতন কাঠামো মুছে ফেলতে চান?')) return;
+    try {
+      setLoading(true);
+      await axios.delete(`${API}/payroll/salary-structures/${structureId}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      toast.success('বেতন কাঠামো সফলভাবে মুছে ফেলা হয়েছে');
+      fetchSalaryStructures();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'বেতন কাঠামো মুছতে ব্যর্থ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update salary structure
+  const handleUpdateSalaryStructure = async (structureId, data) => {
+    try {
+      setLoading(true);
+      await axios.put(`${API}/payroll/salary-structures/${structureId}`, data, {
+        headers: { Authorization: getAuthToken() }
+      });
+      toast.success('বেতন কাঠামো সফলভাবে আপডেট হয়েছে');
+      setEditingSalaryStructure(null);
+      setShowSalaryForm(false);
+      fetchSalaryStructures();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'বেতন কাঠামো আপডেট করতে ব্যর্থ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete bonus
+  const handleDeleteBonus = async (bonusId) => {
+    if (!window.confirm('আপনি কি নিশ্চিত যে এই বোনাস মুছে ফেলতে চান?')) return;
+    try {
+      setLoading(true);
+      await axios.delete(`${API}/payroll/bonuses/${bonusId}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      toast.success('বোনাস সফলভাবে মুছে ফেলা হয়েছে');
+      fetchBonuses();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'বোনাস মুছতে ব্যর্থ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update bonus
+  const handleUpdateBonus = async (bonusId, data) => {
+    try {
+      setLoading(true);
+      await axios.put(`${API}/payroll/bonuses/${bonusId}`, data, {
+        headers: { Authorization: getAuthToken() }
+      });
+      toast.success('বোনাস সফলভাবে আপডেট হয়েছে');
+      setEditingBonus(null);
+      setShowBonusForm(false);
+      fetchBonuses();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'বোনাস আপডেট করতে ব্যর্থ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete advance
+  const handleDeleteAdvance = async (advanceId) => {
+    if (!window.confirm('আপনি কি নিশ্চিত যে এই অগ্রিম মুছে ফেলতে চান?')) return;
+    try {
+      setLoading(true);
+      await axios.delete(`${API}/payroll/advances/${advanceId}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      toast.success('অগ্রিম সফলভাবে মুছে ফেলা হয়েছে');
+      fetchAdvances();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'অগ্রিম মুছতে ব্যর্থ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update advance
+  const handleUpdateAdvance = async (advanceId, data) => {
+    try {
+      setLoading(true);
+      await axios.put(`${API}/payroll/advances/${advanceId}`, data, {
+        headers: { Authorization: getAuthToken() }
+      });
+      toast.success('অগ্রিম সফলভাবে আপডেট হয়েছে');
+      setEditingAdvance(null);
+      setShowAdvanceForm(false);
+      fetchAdvances();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'অগ্রিম আপডেট করতে ব্যর্থ');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -800,6 +910,7 @@ const Payroll = () => {
                     <TableHead className="text-right">যাতায়াত</TableHead>
                     <TableHead className="text-right">মোট</TableHead>
                     <TableHead>অবস্থা</TableHead>
+                    <TableHead>কার্যক্রম</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -831,6 +942,27 @@ const Payroll = () => {
                           {struct.is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingSalaryStructure(struct);
+                              setShowSalaryForm(true);
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteSalaryStructure(struct.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -859,6 +991,7 @@ const Payroll = () => {
                     <TableHead>প্রযোজ্য</TableHead>
                     <TableHead className="text-right">পরিমাণ</TableHead>
                     <TableHead>মাস</TableHead>
+                    <TableHead>কার্যক্রম</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -878,6 +1011,27 @@ const Payroll = () => {
                       </TableCell>
                       <TableCell>
                         {months.find(m => m.value === bonus.effective_month)?.label} {bonus.effective_year}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingBonus(bonus);
+                              setShowBonusForm(true);
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteBonus(bonus.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -908,6 +1062,7 @@ const Payroll = () => {
                     <TableHead className="text-right">মাসিক কর্তন</TableHead>
                     <TableHead className="text-right">বাকি</TableHead>
                     <TableHead>অবস্থা</TableHead>
+                    <TableHead>কার্যক্রম</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -924,6 +1079,27 @@ const Payroll = () => {
                         <Badge className={advance.is_active ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
                           {advance.is_active ? 'সক্রিয়' : 'নিষ্পত্তি'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingAdvance(advance);
+                              setShowAdvanceForm(true);
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteAdvance(advance.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1070,29 +1246,37 @@ const Payroll = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-emerald-600" />
-                বেতন কাঠামো যোগ করুন
+                {editingSalaryStructure ? 'বেতন কাঠামো সম্পাদনা করুন' : 'বেতন কাঠামো যোগ করুন'}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <SalaryStructureForm
                 employees={employees}
                 departments={departments}
+                initialData={editingSalaryStructure}
                 onSubmit={async (data) => {
-                  try {
-                    setLoading(true);
-                    await axios.post(`${API}/payroll/salary-structures`, data, {
-                      headers: { Authorization: getAuthToken() }
-                    });
-                    toast.success('বেতন কাঠামো সফলভাবে যোগ হয়েছে');
-                    setShowSalaryForm(false);
-                    fetchSalaryStructures();
-                  } catch (error) {
-                    toast.error(error.response?.data?.detail || 'বেতন কাঠামো যোগ করতে ব্যর্থ');
-                  } finally {
-                    setLoading(false);
+                  if (editingSalaryStructure) {
+                    await handleUpdateSalaryStructure(editingSalaryStructure.id, data);
+                  } else {
+                    try {
+                      setLoading(true);
+                      await axios.post(`${API}/payroll/salary-structures`, data, {
+                        headers: { Authorization: getAuthToken() }
+                      });
+                      toast.success('বেতন কাঠামো সফলভাবে যোগ হয়েছে');
+                      setShowSalaryForm(false);
+                      fetchSalaryStructures();
+                    } catch (error) {
+                      toast.error(error.response?.data?.detail || 'বেতন কাঠামো যোগ করতে ব্যর্থ');
+                    } finally {
+                      setLoading(false);
+                    }
                   }
                 }}
-                onCancel={() => setShowSalaryForm(false)}
+                onCancel={() => {
+                  setShowSalaryForm(false);
+                  setEditingSalaryStructure(null);
+                }}
                 loading={loading}
               />
             </CardContent>
@@ -1106,7 +1290,7 @@ const Payroll = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Gift className="h-5 w-5 text-purple-600" />
-                বোনাস যোগ করুন
+                {editingBonus ? 'বোনাস সম্পাদনা করুন' : 'বোনাস যোগ করুন'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1114,22 +1298,30 @@ const Payroll = () => {
                 employees={employees}
                 departments={departments}
                 months={months}
+                initialData={editingBonus}
                 onSubmit={async (data) => {
-                  try {
-                    setLoading(true);
-                    await axios.post(`${API}/payroll/bonuses`, data, {
-                      headers: { Authorization: getAuthToken() }
-                    });
-                    toast.success('বোনাস সফলভাবে যোগ হয়েছে');
-                    setShowBonusForm(false);
-                    fetchBonuses();
-                  } catch (error) {
-                    toast.error(error.response?.data?.detail || 'বোনাস যোগ করতে ব্যর্থ');
-                  } finally {
-                    setLoading(false);
+                  if (editingBonus) {
+                    await handleUpdateBonus(editingBonus.id, data);
+                  } else {
+                    try {
+                      setLoading(true);
+                      await axios.post(`${API}/payroll/bonuses`, data, {
+                        headers: { Authorization: getAuthToken() }
+                      });
+                      toast.success('বোনাস সফলভাবে যোগ হয়েছে');
+                      setShowBonusForm(false);
+                      fetchBonuses();
+                    } catch (error) {
+                      toast.error(error.response?.data?.detail || 'বোনাস যোগ করতে ব্যর্থ');
+                    } finally {
+                      setLoading(false);
+                    }
                   }
                 }}
-                onCancel={() => setShowBonusForm(false)}
+                onCancel={() => {
+                  setShowBonusForm(false);
+                  setEditingBonus(null);
+                }}
                 loading={loading}
               />
             </CardContent>
@@ -1143,28 +1335,36 @@ const Payroll = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PiggyBank className="h-5 w-5 text-orange-600" />
-                অগ্রিম যোগ করুন
+                {editingAdvance ? 'অগ্রিম সম্পাদনা করুন' : 'অগ্রিম যোগ করুন'}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <AdvanceForm
                 employees={employees}
+                initialData={editingAdvance}
                 onSubmit={async (data) => {
-                  try {
-                    setLoading(true);
-                    await axios.post(`${API}/payroll/advances`, data, {
-                      headers: { Authorization: getAuthToken() }
-                    });
-                    toast.success('অগ্রিম সফলভাবে যোগ হয়েছে');
-                    setShowAdvanceForm(false);
-                    fetchAdvances();
-                  } catch (error) {
-                    toast.error(error.response?.data?.detail || 'অগ্রিম যোগ করতে ব্যর্থ');
-                  } finally {
-                    setLoading(false);
+                  if (editingAdvance) {
+                    await handleUpdateAdvance(editingAdvance.id, data);
+                  } else {
+                    try {
+                      setLoading(true);
+                      await axios.post(`${API}/payroll/advances`, data, {
+                        headers: { Authorization: getAuthToken() }
+                      });
+                      toast.success('অগ্রিম সফলভাবে যোগ হয়েছে');
+                      setShowAdvanceForm(false);
+                      fetchAdvances();
+                    } catch (error) {
+                      toast.error(error.response?.data?.detail || 'অগ্রিম যোগ করতে ব্যর্থ');
+                    } finally {
+                      setLoading(false);
+                    }
                   }
                 }}
-                onCancel={() => setShowAdvanceForm(false)}
+                onCancel={() => {
+                  setShowAdvanceForm(false);
+                  setEditingAdvance(null);
+                }}
                 loading={loading}
               />
             </CardContent>
@@ -1288,18 +1488,18 @@ const PaymentForm = ({ item, onSubmit, onCancel }) => {
   );
 };
 
-const SalaryStructureForm = ({ employees, departments, onSubmit, onCancel, loading }) => {
+const SalaryStructureForm = ({ employees, departments, onSubmit, onCancel, loading, initialData }) => {
   const [formData, setFormData] = useState({
-    employee_id: '',
-    basic_salary: '',
-    house_rent_allowance: '',
-    food_allowance: '',
-    transport_allowance: '',
-    medical_allowance: '',
-    other_allowance: '',
-    provident_fund_percentage: '0',
-    tax_percentage: '0',
-    is_active: true
+    employee_id: initialData?.employee_id || '',
+    basic_salary: initialData?.basic_salary?.toString() || '',
+    house_rent_allowance: initialData?.house_rent_allowance?.toString() || '',
+    food_allowance: initialData?.food_allowance?.toString() || '',
+    transport_allowance: initialData?.transport_allowance?.toString() || '',
+    medical_allowance: initialData?.medical_allowance?.toString() || '',
+    other_allowance: initialData?.other_allowance?.toString() || '',
+    provident_fund_percentage: initialData?.provident_fund_percentage?.toString() || '0',
+    tax_percentage: initialData?.tax_percentage?.toString() || '0',
+    is_active: initialData?.is_active ?? true
   });
 
   const handleSubmit = (e) => {
@@ -1427,17 +1627,17 @@ const SalaryStructureForm = ({ employees, departments, onSubmit, onCancel, loadi
   );
 };
 
-const BonusForm = ({ employees, departments, months, onSubmit, onCancel, loading }) => {
+const BonusForm = ({ employees, departments, months, onSubmit, onCancel, loading, initialData }) => {
   const [formData, setFormData] = useState({
-    bonus_name: '',
-    bonus_type: 'fixed',
-    amount: '',
-    percentage: '',
-    applicable_to: 'all',
-    employee_ids: [],
-    department: '',
-    effective_month: new Date().getMonth() + 1,
-    effective_year: new Date().getFullYear()
+    bonus_name: initialData?.bonus_name || '',
+    bonus_type: initialData?.bonus_type || 'fixed',
+    amount: initialData?.amount?.toString() || '',
+    percentage: initialData?.percentage?.toString() || '',
+    applicable_to: initialData?.applicable_to || 'all',
+    employee_ids: initialData?.employee_ids || [],
+    department: initialData?.department || '',
+    effective_month: initialData?.effective_month || new Date().getMonth() + 1,
+    effective_year: initialData?.effective_year || new Date().getFullYear()
   });
 
   const handleSubmit = (e) => {
@@ -1573,31 +1773,44 @@ const BonusForm = ({ employees, departments, months, onSubmit, onCancel, loading
   );
 };
 
-const AdvanceForm = ({ employees, onSubmit, onCancel, loading }) => {
+const AdvanceForm = ({ employees, onSubmit, onCancel, loading, initialData }) => {
+  const isEditing = !!initialData;
   const [formData, setFormData] = useState({
-    employee_id: '',
-    amount: '',
-    monthly_deduction: '',
-    reason: '',
-    start_date: new Date().toISOString().split('T')[0]
+    employee_id: initialData?.employee_id || '',
+    amount: initialData?.amount?.toString() || '',
+    reason: initialData?.reason || '',
+    repayment_months: initialData?.repayment_months?.toString() || '1',
+    start_month: initialData?.start_month || new Date().getMonth() + 1,
+    start_year: initialData?.start_year || new Date().getFullYear()
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.employee_id || !formData.amount) return;
-    onSubmit({
-      ...formData,
+    const submitData = {
       amount: Number(formData.amount),
-      monthly_deduction: Number(formData.monthly_deduction) || Number(formData.amount)
-    });
+      reason: formData.reason,
+      repayment_months: Number(formData.repayment_months) || 1,
+      start_month: Number(formData.start_month),
+      start_year: Number(formData.start_year)
+    };
+    // Only include employee_id when creating new advance
+    if (!isEditing) {
+      submitData.employee_id = formData.employee_id;
+    }
+    onSubmit(submitData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>কর্মচারী নির্বাচন করুন *</Label>
-        <Select value={formData.employee_id} onValueChange={(v) => setFormData({...formData, employee_id: v})}>
-          <SelectTrigger>
+        <Select 
+          value={formData.employee_id} 
+          onValueChange={(v) => setFormData({...formData, employee_id: v})}
+          disabled={isEditing}
+        >
+          <SelectTrigger className={isEditing ? 'opacity-60 cursor-not-allowed' : ''}>
             <SelectValue placeholder="কর্মচারী বাছুন" />
           </SelectTrigger>
           <SelectContent>
@@ -1608,6 +1821,7 @@ const AdvanceForm = ({ employees, onSubmit, onCancel, loading }) => {
             ))}
           </SelectContent>
         </Select>
+        {isEditing && <p className="text-xs text-gray-500">কর্মচারী পরিবর্তন করা যাবে না</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -61,7 +61,7 @@ from student_portal import setup_student_portal_routes
 from payroll_management import (
     SalaryStructureCreate, PayrollSettings, PayrollProcessRequest,
     PayrollItemUpdate, PayrollApprovalRequest, BonusCreate, 
-    PaymentRecordCreate, AdvanceCreate,
+    PaymentRecordCreate, AdvanceCreate, AdvanceUpdate,
     get_payroll_settings, calculate_attendance_summary,
     get_approved_leaves, calculate_salary, generate_payslip_pdf,
     get_school_branding_for_reports as get_payroll_branding,
@@ -29645,6 +29645,25 @@ async def update_salary_structure(
     
     return {"message": "Salary structure updated successfully"}
 
+@api_router.delete("/payroll/salary-structures/{structure_id}")
+async def delete_salary_structure(
+    structure_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete salary structure"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    result = await db.salary_structures.delete_one({
+        "id": structure_id,
+        "tenant_id": current_user.tenant_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Salary structure not found")
+    
+    return {"message": "Salary structure deleted successfully"}
+
 # ================================
 # PAYROLL PROCESSING ENDPOINTS
 # ================================
@@ -30289,6 +30308,34 @@ async def lock_payroll(
 # ================================
 
 
+@api_router.put("/payroll/bonuses/{bonus_id}")
+async def update_bonus(
+    bonus_id: str,
+    data: BonusCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update bonus"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    bonus = await db.payroll_bonuses.find_one({
+        "id": bonus_id,
+        "tenant_id": current_user.tenant_id
+    })
+    if not bonus:
+        raise HTTPException(status_code=404, detail="Bonus not found")
+    
+    update_data = data.dict()
+    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_by"] = current_user.id
+    
+    await db.payroll_bonuses.update_one(
+        {"id": bonus_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Bonus updated successfully"}
+
 @api_router.delete("/payroll/bonuses/{bonus_id}")
 async def delete_bonus(
     bonus_id: str,
@@ -30366,6 +30413,83 @@ async def close_advance(
         raise HTTPException(status_code=404, detail="Advance not found")
     
     return {"message": "Advance closed successfully"}
+
+@api_router.put("/payroll/advances/{advance_id}")
+async def update_advance(
+    advance_id: str,
+    data: AdvanceUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update advance - preserves repayment progress and validates amount changes"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    advance = await db.employee_advances.find_one({
+        "id": advance_id,
+        "tenant_id": current_user.tenant_id
+    })
+    if not advance:
+        raise HTTPException(status_code=404, detail="Advance not found")
+    
+    # Calculate how much was already paid
+    original_amount = advance.get("amount", 0)
+    original_remaining = advance.get("remaining_amount", 0)
+    paid_amount = original_amount - original_remaining
+    
+    # Reject if new amount is less than what's already been paid
+    if data.amount < paid_amount:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"New amount cannot be less than already paid amount ({paid_amount})"
+        )
+    
+    # Calculate new remaining balance
+    new_remaining = data.amount - paid_amount
+    
+    # Calculate monthly deduction based on remaining balance and repayment months
+    if data.repayment_months > 0 and new_remaining > 0:
+        monthly_deduction = new_remaining / data.repayment_months
+    else:
+        monthly_deduction = new_remaining
+    
+    # Note: employee_id is not updated - advance is tied to original employee
+    update_data = {
+        "reason": data.reason,
+        "amount": data.amount,
+        "remaining_amount": new_remaining,
+        "monthly_deduction": monthly_deduction,
+        "repayment_months": data.repayment_months,
+        "start_month": data.start_month,
+        "start_year": data.start_year,
+        "updated_at": datetime.utcnow(),
+        "updated_by": current_user.id
+    }
+    
+    await db.employee_advances.update_one(
+        {"id": advance_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Advance updated successfully"}
+
+@api_router.delete("/payroll/advances/{advance_id}")
+async def delete_advance(
+    advance_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete advance"""
+    if current_user.role not in ["super_admin", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    result = await db.employee_advances.delete_one({
+        "id": advance_id,
+        "tenant_id": current_user.tenant_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Advance not found")
+    
+    return {"message": "Advance deleted successfully"}
 
 # ================================
 # PAYMENT ENDPOINTS

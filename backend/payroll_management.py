@@ -125,6 +125,14 @@ class AdvanceCreate(BaseModel):
     start_month: int
     start_year: int
 
+class AdvanceUpdate(BaseModel):
+    """Update existing advance/loan (employee_id cannot be changed)"""
+    amount: float
+    reason: str
+    repayment_months: int = 1
+    start_month: int
+    start_year: int
+
 # ================================
 # PAYROLL ROUTER
 # ================================
