@@ -1578,25 +1578,23 @@ const ClassManagement = () => {
                                 )}
                               </span>
                               {std.category === "Custom" && std.id ? (
-                                <button
-                                  type="button"
-                                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteCustomMarhala(std.id, std.display_name, e); }}
-                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 z-50"
+                                <div
+                                  onPointerDown={(e) => { e.stopPropagation(); }}
+                                  onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteCustomMarhala(std.id, std.display_name, e); }}
+                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 cursor-pointer"
                                   title="মুছুন"
                                 >
                                   <Trash2 className="h-3 w-3" />
-                                </button>
+                                </div>
                               ) : std.category !== "Custom" && (
-                                <button
-                                  type="button"
-                                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleHideSystemMarhala(std.standard, std.display_name, e); }}
-                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 z-50"
+                                <div
+                                  onPointerDown={(e) => { e.stopPropagation(); }}
+                                  onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); handleHideSystemMarhala(std.standard, std.display_name, e); }}
+                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 cursor-pointer"
                                   title="লুকান"
                                 >
                                   <Trash2 className="h-3 w-3" />
-                                </button>
+                                </div>
                               )}
                             </span>
                           </SelectItem>
