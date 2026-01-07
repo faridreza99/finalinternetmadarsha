@@ -126,6 +126,14 @@ const madrasahLabels = {
   sectionPlaceholder: "যেমন: ক, খ, গ বা A, B, C",
   subjectPlaceholder: "যেমন: কুরআন, হাদিস, ফিকহ",
   subjectCodePlaceholder: "যেমন: QRN101, HDT101",
+  addNewMarhala: "+ নতুন মারহালা যোগ করুন",
+  newMarhalaTitle: "নতুন মারহালা যোগ করুন",
+  newMarhalaDesc: "কাস্টম মারহালা তৈরি করুন",
+  marhalaName: "মারহালার নাম",
+  marhalaDisplayName: "প্রদর্শন নাম",
+  marhalaLevel: "স্তর (লেভেল)",
+  marhalaNamePlaceholder: "যেমন: Fazil 1, Kamil",
+  marhalaDisplayPlaceholder: "যেমন: ফাজিল ১ম বর্ষ, কামিল",
 };
 
 // School-specific English labels
@@ -194,6 +202,14 @@ const schoolLabels = {
   sectionPlaceholder: "e.g., A, B, C",
   subjectPlaceholder: "e.g., Mathematics, Science",
   subjectCodePlaceholder: "e.g., MATH101, SCI101",
+  addNewMarhala: "+ Add New Standard",
+  newMarhalaTitle: "Add New Standard",
+  newMarhalaDesc: "Create a custom standard/level",
+  marhalaName: "Standard Name",
+  marhalaDisplayName: "Display Name",
+  marhalaLevel: "Level Number",
+  marhalaNamePlaceholder: "e.g., Grade 13, Special",
+  marhalaDisplayPlaceholder: "e.g., Grade 13, Special Program",
 };
 
 const toBengaliNumeral = (num) => {
@@ -240,6 +256,14 @@ const ClassManagement = () => {
   const [showInactiveClasses, setShowInactiveClasses] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const [customMarhalas, setCustomMarhalas] = useState([]);
+  const [isMarhalaModalOpen, setIsMarhalaModalOpen] = useState(false);
+  const [newMarhalaForm, setNewMarhalaForm] = useState({
+    standard: "",
+    display_name: "",
+    internal_standard: 0,
+    category: "Custom",
+  });
 
   const [classFormData, setClassFormData] = useState({
     name: "",
@@ -422,8 +446,46 @@ const ClassManagement = () => {
   const defaultStandards =
     institutionType === "madrasah" ? madrasahStandards : schoolStandards;
 
+  const allStandards = [...defaultStandards, ...customMarhalas];
+
   // For subject dropdowns, use standards from existing classes
   const classStandards = getUniqueStandards();
+
+  const handleAddNewMarhala = () => {
+    if (!newMarhalaForm.standard || !newMarhalaForm.display_name) {
+      toast.error("মারহালার নাম এবং প্রদর্শন নাম প্রয়োজন");
+      return;
+    }
+    const existingStandard = allStandards.find(
+      (s) => s.standard === newMarhalaForm.standard
+    );
+    if (existingStandard) {
+      toast.error("এই মারহালা আগে থেকেই আছে");
+      return;
+    }
+    const newMarhala = {
+      standard: newMarhalaForm.standard,
+      display_name: newMarhalaForm.display_name,
+      internal_standard: parseInt(newMarhalaForm.internal_standard) || 0,
+      category: "Custom",
+    };
+    setCustomMarhalas((prev) => [...prev, newMarhala]);
+    setClassFormData({
+      ...classFormData,
+      standard: newMarhala.standard,
+      display_name: newMarhala.display_name,
+      internal_standard: newMarhala.internal_standard,
+      name: newMarhala.display_name,
+    });
+    setNewMarhalaForm({
+      standard: "",
+      display_name: "",
+      internal_standard: 0,
+      category: "Custom",
+    });
+    setIsMarhalaModalOpen(false);
+    toast.success("নতুন মারহালা যোগ হয়েছে");
+  };
 
   useEffect(() => {
     fetchData();
@@ -1387,11 +1449,11 @@ const ClassManagement = () => {
                     <Select
                       value={classFormData.standard}
                       onValueChange={(value) => {
-                        const standardsList =
-                          institutionType === "madrasah"
-                            ? madrasahStandards
-                            : defaultStandards;
-                        const selectedStd = standardsList.find(
+                        if (value === "add_new_marhala") {
+                          setIsMarhalaModalOpen(true);
+                          return;
+                        }
+                        const selectedStd = allStandards.find(
                           (s) => s.standard === value,
                         );
                         setClassFormData({
@@ -1407,14 +1469,11 @@ const ClassManagement = () => {
                       <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700">
                         <SelectValue placeholder={labels.selectStandard} />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-gray-800">
+                      <SelectContent className="dark:bg-gray-800 max-h-[300px]">
                         <SelectItem value="select_standard" disabled>
                           {labels.selectStandard}
                         </SelectItem>
-                        {(institutionType === "madrasah"
-                          ? madrasahStandards
-                          : defaultStandards
-                        ).map((std) => (
+                        {allStandards.map((std) => (
                           <SelectItem key={std.standard} value={std.standard}>
                             <span className="flex items-center gap-2">
                               <span>{std.display_name}</span>
@@ -1423,9 +1482,20 @@ const ClassManagement = () => {
                                   ({std.standard})
                                 </span>
                               )}
+                              {std.category === "Custom" && (
+                                <Badge variant="outline" className="text-xs ml-1">
+                                  কাস্টম
+                                </Badge>
+                              )}
                             </span>
                           </SelectItem>
                         ))}
+                        <SelectItem value="add_new_marhala" className="text-emerald-600 font-medium border-t mt-1 pt-2">
+                          <span className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            {labels.addNewMarhala}
+                          </span>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2311,6 +2381,110 @@ const ClassManagement = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Add New Marhala Modal */}
+      <Dialog open={isMarhalaModalOpen} onOpenChange={setIsMarhalaModalOpen}>
+        <DialogContent className="dark:bg-gray-900">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">
+              {labels.newMarhalaTitle}
+            </DialogTitle>
+            <DialogDescription className="dark:text-gray-400">
+              {labels.newMarhalaDesc}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="marhala_standard" className="dark:text-gray-300">
+                {labels.marhalaName} *
+              </Label>
+              <Input
+                id="marhala_standard"
+                value={newMarhalaForm.standard}
+                onChange={(e) =>
+                  setNewMarhalaForm({
+                    ...newMarhalaForm,
+                    standard: e.target.value,
+                  })
+                }
+                placeholder={labels.marhalaNamePlaceholder}
+                className="dark:bg-gray-800 dark:border-gray-700"
+                required
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                ইংরেজিতে লিখুন (যেমন: Fazil 1, Kamil 1)
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="marhala_display" className="dark:text-gray-300">
+                {labels.marhalaDisplayName} *
+              </Label>
+              <Input
+                id="marhala_display"
+                value={newMarhalaForm.display_name}
+                onChange={(e) =>
+                  setNewMarhalaForm({
+                    ...newMarhalaForm,
+                    display_name: e.target.value,
+                  })
+                }
+                placeholder={labels.marhalaDisplayPlaceholder}
+                className="dark:bg-gray-800 dark:border-gray-700"
+                required
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                বাংলায় প্রদর্শন নাম (যেমন: ফাজিল ১ম বর্ষ, কামিল ১ম বর্ষ)
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="marhala_level" className="dark:text-gray-300">
+                {labels.marhalaLevel}
+              </Label>
+              <Input
+                id="marhala_level"
+                type="number"
+                min="0"
+                value={newMarhalaForm.internal_standard}
+                onChange={(e) =>
+                  setNewMarhalaForm({
+                    ...newMarhalaForm,
+                    internal_standard: e.target.value,
+                  })
+                }
+                placeholder="13"
+                className="dark:bg-gray-800 dark:border-gray-700"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                ক্রম নির্ধারণের জন্য সংখ্যা (যেমন: আলিম পরবর্তী হলে ১৩)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsMarhalaModalOpen(false);
+                setNewMarhalaForm({
+                  standard: "",
+                  display_name: "",
+                  internal_standard: 0,
+                  category: "Custom",
+                });
+              }}
+            >
+              {labels.cancel}
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-500 hover:bg-emerald-600"
+              onClick={handleAddNewMarhala}
+            >
+              {labels.save}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
