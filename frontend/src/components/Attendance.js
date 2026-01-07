@@ -101,6 +101,7 @@ const MarkAttendance = () => {
       // Prepare attendance records with proper field names
       const records = staff.map(member => ({
         employee_id: member.employee_id || member.id,
+        staff_id: member.id,
         staff_name: member.name || member.full_name || '',
         department: member.department || '',
         status: attendance[member.id] || 'absent',

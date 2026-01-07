@@ -6095,6 +6095,7 @@ async def update_leave_request(
 class AttendanceRecord(BaseModel):
     employee_id: Optional[str] = None
     staff_name: Optional[str] = None
+    staff_id: Optional[str] = None
     department: Optional[str] = None
     person_id: Optional[str] = None
     person_name: Optional[str] = None
@@ -6254,6 +6255,7 @@ async def save_bulk_attendance(
             else:  # staff
                 attendance_doc.update({
                     "employee_id": record.employee_id,
+                    "staff_id": record.staff_id,
                     "staff_name": record.staff_name,
                     "department": record.department
                 })
@@ -6554,6 +6556,35 @@ async def generate_monthly_attendance_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"monthly_attendance_{report_year}_{report_month:02d}"
             file_path = await generate_attendance_excel_report("monthly_summary", report_data, current_user, filename)
@@ -6783,7 +6814,36 @@ async def generate_staff_attendance_report(
             
             if format.lower() == "json":
                 return {"message": "No staff attendance data found for this period", "data": empty_report_data, "format": "json"}
-            elif format.lower() == "excel":
+            elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
+        elif format.lower() == "excel":
                 filename = f"staff_attendance_{start_date}_{end_date}".replace("-", "_")
                 file_path = await generate_attendance_excel_report("staff_attendance", empty_report_data, current_user, filename)
                 return FileResponse(path=file_path, filename=f"{filename}.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", background=BackgroundTask(cleanup_temp_file, file_path))
@@ -6903,6 +6963,35 @@ async def generate_staff_attendance_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"staff_attendance_{start_date}_{end_date}".replace("-", "_")
             file_path = await generate_attendance_excel_report("staff_attendance", report_data, current_user, filename)
@@ -6998,7 +7087,36 @@ async def generate_student_attendance_report(
             
             if format.lower() == "json":
                 return {"message": "No student attendance data found for this date", "data": empty_report_data, "format": "json"}
-            elif format.lower() == "excel":
+            elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
+        elif format.lower() == "excel":
                 filename = f"student_attendance_{date_str}".replace("-", "_")
                 file_path = await generate_attendance_excel_report("student_attendance", empty_report_data, current_user, filename)
                 return FileResponse(path=file_path, filename=f"{filename}.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", background=BackgroundTask(cleanup_temp_file, file_path))
@@ -7084,6 +7202,35 @@ async def generate_student_attendance_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"student_attendance_{date_str}".replace("-", "_")
             file_path = await generate_attendance_excel_report("student_attendance", report_data, current_user, filename)
@@ -10778,6 +10925,35 @@ async def generate_admission_summary_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             # Generate Excel file
             filename = f"admission_summary_{year.replace('-', '_')}"
@@ -10865,6 +11041,35 @@ async def generate_login_activity_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"login_activity_{start_date.replace('-', '_')}_{end_date.replace('-', '_')}"
             file_path = await generate_administrative_excel_report("login_activity", report_data, current_user, filename)
@@ -11017,6 +11222,35 @@ async def generate_vehicle_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"vehicle_report_{datetime.now().strftime('%Y%m%d')}"
             file_path = await generate_transport_excel_report("vehicle", report_data, current_user, filename)
@@ -11182,6 +11416,35 @@ async def generate_transport_fees_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"transport_fees_{datetime.now().strftime('%Y%m%d')}"
             file_path = await generate_transport_excel_report("transport_fees", report_data, current_user, filename)
@@ -11721,6 +11984,35 @@ async def generate_biometric_status_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"biometric_status_{type}_{datetime.now().strftime('%Y%m%d')}"
             file_path = await generate_biometric_excel_report("status_report", report_data, current_user, filename)
@@ -12737,6 +13029,35 @@ async def generate_consolidated_marksheet(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"consolidated_marksheet_{year.replace('-', '_')}"
             file_path = await generate_academic_excel_report("consolidated_marksheet", report_data, current_user, filename)
@@ -12822,6 +13143,35 @@ async def generate_subject_wise_analysis(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"subject_wise_analysis_{year.replace('-', '_')}"
             file_path = await generate_academic_excel_report("subject_wise_analysis", report_data, current_user, filename)
@@ -12917,6 +13267,35 @@ async def generate_class_performance(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             filename = f"class_performance_{year.replace('-', '_')}"
             file_path = await generate_academic_excel_report("class_performance", report_data, current_user, filename)
@@ -13030,6 +13409,35 @@ async def generate_daily_transport_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             # Generate Excel file
             filename = f"daily_transport_report_{report_date.strftime('%Y%m%d')}"
@@ -13143,6 +13551,35 @@ async def generate_monthly_transport_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             # Generate Excel file
             filename = f"monthly_transport_report_{report_month.strftime('%Y%m')}"
@@ -13269,6 +13706,35 @@ async def generate_custom_transport_report(
                 "data": report_data,
                 "format": "json"
             }
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             # Generate Excel file
             filename = f"custom_transport_report_{start_date}_to_{end_date}".replace("-", "")
@@ -20243,6 +20709,35 @@ async def export_admission_applications(
                 headers={"Content-Disposition": f"attachment; filename=admission_applications_{timestamp}.csv"}
             )
             
+        elif format.lower() == "csv":
+            # Generate CSV file
+            import csv
+            from io import StringIO
+            filename = f"admission_summary_{year.replace('-', '_')}"
+            output = StringIO()
+            writer = csv.writer(output)
+            # Write header
+            writer.writerow(["#", "Student ID", "Name", "Class", "Gender", "Guardian", "Contact", "Admission Date"])
+            # Write data
+            for idx, student in enumerate(students, 1):
+                writer.writerow([
+                    idx,
+                    student.get("student_id", student.get("id", "")),
+                    student.get("name", student.get("name_bn", "")),
+                    student.get("class_name", ""),
+                    student.get("gender", ""),
+                    student.get("guardian_name", student.get("parent_name", "")),
+                    student.get("guardian_phone", student.get("contact", "")),
+                    student.get("admission_date", "")
+                ])
+            csv_content = output.getvalue()
+            output.close()
+            from starlette.responses import Response
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+            )
         elif format.lower() == "excel":
             # Generate Excel file
             wb = openpyxl.Workbook()
