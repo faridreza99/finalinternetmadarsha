@@ -5,7 +5,7 @@ integrations = ["replitmail:1.0.0", "twilio_send_message:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "file", "fontconfig", "freetype", "fribidi", "ghostscript", "glib", "glibcLocales", "harfbuzz", "lcms2", "libiconv", "libimagequant", "libjpeg", "libraqm", "libtiff", "libwebp", "libxcrypt", "noto-fonts", "openjpeg", "openssl", "pango", "pkg-config", "postgresql", "rustc", "tcl", "tesseract", "tk", "unzip", "zlib", "gdk-pixbuf", "cairo"]
+packages = ["cairo", "cargo", "file", "fontconfig", "freetype", "fribidi", "gdk-pixbuf", "ghostscript", "glib", "glibcLocales", "harfbuzz", "lcms2", "libiconv", "libimagequant", "libjpeg", "libraqm", "libtiff", "libwebp", "libxcrypt", "noto-fonts", "openjpeg", "openssl", "pango", "pkg-config", "postgresql", "rustc", "tcl", "tesseract", "tk", "unzip", "zlib"]
 
 [workflows]
 runButton = "Project"

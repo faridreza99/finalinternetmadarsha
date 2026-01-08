@@ -266,6 +266,28 @@ const ClassManagement = () => {
     category: "Custom",
   });
 
+  const marhalaOptions = React.useMemo(() => {
+    const fromClasses = classes.map((cls) => ({
+      standard: cls.standard,
+      display_name: cls.display_name || cls.standard,
+      internal_standard: cls.internal_standard || 0,
+      category: cls.category || "System",
+    }));
+
+    const fromCustom = customMarhalas.map((m) => ({
+      ...m,
+      category: "Custom",
+    }));
+
+    const merged = [...fromClasses, ...fromCustom];
+
+    const unique = Array.from(
+      new Map(merged.map((m) => [m.standard, m])).values(),
+    );
+
+    return unique.filter((m) => !hiddenMarhalas.includes(m.standard));
+  }, [classes, customMarhalas, hiddenMarhalas]);
+
   const [classFormData, setClassFormData] = useState({
     name: "",
     standard: "select_standard",
@@ -324,149 +346,46 @@ const ClassManagement = () => {
     });
   };
 
+  const getDisplayNameForStandard = (standard) => {
+    const found = marhalaOptions.find((m) => m.standard === standard);
+    return found?.display_name || standard;
+  };
+
   // Fallback standards for class creation based on institution type
-  const schoolStandards = [
-    { standard: "Nursery", display_name: "Nursery", internal_standard: 0 },
-    { standard: "LKG", display_name: "LKG", internal_standard: 0 },
-    { standard: "UKG", display_name: "UKG", internal_standard: 0 },
-    { standard: "Class 1", display_name: "Class 1", internal_standard: 1 },
-    { standard: "Class 2", display_name: "Class 2", internal_standard: 2 },
-    { standard: "Class 3", display_name: "Class 3", internal_standard: 3 },
-    { standard: "Class 4", display_name: "Class 4", internal_standard: 4 },
-    { standard: "Class 5", display_name: "Class 5", internal_standard: 5 },
-    { standard: "Class 6", display_name: "Class 6", internal_standard: 6 },
-    { standard: "Class 7", display_name: "Class 7", internal_standard: 7 },
-    { standard: "Class 8", display_name: "Class 8", internal_standard: 8 },
-    { standard: "Class 9", display_name: "Class 9", internal_standard: 9 },
-    { standard: "Class 10", display_name: "Class 10", internal_standard: 10 },
-    {
-      standard: "Class 11",
-      display_name: "Class 11 (HSC 1st Year)",
-      internal_standard: 11,
-    },
-    {
-      standard: "Class 12",
-      display_name: "Class 12 (HSC 2nd Year)",
-      internal_standard: 12,
-    },
-  ];
-
-  const madrasahStandards = [
-    {
-      standard: "Class 1",
-      display_name: "ইবতেদায়ী ১ম বর্ষ",
-      internal_standard: 1,
-      category: "Ebtedayee",
-    },
-    {
-      standard: "Class 2",
-      display_name: "ইবতেদায়ী ২য় বর্ষ",
-      internal_standard: 2,
-      category: "Ebtedayee",
-    },
-    {
-      standard: "Class 3",
-      display_name: "ইবতেদায়ী ৩য় বর্ষ",
-      internal_standard: 3,
-      category: "Ebtedayee",
-    },
-    {
-      standard: "Class 4",
-      display_name: "ইবতেদায়ী ৪র্থ বর্ষ",
-      internal_standard: 4,
-      category: "Ebtedayee",
-    },
-    {
-      standard: "Class 5",
-      display_name: "ইবতেদায়ী ৫ম বর্ষ",
-      internal_standard: 5,
-      category: "Ebtedayee",
-    },
-    {
-      standard: "Class 6",
-      display_name: "দাখিল ৬ষ্ঠ শ্রেণি",
-      internal_standard: 6,
-      category: "Dakhil",
-    },
-    {
-      standard: "Class 7",
-      display_name: "দাখিল ৭ম শ্রেণি",
-      internal_standard: 7,
-      category: "Dakhil",
-    },
-    {
-      standard: "Class 8",
-      display_name: "দাখিল ৮ম শ্রেণি",
-      internal_standard: 8,
-      category: "Dakhil",
-    },
-    {
-      standard: "Class 9",
-      display_name: "দাখিল ৯ম শ্রেণি",
-      internal_standard: 9,
-      category: "Dakhil",
-    },
-    {
-      standard: "Class 10",
-      display_name: "দাখিল ১০ম শ্রেণি",
-      internal_standard: 10,
-      category: "Dakhil",
-    },
-    {
-      standard: "Class 11",
-      display_name: "আলিম ১ম বর্ষ",
-      internal_standard: 11,
-      category: "Alim",
-    },
-    {
-      standard: "Class 12",
-      display_name: "আলিম ২য় বর্ষ",
-      internal_standard: 12,
-      category: "Alim",
-    },
-    {
-      standard: "Nazera",
-      display_name: "নাজেরা",
-      internal_standard: 0,
-      category: "Special",
-    },
-    {
-      standard: "Hifz",
-      display_name: "হিফজ",
-      internal_standard: 0,
-      category: "Special",
-    },
-    {
-      standard: "Kitab",
-      display_name: "কিতাব",
-      internal_standard: 0,
-      category: "Special",
-    },
-  ];
-
-  const defaultStandards =
-    institutionType === "madrasah" ? madrasahStandards : schoolStandards;
 
   // Filter out hidden marhalas from the list
-  const visibleDefaultStandards = defaultStandards.filter(s => !hiddenMarhalas.includes(s.standard));
-  const allStandards = [...visibleDefaultStandards, ...customMarhalas];
 
   // For subject dropdowns, use standards from existing classes
-  const classStandards = getUniqueStandards();
+  const classStandards = React.useMemo(() => {
+    return Array.from(new Set(classes.map((c) => c.standard)));
+  }, [classes]);
 
   const handleAddNewMarhala = async () => {
     if (!newMarhalaForm.standard || !newMarhalaForm.display_name) {
       toast.error("মারহালার নাম এবং প্রদর্শন নাম প্রয়োজন");
       return;
     }
-    const existingStandard = allStandards.find(
-      (s) => s.standard === newMarhalaForm.standard
+
+    // Check for duplicate standard name
+    const existingStandard = marhalaOptions.find(
+      (s) => s.standard.toLowerCase() === newMarhalaForm.standard.toLowerCase(),
     );
+
     if (existingStandard) {
       toast.error("এই মারহালা আগে থেকেই আছে");
       return;
     }
-    
+
+    // Check for duplicate display name
+    const existingDisplayName = marhalaOptions.find(
+      (s) => s.display_name.toLowerCase() === newMarhalaForm.display_name.toLowerCase(),
+    );
+
+    if (existingDisplayName) {
+      toast.error("এই প্রদর্শন নাম আগে থেকেই ব্যবহৃত হয়েছে");
+      return;
+    }
+
     try {
       const response = await axios.post(`${API}/custom-marhalas`, {
         standard: newMarhalaForm.standard,
@@ -474,26 +393,32 @@ const ClassManagement = () => {
         internal_standard: parseInt(newMarhalaForm.internal_standard) || 0,
         category: "Custom",
       });
-      
+
       const newMarhala = response.data;
+
       setCustomMarhalas((prev) => [...prev, newMarhala]);
-      setClassFormData({
-        ...classFormData,
+
+      setClassFormData((prev) => ({
+        ...prev,
         standard: newMarhala.standard,
         display_name: newMarhala.display_name,
         internal_standard: newMarhala.internal_standard,
         name: newMarhala.display_name,
-      });
+      }));
+
       setNewMarhalaForm({
         standard: "",
         display_name: "",
         internal_standard: 0,
         category: "Custom",
       });
+
       setIsMarhalaModalOpen(false);
       toast.success("নতুন মারহালা যোগ হয়েছে");
     } catch (error) {
-      toast.error(error.response?.data?.detail || "মারহালা যোগ করতে সমস্যা হয়েছে");
+      toast.error(
+        error.response?.data?.detail || "মারহালা যোগ করতে সমস্যা হয়েছে",
+      );
     }
   };
 
@@ -585,27 +510,31 @@ const ClassManagement = () => {
   const handleHideSystemMarhala = async (marhalaStandard, displayName, e) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     const result = await Swal.fire({
-      title: 'মারহালা লুকান?',
+      title: "মারহালা লুকান?",
       text: `আপনি কি "${displayName}" মারহালা লুকাতে চান? এটি ড্রপডাউন থেকে সরিয়ে দেওয়া হবে।`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'হ্যাঁ, লুকান',
-      cancelButtonText: 'বাতিল',
-      customClass: { popup: 'swal-high-zindex' },
-      backdrop: 'rgba(0,0,0,0.8)'
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "হ্যাঁ, লুকান",
+      cancelButtonText: "বাতিল",
+      customClass: { popup: "swal-high-zindex" },
+      backdrop: "rgba(0,0,0,0.8)",
     });
 
     if (result.isConfirmed) {
       try {
-        await axios.post(`${API}/hidden-marhalas`, { standard: marhalaStandard });
+        await axios.post(`${API}/hidden-marhalas`, {
+          standard: marhalaStandard,
+        });
         setHiddenMarhalas((prev) => [...prev, marhalaStandard]);
         toast.success("মারহালা লুকানো হয়েছে");
       } catch (error) {
-        toast.error(error.response?.data?.detail || "মারহালা লুকাতে সমস্যা হয়েছে");
+        toast.error(
+          error.response?.data?.detail || "মারহালা লুকাতে সমস্যা হয়েছে",
+        );
       }
     }
   };
@@ -613,27 +542,47 @@ const ClassManagement = () => {
   const handleDeleteCustomMarhala = async (marhalaId, marhalaStandard, e) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
+    // Prevent deleting the last remaining marhala
+    if (marhalaOptions.length <= 1) {
+      toast.error("শেষ মারহালা মুছে ফেলা যাবে না। কমপক্ষে একটি মারহালা রাখতে হবে।");
+      return;
+    }
+
     const result = await Swal.fire({
-      title: 'মারহালা মুছে ফেলুন?',
+      title: "মারহালা মুছে ফেলুন?",
       text: `আপনি কি "${marhalaStandard}" মারহালা মুছে ফেলতে চান?`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'হ্যাঁ, মুছুন',
-      cancelButtonText: 'বাতিল',
-      customClass: { popup: 'swal-high-zindex' },
-      backdrop: 'rgba(0,0,0,0.8)'
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "হ্যাঁ, মুছুন",
+      cancelButtonText: "বাতিল",
+      customClass: { popup: "swal-high-zindex" },
+      backdrop: "rgba(0,0,0,0.8)",
     });
 
     if (result.isConfirmed) {
       try {
         await axios.delete(`${API}/custom-marhalas/${marhalaId}`);
         setCustomMarhalas((prev) => prev.filter((m) => m.id !== marhalaId));
+        
+        // If the deleted marhala is currently selected, clear the selection
+        if (classFormData.standard === marhalaStandard) {
+          setClassFormData((prev) => ({
+            ...prev,
+            standard: "select_standard",
+            display_name: "",
+            name: "",
+            internal_standard: 0,
+          }));
+        }
+        
         toast.success("মারহালা মুছে ফেলা হয়েছে");
       } catch (error) {
-        toast.error(error.response?.data?.detail || "মারহালা মুছতে সমস্যা হয়েছে");
+        toast.error(
+          error.response?.data?.detail || "মারহালা মুছতে সমস্যা হয়েছে",
+        );
       }
     }
   };
@@ -667,9 +616,11 @@ const ClassManagement = () => {
       }
 
       // Find if the selected marhala is custom
-      const selectedMarhala = allStandards.find(s => s.standard === classFormData.standard);
+      const selectedMarhala = marhalaOptions.find(
+        (m) => m.standard === classFormData.standard,
+      );
       const category = selectedMarhala?.category || null;
-      
+
       const submitData = {
         ...classFormData,
         max_students: parseInt(classFormData.max_students),
@@ -678,7 +629,8 @@ const ClassManagement = () => {
             ? null
             : classFormData.class_teacher_id,
         display_name: classFormData.display_name || classFormData.name,
-        internal_standard: classFormData.internal_standard || 0,
+        internal_standard: selectedMarhala?.internal_standard || 0,
+        category: selectedMarhala?.category || "System",
         order_index: classFormData.order_index || classes.length,
         institution_type: institutionType,
         category: category,
@@ -699,7 +651,10 @@ const ClassManagement = () => {
         );
         toast.success("জামাত সফলভাবে আপডেট হয়েছে");
       } else {
-        const res = await withTimeout(axios.post(`${API}/classes`, submitData), 10000);
+        const res = await withTimeout(
+          axios.post(`${API}/classes`, submitData),
+          10000,
+        );
         const newClass = res.data?.class || res.data;
         setClasses((prev) => [...prev, newClass]);
         toast.success("জামাত সফলভাবে যোগ হয়েছে");
@@ -884,8 +839,10 @@ const ClassManagement = () => {
       setClasses((prev) => prev.filter((c) => c.id !== cls.id));
       // Also remove related sections
       setSections((prev) => prev.filter((s) => s.class_id !== cls.id));
-      
-      toast.success(`"${cls.display_name || cls.name}" সফলভাবে মুছে ফেলা হয়েছে`);
+
+      toast.success(
+        `"${cls.display_name || cls.name}" সফলভাবে মুছে ফেলা হয়েছে`,
+      );
     } catch (error) {
       console.error("Failed to delete class:", error);
       toast.error(error.response?.data?.detail || "জামাত মুছতে সমস্যা হয়েছে");
@@ -921,7 +878,7 @@ const ClassManagement = () => {
 
       // Real-time update: Remove section from state
       setSections((prev) => prev.filter((s) => s.id !== section.id));
-      
+
       toast.success(`"${section.name}" শাখা সফলভাবে মুছে ফেলা হয়েছে`);
     } catch (error) {
       console.error("Failed to delete section:", error);
@@ -992,9 +949,13 @@ const ClassManagement = () => {
       console.log("📤 Sending subject data to API:", submitData);
 
       if (editingSubject) {
-        const res = await axios.put(`${API}/subjects/${editingSubject.id}`, submitData, {
-          headers,
-        });
+        const res = await axios.put(
+          `${API}/subjects/${editingSubject.id}`,
+          submitData,
+          {
+            headers,
+          },
+        );
         const updatedSubject = res.data?.subject || res.data || submitData;
         setSubjects((prev) =>
           prev.map((s) =>
@@ -1003,7 +964,9 @@ const ClassManagement = () => {
         );
         toast.success("কিতাব সফলভাবে আপডেট হয়েছে");
       } else {
-        const res = await axios.post(`${API}/subjects`, submitData, { headers });
+        const res = await axios.post(`${API}/subjects`, submitData, {
+          headers,
+        });
         const newSubject = res.data?.subject || res.data;
         setSubjects((prev) => [...prev, newSubject]);
         toast.success("কিতাব সফলভাবে যোগ হয়েছে");
@@ -1014,7 +977,9 @@ const ClassManagement = () => {
       resetSubjectForm();
     } catch (error) {
       console.error("Failed to save subject:", error);
-      toast.error(error.response?.data?.detail || "কিতাব সংরক্ষণে সমস্যা হয়েছে");
+      toast.error(
+        error.response?.data?.detail || "কিতাব সংরক্ষণে সমস্যা হয়েছে",
+      );
     } finally {
       setLoading(false);
     }
@@ -1081,7 +1046,7 @@ const ClassManagement = () => {
 
       // Real-time update: Remove subject from state
       setSubjects((prev) => prev.filter((s) => s.id !== subject.id));
-      
+
       toast.success(`"${subject.subject_name}" কিতাব সফলভাবে মুছে ফেলা হয়েছে`);
     } catch (error) {
       console.error("Failed to delete subject:", error);
@@ -1175,35 +1140,13 @@ const ClassManagement = () => {
   };
 
   const getDisplayName = (cls) => {
-    // For madrasah institution type, apply Bengali class names based on internal_standard
-    if (institutionType === "madrasah") {
-      const internalStd =
-        cls.internal_standard || parseInt(cls.standard?.match(/\d+/)?.[0]) || 0;
-      const madrasahMatch = madrasahStandards.find(
-        (m) => m.internal_standard === internalStd && internalStd > 0,
-      );
-      if (madrasahMatch) {
-        return madrasahMatch.display_name;
-      }
-      // Check for special classes by standard name
-      const specialMatch = madrasahStandards.find(
-        (m) => m.standard === cls.standard || m.standard === cls.name,
-      );
-      if (specialMatch) {
-        return specialMatch.display_name;
-      }
-    }
-    return cls.display_name || cls.name || cls.standard;
+    const found = marhalaOptions.find((m) => m.standard === cls.standard);
+    return found?.display_name || cls.display_name || cls.name || cls.standard;
   };
 
-  const getDisplayNameForStandard = (std) => {
-    if (institutionType === "madrasah") {
-      const madrasahMatch = madrasahStandards.find((m) => m.standard === std);
-      if (madrasahMatch) {
-        return madrasahMatch.display_name;
-      }
-    }
-    return std;
+  const getClassDisplayName = (standard) => {
+    const found = marhalaOptions.find((m) => m.standard === standard);
+    return found?.display_name || standard;
   };
 
   const handleToggleClassStatus = async (cls) => {
@@ -1545,17 +1488,18 @@ const ClassManagement = () => {
                           setIsMarhalaModalOpen(true);
                           return;
                         }
-                        const selectedStd = allStandards.find(
-                          (s) => s.standard === value,
+
+                        const selected = marhalaOptions.find(
+                          (m) => m.standard === value,
                         );
-                        setClassFormData({
-                          ...classFormData,
+
+                        setClassFormData((prev) => ({
+                          ...prev,
                           standard: value,
-                          display_name: selectedStd?.display_name || value,
-                          internal_standard:
-                            selectedStd?.internal_standard || 0,
-                          name: selectedStd?.display_name || value,
-                        });
+                          name: selected?.display_name || value,
+                          display_name: selected?.display_name || value,
+                          internal_standard: selected?.internal_standard || 0,
+                        }));
                       }}
                     >
                       <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700">
@@ -1565,45 +1509,48 @@ const ClassManagement = () => {
                         <SelectItem value="select_standard" disabled>
                           {labels.selectStandard}
                         </SelectItem>
-                        {allStandards.map((std) => (
-                          <SelectItem key={std.standard} value={std.standard}>
-                            <span className="flex items-center gap-2 w-full justify-between">
-                              <span className="flex items-center gap-2">
+                        {marhalaOptions.map((std) => (
+                          <SelectItem
+                            key={std.standard}
+                            value={std.standard}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center justify-between w-full gap-2">
+                              {/* Left: Name */}
+                              <div className="flex items-center gap-2">
                                 <span>{std.display_name}</span>
-                                {std.display_name !== std.standard && (
-                                  <span className="text-xs text-gray-500">
-                                    ({std.standard})
-                                  </span>
-                                )}
+
                                 {std.category === "Custom" && (
-                                  <Badge variant="outline" className="text-xs ml-1">
+                                  <Badge variant="outline" className="text-xs">
                                     কাস্টম
                                   </Badge>
                                 )}
-                              </span>
-                              {std.category === "Custom" && std.id ? (
-                                <div
-                                  onPointerDown={(e) => { e.stopPropagation(); }}
-                                  onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteCustomMarhala(std.id, std.display_name, e); }}
-                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 cursor-pointer"
-                                  title="মুছুন"
+                              </div>
+
+                              {/* Right: Delete icon */}
+                              {std.category === "Custom" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // ⛔ prevent select
+                                    handleDeleteCustomMarhala(
+                                      std.id,
+                                      std.standard,
+                                      e,
+                                    );
+                                  }}
+                                  className="text-red-500 hover:text-red-700 ml-2"
+                                  title="মারহালা মুছুন"
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                </div>
-                              ) : std.category !== "Custom" && (
-                                <div
-                                  onPointerDown={(e) => { e.stopPropagation(); }}
-                                  onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); handleHideSystemMarhala(std.standard, std.display_name, e); }}
-                                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900 cursor-pointer"
-                                  title="লুকান"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </div>
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
                               )}
-                            </span>
+                            </div>
                           </SelectItem>
                         ))}
-                        <SelectItem value="add_new_marhala" className="text-emerald-600 font-medium border-t mt-1 pt-2">
+                        <SelectItem
+                          value="add_new_marhala"
+                          className="text-emerald-600 font-medium border-t mt-1 pt-2"
+                        >
                           <span className="flex items-center gap-2">
                             <Plus className="h-4 w-4" />
                             {labels.addNewMarhala}
