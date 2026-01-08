@@ -1528,17 +1528,23 @@ const ClassManagement = () => {
                               </div>
 
                               {/* Right: Delete icon */}
-                              {std.category === "Custom" && (
+                              {std.category === "Custom" && std.id && (
                                 <button
+                                  type="button"
+                                  onPointerDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
                                   onClick={(e) => {
-                                    e.stopPropagation(); // ⛔ prevent select
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     handleDeleteCustomMarhala(
                                       std.id,
                                       std.standard,
                                       e,
                                     );
                                   }}
-                                  className="text-red-500 hover:text-red-700 ml-2"
+                                  className="text-red-500 hover:text-red-700 ml-2 p-1 rounded hover:bg-red-50"
                                   title="মারহালা মুছুন"
                                 >
                                   <Trash2 className="h-4 w-4" />
