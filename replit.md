@@ -29,6 +29,7 @@ Preferred communication style: Simple, everyday language.
     - **Live Class Management**: Live class module with Telegram integration, gender-based filtering, automatic attendance, and payment-based access control.
     - **Financial Reporting Hub**: Comprehensive reporting (Financial Summary, Admission Fee, Monthly Fee, Donation, Date-wise) with Print, PDF, and Excel export.
     - **Madrasah Specific Features**: Madrasah Class Management, Simplified Fee Wizard, Professional Receipts, Simplified Certificate System, Simple Result System (MUMTAZ grading), Simple Routine System, and Simplified Settings, all with full Bengali support and nomenclature.
+    - **Madrasha Academic Hierarchy**: Semester-centric academic structure following Marhala → Department/Jamaat → Semester → Student flow. All operations (Attendance, Video Classes, Exams, Fees, Reports) designed to be semester-based with `semester_id` as the primary operational reference for student enrollment.
 
 ## Feature Specifications
 - **Multi-tenancy & RBAC**: Strict data isolation with granular permissions (for future multi-tenancy, currently single tenant).
