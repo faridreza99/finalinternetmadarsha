@@ -205,7 +205,9 @@ async def get_student_class_info(db, tenant_id: str, class_id: Optional[str]) ->
 
 async def get_student_fee_structure(db, tenant_id: str, student: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Get complete fee structure for a student based on their class and fee types.
+    Get complete fee structure for a student based on their semester/class and fee types.
+    
+    Madrasha hierarchy: semester_id is primary, falls back to class_id for backward compatibility.
     
     Args:
         db: MongoDB database instance
@@ -219,13 +221,28 @@ async def get_student_fee_structure(db, tenant_id: str, student: Dict[str, Any])
             - admission_fee: One-time admission fee
             - total_annual: Total annual fees
     """
+    semester_id = student.get('semester_id')
+    marhala_id = student.get('marhala_id')
+    department_id = student.get('department_id')
     class_id = student.get('class_id')
     
-    # Get all active fee types for this tenant
-    fee_types = await db.fee_types.find({
+    # Build query for fee types - semester-centric with fallback
+    fee_query = {
         "tenant_id": tenant_id,
         "is_active": {"$ne": False}
-    }).to_list(100)
+    }
+    
+    # If student has semester_id, try semester-specific fees first
+    if semester_id:
+        fee_query["$or"] = [
+            {"semester_id": semester_id},
+            {"department_id": department_id, "semester_id": {"$exists": False}},
+            {"marhala_id": marhala_id, "department_id": {"$exists": False}, "semester_id": {"$exists": False}},
+            {"marhala_id": {"$exists": False}, "department_id": {"$exists": False}, "semester_id": {"$exists": False}}
+        ]
+    
+    # Get all active fee types for this tenant
+    fee_types = await db.fee_types.find(fee_query).to_list(100)
     
     result = {
         "fee_types": [],

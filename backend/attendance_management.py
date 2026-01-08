@@ -52,6 +52,9 @@ class ManualAttendanceRecord(BaseModel):
     reason: Optional[str] = None
     class_id: Optional[str] = None
     section_id: Optional[str] = None
+    semester_id: Optional[str] = None
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
 
 class AttendanceEditRequest(BaseModel):
     new_status: str
@@ -61,6 +64,9 @@ class BulkManualAttendance(BaseModel):
     date: str
     class_id: str
     section_id: Optional[str] = None
+    semester_id: Optional[str] = None
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
     records: List[ManualAttendanceRecord]
 
 # ================================
@@ -624,16 +630,27 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
     async def get_daily_attendance_report(
         date: Optional[str] = None,
         class_id: Optional[str] = None,
+        semester_id: Optional[str] = None,
+        marhala_id: Optional[str] = None,
+        department_id: Optional[str] = None,
         format: str = "json",
         current_user: User = Depends(get_current_user)
     ):
-        """Get daily attendance report"""
+        """Get daily attendance report with semester filtering support"""
         try:
             if not date:
                 date = datetime.utcnow().strftime("%Y-%m-%d")
             
             filter_criteria = {"tenant_id": current_user.tenant_id, "date": date}
-            if class_id:
+            
+            # Semester-centric filtering (Madrasha hierarchy)
+            if semester_id:
+                filter_criteria["semester_id"] = semester_id
+            elif department_id:
+                filter_criteria["department_id"] = department_id
+            elif marhala_id:
+                filter_criteria["marhala_id"] = marhala_id
+            elif class_id:
                 filter_criteria["class_id"] = class_id
             
             student_records = await db.student_attendance.find(filter_criteria).to_list(1000)
@@ -679,11 +696,14 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
         month: int,
         year: int,
         class_id: Optional[str] = None,
+        semester_id: Optional[str] = None,
+        marhala_id: Optional[str] = None,
+        department_id: Optional[str] = None,
         person_type: str = "student",
         format: str = "json",
         current_user: User = Depends(get_current_user)
     ):
-        """Get monthly attendance summary report"""
+        """Get monthly attendance summary report with semester filtering"""
         try:
             start_date = f"{year}-{month:02d}-01"
             if month == 12:
@@ -697,6 +717,16 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
                 "tenant_id": current_user.tenant_id,
                 "date": {"$gte": start_date, "$lt": end_date}
             }
+            
+            # Semester-centric filtering (Madrasha hierarchy)
+            if semester_id:
+                filter_criteria["semester_id"] = semester_id
+            elif department_id:
+                filter_criteria["department_id"] = department_id
+            elif marhala_id:
+                filter_criteria["marhala_id"] = marhala_id
+            elif class_id:
+                filter_criteria["class_id"] = class_id
             if class_id and person_type == "student":
                 filter_criteria["class_id"] = class_id
             

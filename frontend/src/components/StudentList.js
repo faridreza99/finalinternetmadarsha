@@ -142,6 +142,7 @@ const StudentList = () => {
 
   const [semesters, setSemesters] = useState([]);
   const [selectedSemesterIds, setSelectedSemesterIds] = useState([]);
+  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
   const [formData, setFormData] = useState({
     admission_no: '',
     roll_no: '',
@@ -157,6 +158,9 @@ const StudentList = () => {
     gender: '',
     class_id: '',
     section_id: '',
+    marhala_id: '',
+    department_id: '',
+    semester_id: '',
     phone: '',
     email: '',
     address: '',
@@ -188,15 +192,17 @@ const StudentList = () => {
 
   const fetchData = async () => {
     try {
-      const [studentsRes, classesRes, semestersRes] = await Promise.all([
+      const [studentsRes, classesRes, semestersRes, hierarchyRes] = await Promise.all([
         axios.get(`${API}/students`),
         axios.get(`${API}/classes`),
-        axios.get(`${API}/admin/semesters`).catch(() => ({ data: { semesters: [] } }))
+        axios.get(`${API}/admin/semesters`).catch(() => ({ data: { semesters: [] } })),
+        axios.get(`${API}/academic-hierarchy`).catch(() => ({ data: { flat: { marhalas: [], departments: [], semesters: [] } } }))
       ]);
       
       setStudents(studentsRes.data);
       setClasses(classesRes.data);
       setSemesters(semestersRes.data?.semesters || []);
+      setAcademicHierarchy(hierarchyRes.data?.flat || { marhalas: [], departments: [], semesters: [] });
     } catch (error) {
       console.error('Failed to fetch data:', error);
       toast.error('Failed to load data');
@@ -565,6 +571,9 @@ const StudentList = () => {
       gender: '',
       class_id: '',
       section_id: '',
+      marhala_id: '',
+      department_id: '',
+      semester_id: '',
       phone: '',
       email: '',
       address: '',
@@ -578,6 +587,16 @@ const StudentList = () => {
     setPhotoFile(null);
     setPhotoPreview('');
     setSelectedSemesterIds([]);
+  };
+  
+  const getFilteredDepartments = () => {
+    if (!formData.marhala_id) return [];
+    return academicHierarchy.departments?.filter(d => d.marhala_id === formData.marhala_id) || [];
+  };
+  
+  const getFilteredAcademicSemesters = () => {
+    if (!formData.department_id) return [];
+    return academicHierarchy.semesters?.filter(s => s.department_id === formData.department_id) || [];
   };
 
   const handleBulkPhotoUpload = async () => {
@@ -1035,6 +1054,80 @@ const StudentList = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Madrasha Academic Hierarchy - Cascaded Pickers */}
+                {academicHierarchy.marhalas?.length > 0 && (
+                  <>
+                    <div className="md:col-span-2 mt-4 mb-2">
+                      <div className="text-sm font-medium text-muted-foreground border-b pb-2">
+                        একাডেমিক স্ট্রাকচার (মারহালা → বিভাগ → সেমিস্টার)
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="marhala_id">মারহালা</Label>
+                      <Select 
+                        value={formData.marhala_id} 
+                        onValueChange={(value) => {
+                          setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''});
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="মারহালা নির্বাচন করুন" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {academicHierarchy.marhalas?.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.name_bn || m.name_en}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="department_id">বিভাগ/জামাত</Label>
+                      <Select 
+                        value={formData.department_id} 
+                        onValueChange={(value) => {
+                          setFormData({...formData, department_id: value, semester_id: ''});
+                        }}
+                        disabled={!formData.marhala_id}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={formData.marhala_id ? "বিভাগ নির্বাচন করুন" : "প্রথমে মারহালা নির্বাচন করুন"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getFilteredDepartments().map((d) => (
+                            <SelectItem key={d.id} value={d.id}>
+                              {d.name_bn || d.name_en}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="semester_id">সেমিস্টার</Label>
+                      <Select 
+                        value={formData.semester_id} 
+                        onValueChange={(value) => {
+                          setFormData({...formData, semester_id: value});
+                        }}
+                        disabled={!formData.department_id}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={formData.department_id ? "সেমিস্টার নির্বাচন করুন" : "প্রথমে বিভাগ নির্বাচন করুন"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getFilteredAcademicSemesters().map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name_bn || s.name_en}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+                
                 {semesters.length > 0 && (
                   <div className="col-span-2">
                     <Label>সেমিস্টার ভর্তি (ভিডিও পাঠের জন্য)</Label>

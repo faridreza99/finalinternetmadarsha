@@ -73,6 +73,11 @@ class FeeTypeCreate(BaseModel):
     currency: str = "BDT"
     description: Optional[str] = None
     is_active: bool = True
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
+    semester_id: Optional[str] = None
+    frequency: str = "monthly"
+    category: str = "general"
 
 class FeeTypeUpdate(BaseModel):
     name: Optional[str] = None
@@ -81,6 +86,11 @@ class FeeTypeUpdate(BaseModel):
     currency: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
+    semester_id: Optional[str] = None
+    frequency: Optional[str] = None
+    category: Optional[str] = None
 
 class MonthlyPaymentCreate(BaseModel):
     student_id: str
