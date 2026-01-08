@@ -1,0 +1,75 @@
+I have a React component called ClassManagement.
+
+There are TWO places where classes (marhala / standard) appear:
+
+1) "জামাত সমূহ" list (main table)
+   - Classes can be deleted from here using a delete icon.
+   - Deletion already works via API: DELETE /classes/{id}
+
+2) "নতুন জামাত যোগ করুন" modal
+   - There is a dropdown (Select) for মারহালা / Standard
+   - Dropdown options are built from:
+     - Existing classes (classes state)
+     - Custom marhalas (customMarhalas state)
+
+CURRENT PROBLEM:
+When I delete a class from "জামাত সমূহ",
+the deleted class STILL appears in the marhala dropdown.
+
+I want to fully sync the dropdown with class deletion.
+
+-----------------------------------
+REQUIRED FUNCTIONALITY
+-----------------------------------
+
+1. When a class is deleted from "জামাত সমূহ":
+   - It must be removed from:
+     - classes state
+     - marhalaOptions dropdown immediately
+   - NO page refresh
+   - NO manual reload
+
+2. If the deleted class’s standard is currently selected
+   in the "নতুন জামাত যোগ করুন" modal:
+   - Reset the dropdown to "select_standard"
+   - Clear related fields:
+     - name
+     - display_name
+     - internal_standard
+
+3. Dropdown behavior rules:
+   - marhalaOptions must always be derived from current state
+   - Deleted classes must never appear again unless re-created
+   - Custom marhalas must remain unaffected
+
+4. Implementation rules:
+   - Use existing handleDeleteClass function
+   - Update state properly after delete success
+   - Do NOT hardcode dropdown options
+   - Do NOT redesign UI
+   - Only logic changes
+
+-----------------------------------
+HINTS (IMPORTANT)
+-----------------------------------
+
+- marhalaOptions is built from:
+  - classes
+  - customMarhalas
+
+- When deleting a class:
+  - classes state is already filtered
+  - You must ensure marhalaOptions re-computes correctly
+
+- Also handle this edge case:
+  If no class exists for a standard anymore,
+  it should disappear from the dropdown automatically.
+
+-----------------------------------
+DELIVERABLE
+-----------------------------------
+
+1. Update handleDeleteClass so dropdown syncs instantly
+2. Ensure selected marhala resets if deleted
+3. Return ONLY the updated code parts (not full file)
+4. Add short comments explaining changes

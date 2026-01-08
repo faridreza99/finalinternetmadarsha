@@ -8364,7 +8364,7 @@ async def delete_custom_marhala(
     if class_count > 0:
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot delete: {class_count} class(es) use this marhala. Remove them first."
+            detail="এই মারহালাটি ব্যবহৃত হচ্ছে। আগে সংশ্লিষ্ট জামাত মুছে ফেলুন।"
         )
     
     # Delete the marhala (soft delete by setting is_active to False)

@@ -580,9 +580,11 @@ const ClassManagement = () => {
         
         toast.success("মারহালা মুছে ফেলা হয়েছে");
       } catch (error) {
-        toast.error(
-          error.response?.data?.detail || "মারহালা মুছতে সমস্যা হয়েছে",
-        );
+        if (error.response?.status === 400) {
+          toast.error("এই মারহালাটি ব্যবহার করা হচ্ছে। আগে সংশ্লিষ্ট জামাত মুছুন।");
+        } else {
+          toast.error(error.response?.data?.detail || "মারহালা মুছতে সমস্যা হয়েছে");
+        }
       }
     }
   };
@@ -829,6 +831,8 @@ const ClassManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      const deletedStandard = cls.standard;
+
       await axios.delete(`${API}/classes/${cls.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -839,6 +843,41 @@ const ClassManagement = () => {
       setClasses((prev) => prev.filter((c) => c.id !== cls.id));
       // Also remove related sections
       setSections((prev) => prev.filter((s) => s.class_id !== cls.id));
+
+      // Check if any other class uses the same standard
+      const remainingWithSameStandard = classes.filter(
+        (c) => c.id !== cls.id && c.standard === deletedStandard
+      );
+
+      // If no other class uses this standard, also remove custom marhala
+      if (remainingWithSameStandard.length === 0) {
+        const customMarhala = customMarhalas.find(
+          (m) => m.standard === deletedStandard
+        );
+        if (customMarhala && customMarhala.id) {
+          try {
+            await axios.delete(`${API}/custom-marhalas/${customMarhala.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setCustomMarhalas((prev) =>
+              prev.filter((m) => m.id !== customMarhala.id)
+            );
+          } catch (err) {
+            console.warn("Could not delete custom marhala:", err);
+          }
+        }
+      }
+
+      // Reset form if deleted standard was selected
+      if (classFormData.standard === deletedStandard) {
+        setClassFormData((prev) => ({
+          ...prev,
+          standard: "select_standard",
+          name: "",
+          display_name: "",
+          internal_standard: 0,
+        }));
+      }
 
       toast.success(
         `"${cls.display_name || cls.name}" সফলভাবে মুছে ফেলা হয়েছে`,
@@ -919,6 +958,12 @@ const ClassManagement = () => {
       description: "",
       is_elective: false,
     });
+  };
+
+  const isMarhalaUsed = (standard) => {
+    return classes.some(
+      (cls) => cls.standard === standard && cls.is_active !== false
+    );
   };
 
   const handleSubjectSubmit = async (e) => {
@@ -1528,7 +1573,7 @@ const ClassManagement = () => {
                               </div>
 
                               {/* Right: Delete icon */}
-                              {std.category === "Custom" && std.id && (
+                              {std.category === "Custom" && std.id && !isMarhalaUsed(std.standard) && (
                                 <button
                                   type="button"
                                   onPointerDown={(e) => {
