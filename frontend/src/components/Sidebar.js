@@ -306,6 +306,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           madrasahOnly: true,
         },
         {
+          title: "একাডেমিক স্ট্রাকচার",
+          path: "/madrasah/academic-structure",
+          roles: ["super_admin", "admin", "principal"],
+          madrasahOnly: true,
+        },
+        {
           title: "Calendar",
           madrasahTitle: "ক্যালেন্ডার",
           path: "/calendar",

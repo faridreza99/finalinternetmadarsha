@@ -50,6 +50,7 @@ from twilio.rest import Client
 import io
 import pandas as pd
 import video_lessons
+import madrasha_academic
 import csv
 import cloudinary
 import cloudinary.uploader
@@ -445,6 +446,9 @@ class Student(BaseModel):
     gender: str
     class_id: str
     section_id: str
+    semester_id: Optional[str] = None  # Primary semester for Madrasha enrollment
+    marhala_id: Optional[str] = None   # Academic stage (Dakhil, Alim, Fazil)
+    department_id: Optional[str] = None  # Department/Jamaat
     phone: str
     email: Optional[str] = None
     address: Optional[str] = None
@@ -470,6 +474,9 @@ class StudentCreate(BaseModel):
     gender: str
     class_id: str
     section_id: str
+    semester_id: Optional[str] = None  # Primary semester for Madrasha enrollment
+    marhala_id: Optional[str] = None   # Academic stage (Dakhil, Alim, Fazil)
+    department_id: Optional[str] = None  # Department/Jamaat
     phone: str
     email: Optional[str] = None
     address: Optional[str] = None
@@ -497,6 +504,9 @@ class StudentCreateResponse(BaseModel):
     gender: str
     class_id: str
     section_id: str
+    semester_id: Optional[str] = None  # Primary semester for Madrasha enrollment
+    marhala_id: Optional[str] = None   # Academic stage (Dakhil, Alim, Fazil)
+    department_id: Optional[str] = None  # Department/Jamaat
     phone: str
     email: Optional[str] = None
     address: Optional[str] = None
@@ -33231,6 +33241,10 @@ async def export_date_wise_pdf(
 # Initialize video_lessons module with dependencies
 video_lessons.set_dependencies(db, get_current_user)
 app.include_router(video_lessons.router)
+
+# Include madrasha academic router
+madrasha_academic.set_dependencies(db, get_current_user)
+app.include_router(madrasha_academic.router)
 
 app.include_router(api_router)
 

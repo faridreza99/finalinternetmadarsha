@@ -95,6 +95,7 @@ const DonationManagement = lazy(() => import("./components/DonationManagement"))
 const ContactLinksManagement = lazy(() => import("./components/ContactLinksManagement"));
 const MonthlyPayments = lazy(() => import("./components/MonthlyPayments"));
 const AdminUserManagement = lazy(() => import("./components/AdminUserManagement"));
+const AcademicHierarchy = lazy(() => import("./components/AcademicHierarchy"));
 
 // Loading spinner for lazy components
 const LoadingSpinner = () => (
@@ -569,6 +570,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <MadrasahReportPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/madrasah/academic-structure"
+                  element={
+                    <ProtectedRoute>
+                      <AcademicHierarchy />
                     </ProtectedRoute>
                   }
                 />
