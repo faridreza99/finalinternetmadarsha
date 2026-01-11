@@ -65,8 +65,6 @@ const MadrasahSimpleSettings = () => {
 
   const [academicData, setAcademicData] = useState({
     currentYear: new Date().getFullYear().toString(),
-    classes: [],
-    sections: [],
   });
 
   const [attendanceSettings, setAttendanceSettings] = useState({
@@ -79,7 +77,6 @@ const MadrasahSimpleSettings = () => {
   const [users, setUsers] = useState([]);
   const [subscription, setSubscription] = useState(null);
 
-  const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [selectedUserForReset, setSelectedUserForReset] = useState(null);
@@ -88,7 +85,6 @@ const MadrasahSimpleSettings = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
-  const [newClassName, setNewClassName] = useState("");
   const [newUserData, setNewUserData] = useState({
     name: "",
     username: "",
@@ -101,13 +97,11 @@ const MadrasahSimpleSettings = () => {
     try {
       const [
         institutionRes,
-        classesRes,
         usersRes,
         subscriptionRes,
         settingsRes,
       ] = await Promise.all([
         axios.get(`${API_BASE_URL}/institution`).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE_URL}/classes`).catch(() => ({ data: [] })),
         axios.get(`${API_BASE_URL}/users`).catch(() => ({ data: [] })),
         axios
           .get(`${API_BASE_URL}/subscriptions/current`)
@@ -133,13 +127,6 @@ const MadrasahSimpleSettings = () => {
           siteTitle: institutionRes.data.site_title || "",
           faviconUrl: institutionRes.data.favicon_url || "",
         });
-      }
-
-      if (classesRes.data) {
-        setAcademicData((prev) => ({
-          ...prev,
-          classes: Array.isArray(classesRes.data) ? classesRes.data : [],
-        }));
       }
 
       if (usersRes.data) {
@@ -364,40 +351,6 @@ const MadrasahSimpleSettings = () => {
     }
   };
 
-  const handleAddClass = async () => {
-    if (!newClassName.trim()) {
-      toast.error("মারহালার নাম দিন");
-      return;
-    }
-    try {
-      const classNumber = academicData.classes.length + 1;
-      await axios.post(`${API_BASE_URL}/classes`, {
-        name: newClassName,
-        standard: `Class ${classNumber}`,
-        display_name: newClassName,
-        internal_standard: classNumber,
-        institution_type: "madrasah",
-      });
-      toast.success("মারহালা যোগ হয়েছে");
-      setNewClassName("");
-      setIsAddClassModalOpen(false);
-      fetchData();
-    } catch (error) {
-      toast.error("মারহালা যোগ করতে সমস্যা হয়েছে");
-    }
-  };
-
-  const handleDeleteClass = async (classId) => {
-    if (!window.confirm("এই মারহালা মুছে ফেলতে চান?")) return;
-    try {
-      await axios.delete(`${API_BASE_URL}/classes/${classId}`);
-      toast.success("মারহালা মুছে ফেলা হয়েছে");
-      fetchData();
-    } catch (error) {
-      toast.error("মুছতে সমস্যা হয়েছে");
-    }
-  };
-
   const handleAddUser = async () => {
     if (!newUserData.name || !newUserData.username || !newUserData.password) {
       toast.error("সব তথ্য দিন");
@@ -498,7 +451,7 @@ const MadrasahSimpleSettings = () => {
             className="flex items-center gap-2 py-3 text-sm"
           >
             <GraduationCap className="h-4 w-4" />
-            <span className="hidden sm:inline">শিক্ষাবর্ষ ও মারহালা</span>
+            <span className="hidden sm:inline">শিক্ষাবর্ষ</span>
           </TabsTrigger>
           <TabsTrigger
             value="attendance"
@@ -790,7 +743,7 @@ const MadrasahSimpleSettings = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <GraduationCap className="h-5 w-5 text-blue-500" />
-                শিক্ষাবর্ষ ও মারহালা
+                শিক্ষাবর্ষ
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -818,53 +771,9 @@ const MadrasahSimpleSettings = () => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">
-                    মারহালা তালিকা
-                  </Label>
-                  <Button
-                    onClick={() => setIsAddClassModalOpen(true)}
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    নতুন মারহালা
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {academicData.classes.map((cls) => (
-                    <div
-                      key={cls.id || cls.class_id}
-                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border"
-                    >
-                      <div>
-                        <p className="font-medium">{cls.name}</p>
-                        {cls.sections && cls.sections.length > 0 && (
-                          <p className="text-sm text-gray-500">
-                            শাখা: {cls.sections.join(", ")}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleDeleteClass(cls.id || cls.class_id)
-                        }
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  {academicData.classes.length === 0 && (
-                    <p className="text-gray-500 col-span-full text-center py-8">
-                      কোনো মারহালা নেই
-                    </p>
-                  )}
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                মারহালা ব্যবস্থাপনার জন্য "একাডেমিক" মেনু ব্যবহার করুন
+              </p>
 
               <div className="flex justify-end pt-4 border-t">
                 <Button
@@ -1151,40 +1060,6 @@ const MadrasahSimpleSettings = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <Dialog open={isAddClassModalOpen} onOpenChange={setIsAddClassModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-emerald-500" />
-              নতুন মারহালা যোগ করুন
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>মারহালার নাম</Label>
-              <Input
-                value={newClassName}
-                onChange={(e) => setNewClassName(e.target.value)}
-                placeholder="যেমন: নূরানি, কিতাব, হিফজ"
-                className="text-lg py-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsAddClassModalOpen(false)}
-            >
-              বাতিল
-            </Button>
-            <Button onClick={handleAddClass}>
-              <Plus className="h-4 w-4 mr-2" />
-              যোগ করুন
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
         <DialogContent>
