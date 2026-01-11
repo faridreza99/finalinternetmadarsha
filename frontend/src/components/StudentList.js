@@ -65,6 +65,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const API = process.env.REACT_APP_API_URL || '/api';
 const BASE_URL = API ? API.replace('/api', '') : '';
@@ -96,6 +97,9 @@ const StudentList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('all_classes');
   const [selectedSection, setSelectedSection] = useState('all_sections');
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -898,9 +902,25 @@ const StudentList = () => {
       const matchesClass = selectedClass === 'all_classes' || student.class_id === selectedClass;
       const matchesSection = selectedSection === 'all_sections' || student.section_id === selectedSection;
       
-      return matchesSearch && matchesClass && matchesSection;
+      // Semester-based filtering (Madrasah hierarchy)
+      const matchesMarhala = !selectedMarhalaId || student.marhala_id === selectedMarhalaId || student.class_id === selectedMarhalaId;
+      const matchesDepartment = !selectedDepartmentId || student.department_id === selectedDepartmentId;
+      const matchesSemester = !selectedSemesterId || student.semester_id === selectedSemesterId;
+      
+      return matchesSearch && matchesClass && matchesSection && matchesMarhala && matchesDepartment && matchesSemester;
     });
-  }, [students, debouncedSearchTerm, selectedClass, selectedSection]);
+  }, [students, debouncedSearchTerm, selectedClass, selectedSection, selectedMarhalaId, selectedDepartmentId, selectedSemesterId]);
+
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id);
+    setSelectedDepartmentId(selection.department_id);
+    setSelectedSemesterId(selection.semester_id);
+    // When using hierarchy selector, reset class/section filters
+    if (selection.marhala_id || selection.department_id || selection.semester_id) {
+      setSelectedClass('all_classes');
+      setSelectedSection('all_sections');
+    }
+  };
 
   const getClassName = (classId) => {
     const cls = classes.find(c => c.id === classId);
@@ -1404,34 +1424,47 @@ const StudentList = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:flex sm:flex-row">
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="w-full sm:w-40 md:w-48 text-xs sm:text-sm">
-                  <SelectValue placeholder="সকল মারহালা" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all_classes">সকল মারহালা</SelectItem>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>
-                      {cls.name} ({cls.standard})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass}>
-                <SelectTrigger className="w-full sm:w-40 md:w-48 text-xs sm:text-sm">
-                  <SelectValue placeholder="সকল শাখা" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all_sections">সকল শাখা</SelectItem>
-                  {sections.map((section) => (
-                    <SelectItem key={section.id} value={section.id}>
-                      {section.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            
+            {/* Academic Hierarchy Selector for Madrasah */}
+            {isMadrasahSimpleUI && (
+              <AcademicHierarchySelector 
+                onSelectionChange={handleHierarchyChange}
+                showAllOption={true}
+                layout="horizontal"
+              />
+            )}
+            
+            {/* Legacy Class/Section Filter (for non-Madrasah or fallback) */}
+            {!isMadrasahSimpleUI && (
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:flex sm:flex-row">
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger className="w-full sm:w-40 md:w-48 text-xs sm:text-sm">
+                    <SelectValue placeholder="সকল মারহালা" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_classes">সকল মারহালা</SelectItem>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name} ({cls.standard})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass}>
+                  <SelectTrigger className="w-full sm:w-40 md:w-48 text-xs sm:text-sm">
+                    <SelectValue placeholder="সকল শাখা" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_sections">সকল শাখা</SelectItem>
+                    {sections.map((section) => (
+                      <SelectItem key={section.id} value={section.id}>
+                        {section.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -17,22 +17,34 @@ import {
   FileDown,
 } from "lucide-react";
 import JSZip from "jszip";
+import { useInstitution } from "../context/InstitutionContext";
+import AcademicHierarchySelector from "./AcademicHierarchySelector";
 
 const API = process.env.REACT_APP_API_URL || "/api";
 
 const StudentIDCard = () => {
   const { t } = useTranslation();
+  const { isMadrasahSimpleUI } = useInstitution();
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [selectedClass, setSelectedClass] = useState("all");
   const [selectedSection, setSelectedSection] = useState("all");
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState("");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const [selectedSemesterId, setSelectedSemesterId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState({});
   const [selectedStudents, setSelectedStudents] = useState(new Set());
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id);
+    setSelectedDepartmentId(selection.department_id);
+    setSelectedSemesterId(selection.semester_id);
+  };
 
   const fetchClasses = useCallback(async () => {
     try {
@@ -152,13 +164,20 @@ const StudentIDCard = () => {
     }
   };
 
-  const filteredStudents = students.filter(
-    (student) =>
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch =
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.father_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.roll_no?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.admission_no?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+      student.admission_no?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Semester-based filtering (Madrasah hierarchy)
+    const matchesMarhala = !selectedMarhalaId || student.marhala_id === selectedMarhalaId || student.class_id === selectedMarhalaId;
+    const matchesDepartment = !selectedDepartmentId || student.department_id === selectedDepartmentId;
+    const matchesSemester = !selectedSemesterId || student.semester_id === selectedSemesterId;
+    
+    return matchesSearch && matchesMarhala && matchesDepartment && matchesSemester;
+  });
 
   const toggleStudentSelection = (studentId) => {
     setSelectedStudents((prev) => {
@@ -260,55 +279,8 @@ const StudentIDCard = () => {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4 mb-6">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t("common.class") || "মারহালা"}
-              </label>
-              <select
-                value={selectedClass}
-                onChange={(e) => {
-                  setSelectedClass(e.target.value);
-                  setSelectedSection("all");
-                }}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="all">
-                  {t("common.allClasses") || "সকল মারহালা"}
-                </option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.display_name || cls.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t("common.section") || "শাখা"}
-              </label>
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="all">
-                  {t("common.allSections") || "সকল শাখা"}
-                </option>
-                {sections
-                  .filter(
-                    (s) =>
-                      !selectedClass ||
-                      selectedClass === "all" ||
-                      s.class_id === selectedClass,
-                  )
-                  .map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
+          <div className="flex flex-col gap-4 mb-6">
+            {/* Search Bar */}
             <div className="flex-1 min-w-[250px]">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t("common.search") || "খুঁজুন"}
@@ -326,6 +298,69 @@ const StudentIDCard = () => {
                 />
               </div>
             </div>
+            
+            {/* Academic Hierarchy Selector for Madrasah */}
+            {isMadrasahSimpleUI && (
+              <AcademicHierarchySelector 
+                onSelectionChange={handleHierarchyChange}
+                showAllOption={true}
+                layout="horizontal"
+              />
+            )}
+            
+            {/* Legacy Class/Section Filter (for non-Madrasah) */}
+            {!isMadrasahSimpleUI && (
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t("common.class") || "মারহালা"}
+                  </label>
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => {
+                      setSelectedClass(e.target.value);
+                      setSelectedSection("all");
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="all">
+                      {t("common.allClasses") || "সকল মারহালা"}
+                    </option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.display_name || cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t("common.section") || "শাখা"}
+                  </label>
+                  <select
+                    value={selectedSection}
+                    onChange={(e) => setSelectedSection(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="all">
+                      {t("common.allSections") || "সকল শাখা"}
+                    </option>
+                    {sections
+                      .filter(
+                        (s) =>
+                          !selectedClass ||
+                          selectedClass === "all" ||
+                          s.class_id === selectedClass,
+                      )
+                      .map((section) => (
+                        <option key={section.id} value={section.id}>
+                          {section.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between mb-4">
