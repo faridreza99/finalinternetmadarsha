@@ -222,12 +222,18 @@ const StudentList = () => {
     }
   };
 
-  const fetchNextRollNumber = async (classId, sectionId) => {
-    if (!classId) return;
+  const fetchNextRollNumber = async (classId, sectionId, semesterId = null) => {
     try {
-      let url = `${API}/students/next-roll?class_id=${classId}`;
-      if (sectionId) {
-        url += `&section_id=${sectionId}`;
+      let url = `${API}/students/next-roll?`;
+      if (semesterId) {
+        url += `semester_id=${semesterId}`;
+      } else if (classId) {
+        url += `class_id=${classId}`;
+        if (sectionId) {
+          url += `&section_id=${sectionId}`;
+        }
+      } else {
+        return null;
       }
       const response = await axios.get(url);
       if (autoRollRef.current) {
@@ -2098,6 +2104,9 @@ const StudentList = () => {
                           value={formData.semester_id} 
                           onValueChange={(value) => {
                             setFormData({...formData, semester_id: value});
+                            if (autoRoll) {
+                              fetchNextRollNumber(null, null, value);
+                            }
                           }}
                         >
                           <SelectTrigger className="text-lg py-3">
@@ -2180,7 +2189,10 @@ const StudentList = () => {
                           setAutoRoll(true);
                           autoRollRef.current = true;
                           setRollDuplicateWarning(null);
-                          if (formData.class_id) {
+                          // Fetch roll based on semester_id or class_id
+                          if (formData.semester_id) {
+                            fetchNextRollNumber(null, null, formData.semester_id);
+                          } else if (formData.class_id) {
                             fetchNextRollNumber(formData.class_id, formData.section_id);
                           }
                         }}
@@ -2211,7 +2223,7 @@ const StudentList = () => {
                         checkRollDuplicate(formData.class_id, newRoll, formData.section_id);
                       }
                     }}
-                    placeholder={autoRoll ? "মারহালা নির্বাচন করলে স্বয়ংক্রিয়ভাবে হবে" : "যেমন: ১, ২, ৩..."}
+                    placeholder={autoRoll ? "সেমিস্টার নির্বাচন করলে স্বয়ংক্রিয়ভাবে হবে" : "যেমন: ১, ২, ৩..."}
                     className={`text-lg py-3 ${autoRoll ? 'bg-gray-50' : ''}`}
                     readOnly={autoRoll}
                     required
@@ -2225,6 +2237,47 @@ const StudentList = () => {
                   {isCheckingRoll && (
                     <p className="text-xs text-gray-500 mt-1">যাচাই করা হচ্ছে...</p>
                   )}
+                </div>
+                
+                {/* Gender field - visible in main form */}
+                <div>
+                  <Label htmlFor="add_gender" className="text-base font-semibold">লিঙ্গ</Label>
+                  <Select 
+                    value={formData.gender} 
+                    onValueChange={(value) => setFormData({...formData, gender: value})}
+                  >
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">পুরুষ</SelectItem>
+                      <SelectItem value="female">মহিলা</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Date of Birth field - visible in main form */}
+                <div>
+                  <Label htmlFor="add_dob" className="text-base font-semibold">জন্ম তারিখ</Label>
+                  <Input
+                    id="add_dob"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                    className="text-lg py-3"
+                  />
+                </div>
+
+                {/* Address field - visible in main form */}
+                <div>
+                  <Label htmlFor="add_address_main" className="text-base font-semibold">ঠিকানা</Label>
+                  <Input
+                    id="add_address_main"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    placeholder="গ্রাম, থানা, জেলা"
+                    className="text-lg py-3"
+                  />
                 </div>
                 
                 {/* Optional fields collapsed */}
@@ -2248,15 +2301,6 @@ const StudentList = () => {
                         value={formData.father_whatsapp}
                         onChange={(e) => setFormData({...formData, father_whatsapp: e.target.value})}
                         placeholder="হোয়াটসঅ্যাপ নম্বর"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="add_address">ঠিকানা</Label>
-                      <Input
-                        id="add_address"
-                        value={formData.address}
-                        onChange={(e) => setFormData({...formData, address: e.target.value})}
-                        placeholder="গ্রাম, থানা, জেলা"
                       />
                     </div>
                     <div className="flex flex-col items-center space-y-2">

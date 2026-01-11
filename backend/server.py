@@ -3907,22 +3907,30 @@ async def get_students(
 
 @api_router.get("/students/next-roll")
 async def get_next_roll_number(
-    class_id: str,
+    class_id: Optional[str] = None,
     section_id: Optional[str] = None,
+    semester_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get the next available roll number for a class/section combination"""
+    """Get the next available roll number for a class/section or semester combination"""
     if current_user.role not in ["super_admin", "admin", "teacher"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     try:
         query = {
             "tenant_id": current_user.tenant_id,
-            "class_id": class_id,
             "is_active": True
         }
-        if section_id:
-            query["section_id"] = section_id
+        
+        # Support both legacy class_id and new semester_id based queries
+        if semester_id:
+            query["semester_id"] = semester_id
+        elif class_id:
+            query["class_id"] = class_id
+            if section_id:
+                query["section_id"] = section_id
+        else:
+            raise HTTPException(status_code=400, detail="Either class_id or semester_id is required")
         
         students = await db.students.find(query).to_list(1000)
         
@@ -3942,6 +3950,7 @@ async def get_next_roll_number(
             "next_roll": next_roll,
             "class_id": class_id,
             "section_id": section_id,
+            "semester_id": semester_id,
             "total_students": len(students)
         }
     except Exception as e:
