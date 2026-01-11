@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -126,6 +127,12 @@ const Certificates = () => {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [availableStudents, setAvailableStudents] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Academic Hierarchy Filter State (Madrasah semester-centric)
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
+  const [selectedHierarchyNames, setSelectedHierarchyNames] = useState({});
   
   // TC View/Print States
   const [showTcViewModal, setShowTcViewModal] = useState(false);
@@ -2312,8 +2319,55 @@ const Certificates = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Hierarchy change handler for Madrasah mode
+  const handleHierarchyChange = useCallback((selection) => {
+    setSelectedMarhalaId(selection.marhala_id || '');
+    setSelectedDepartmentId(selection.department_id || '');
+    setSelectedSemesterId(selection.semester_id || '');
+    setSelectedHierarchyNames({
+      marhala_name: selection.marhala_name || '',
+      department_name: selection.department_name || '',
+      semester_name: selection.semester_name || ''
+    });
+  }, []);
 
-  const filteredStudents = availableStudents.filter(student => {
+  // Hierarchy-filtered students (Madrasah semester-centric filtering)
+  const hierarchyFilteredStudents = useMemo(() => {
+    if (!isMadrasah) return availableStudents;
+    
+    return availableStudents.filter(student => {
+      // If no hierarchy selected, show all
+      if (!selectedMarhalaId && !selectedDepartmentId && !selectedSemesterId) {
+        return true;
+      }
+      
+      // Enforce hierarchical containment: all selected levels must match
+      let matchesMarhala = true;
+      let matchesDepartment = true;
+      let matchesSemester = true;
+      
+      // Check marhala_id if selected
+      if (selectedMarhalaId && selectedMarhalaId !== 'all') {
+        matchesMarhala = student.marhala_id === selectedMarhalaId;
+      }
+      
+      // Check department_id if selected
+      if (selectedDepartmentId && selectedDepartmentId !== 'all') {
+        matchesDepartment = student.department_id === selectedDepartmentId;
+      }
+      
+      // Check semester_id (primary operational reference) with class_id fallback
+      if (selectedSemesterId && selectedSemesterId !== 'all') {
+        matchesSemester = student.semester_id === selectedSemesterId || 
+                          student.class_id === selectedSemesterId;
+      }
+      
+      // All selected levels must match
+      return matchesMarhala && matchesDepartment && matchesSemester;
+    });
+  }, [availableStudents, isMadrasah, selectedMarhalaId, selectedDepartmentId, selectedSemesterId]);
+
+  const filteredStudents = hierarchyFilteredStudents.filter(student => {
     // Ensure student is a valid object with required properties
     if (!student || typeof student !== 'object' || !student.name || !student.admission_no) {
       return false;
@@ -2354,6 +2408,19 @@ const Certificates = () => {
           </div>
         )}
       </div>
+
+      {/* Academic Hierarchy Filter for Madrasah Mode */}
+      {isMadrasah && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-4">
+            <AcademicHierarchySelector 
+              onSelectionChange={handleHierarchyChange}
+              showAllOption={true}
+              layout="horizontal"
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards - Bengali for Madrasah */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
