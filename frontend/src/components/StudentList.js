@@ -416,6 +416,12 @@ const StudentList = () => {
     if (submittingRef.current) {
       return;
     }
+
+    // Photo is required for new students in simple form
+    if (!editingStudent && useSimpleForm && !photoFile) {
+      toast.error('ছবি আপলোড করা আবশ্যক');
+      return;
+    }
     
     submittingRef.current = true;
     setIsSubmitting(true);
@@ -2279,6 +2285,31 @@ const StudentList = () => {
                     className="text-lg py-3"
                   />
                 </div>
+
+                {/* Photo Upload - Required */}
+                <div className="flex flex-col items-center space-y-2 p-4 border rounded-lg bg-gray-50">
+                  <Label className="text-base font-semibold">ছবি *</Label>
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Student" className="w-24 h-24 rounded-full object-cover border-4 border-emerald-200" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
+                      <Camera className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+                  <Label htmlFor="student-photo-simple" className="cursor-pointer px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+                    {photoPreview ? 'ছবি পরিবর্তন করুন' : 'ছবি আপলোড করুন'}
+                    <Input
+                      id="student-photo-simple"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </Label>
+                  {!photoPreview && (
+                    <p className="text-xs text-red-500">ছবি আপলোড করা আবশ্যক</p>
+                  )}
+                </div>
                 
                 {/* Optional fields collapsed */}
                 <details className="border rounded-lg p-3">
@@ -2302,26 +2333,6 @@ const StudentList = () => {
                         onChange={(e) => setFormData({...formData, father_whatsapp: e.target.value})}
                         placeholder="হোয়াটসঅ্যাপ নম্বর"
                       />
-                    </div>
-                    <div className="flex flex-col items-center space-y-2">
-                      <Label>ছবি (ঐচ্ছিক)</Label>
-                      {photoPreview ? (
-                        <img src={photoPreview} alt="Student" className="w-20 h-20 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
-                          <Camera className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
-                      <Label htmlFor="student-photo-simple" className="cursor-pointer text-emerald-600 text-sm">
-                        {photoPreview ? 'ছবি পরিবর্তন' : 'ছবি আপলোড'}
-                        <Input
-                          id="student-photo-simple"
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePhotoChange}
-                          className="hidden"
-                        />
-                      </Label>
                     </div>
                   </div>
                 </details>
