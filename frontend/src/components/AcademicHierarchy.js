@@ -53,7 +53,9 @@ import {
   Calendar,
   Users,
   Loader2,
+  Book,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 const API = process.env.REACT_APP_API_URL || "/api";
 
@@ -100,6 +102,19 @@ const AcademicHierarchy = () => {
     order_index: 0,
   });
 
+  const [subjects, setSubjects] = useState([]);
+  const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
+  const [editingSubject, setEditingSubject] = useState(null);
+  const [subjectForm, setSubjectForm] = useState({
+    subject_name: "",
+    subject_code: "",
+    marhala_id: "",
+    semester_id: "",
+    description: "",
+    is_elective: false,
+  });
+  const [activeTab, setActiveTab] = useState("hierarchy");
+
   const fetchHierarchy = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -115,9 +130,23 @@ const AcademicHierarchy = () => {
     }
   }, []);
 
+  const fetchSubjects = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API}/subjects`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubjects(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch subjects:", error);
+      toast.error("বিষয় তালিকা লোড করতে সমস্যা হয়েছে");
+    }
+  }, []);
+
   useEffect(() => {
     fetchHierarchy();
-  }, [fetchHierarchy]);
+    fetchSubjects();
+  }, [fetchHierarchy, fetchSubjects]);
 
   const toggleMarhala = (id) => {
     setExpandedMarhalas((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -310,6 +339,108 @@ const AcademicHierarchy = () => {
     }
   };
 
+  const handleSubjectSubmit = async (e) => {
+    e.preventDefault();
+    if (!subjectForm.subject_name || !subjectForm.subject_code) {
+      toast.error("বিষয়ের নাম ও কোড আবশ্যক");
+      return;
+    }
+    if (!subjectForm.marhala_id) {
+      toast.error("একটি মারহালা নির্বাচন করুন");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      if (editingSubject) {
+        await axios.put(
+          `${API}/subjects/${editingSubject.id}`,
+          subjectForm,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("বিষয় আপডেট হয়েছে");
+      } else {
+        await axios.post(`${API}/subjects`, subjectForm, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("বিষয় তৈরি হয়েছে");
+      }
+      setIsSubjectModalOpen(false);
+      setEditingSubject(null);
+      setSubjectForm({
+        subject_name: "",
+        subject_code: "",
+        marhala_id: "",
+        semester_id: "",
+        description: "",
+        is_elective: false,
+      });
+      fetchSubjects();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "বিষয় সেভ করতে সমস্যা হয়েছে");
+    }
+  };
+
+  const handleDeleteSubject = async (subject) => {
+    const result = await Swal.fire({
+      title: `"${subject.subject_name}" মুছে ফেলবেন?`,
+      text: "এই বিষয় মুছে ফেলা হবে।",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "হ্যাঁ, মুছুন!",
+      cancelButtonText: "বাতিল",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API}/subjects/${subject.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("বিষয় মুছে ফেলা হয়েছে");
+      fetchSubjects();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "বিষয় মুছতে সমস্যা হয়েছে");
+    }
+  };
+
+  const openEditSubject = (subject) => {
+    setEditingSubject(subject);
+    setSubjectForm({
+      subject_name: subject.subject_name || "",
+      subject_code: subject.subject_code || "",
+      marhala_id: subject.marhala_id || "",
+      semester_id: subject.semester_id || "",
+      description: subject.description || "",
+      is_elective: subject.is_elective || false,
+    });
+    setIsSubjectModalOpen(true);
+  };
+
+  const getSubjectsForSemester = (semesterId) => {
+    return subjects.filter(s => s.semester_id === semesterId);
+  };
+
+  const getSubjectsForMarhala = (marhalaId) => {
+    return subjects.filter(s => s.marhala_id === marhalaId && !s.semester_id);
+  };
+
+  const getMarhalaName = (marhalaId) => {
+    const marhala = hierarchy.find(m => m.id === marhalaId);
+    return marhala ? (marhala.name_bn || marhala.name_en || marhala.name) : "";
+  };
+
+  const getSemesterName = (semesterId) => {
+    for (const marhala of hierarchy) {
+      for (const dept of (marhala.departments || [])) {
+        const semester = (dept.semesters || []).find(s => s.id === semesterId);
+        if (semester) return semester.name_bn || semester.name_en || semester.name;
+      }
+    }
+    return "";
+  };
+
   const openEditMarhala = (marhala) => {
     setEditingMarhala(marhala);
     setMarhalaForm({
@@ -397,9 +528,24 @@ const AcademicHierarchy = () => {
             মারহালা → বিভাগ/জামাত → সেমিস্টার হায়ারার্কি পরিচালনা করুন
           </p>
         </div>
+      </div>
 
-        <Dialog open={isMarhalaModalOpen} onOpenChange={setIsMarhalaModalOpen}>
-          <DialogTrigger asChild>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="hierarchy" className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" />
+            হায়ারার্কি
+          </TabsTrigger>
+          <TabsTrigger value="subjects" className="flex items-center gap-2">
+            <Book className="h-4 w-4" />
+            বিষয়সমূহ
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="hierarchy" className="mt-6">
+          <div className="flex justify-end mb-4">
+            <Dialog open={isMarhalaModalOpen} onOpenChange={setIsMarhalaModalOpen}>
+              <DialogTrigger asChild>
             <Button
               className="bg-emerald-500 hover:bg-emerald-600"
               onClick={() => {
@@ -852,6 +998,218 @@ const AcademicHierarchy = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setIsSemesterModalOpen(false)}
+              >
+                বাতিল
+              </Button>
+              <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600">
+                সংরক্ষণ
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+        </TabsContent>
+
+        <TabsContent value="subjects" className="mt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                বিষয় তালিকা
+              </h2>
+              <Button
+                className="bg-emerald-500 hover:bg-emerald-600"
+                onClick={() => {
+                  setEditingSubject(null);
+                  setSubjectForm({
+                    subject_name: "",
+                    subject_code: "",
+                    marhala_id: "",
+                    semester_id: "",
+                    description: "",
+                    is_elective: false,
+                  });
+                  setIsSubjectModalOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                নতুন বিষয়
+              </Button>
+            </div>
+
+            {subjects.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Book className="h-16 w-16 text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    কোন বিষয় নেই
+                  </h3>
+                  <p className="text-gray-500 mt-2">
+                    বিষয় যোগ করুন মারহালা বা সেমিস্টার অনুযায়ী
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>বিষয়ের নাম</TableHead>
+                        <TableHead>কোড</TableHead>
+                        <TableHead>মারহালা</TableHead>
+                        <TableHead>সেমিস্টার</TableHead>
+                        <TableHead>ধরন</TableHead>
+                        <TableHead className="text-right">অ্যাকশন</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {subjects.map((subject) => (
+                        <TableRow key={subject.id}>
+                          <TableCell className="font-medium">{subject.subject_name}</TableCell>
+                          <TableCell>{subject.subject_code}</TableCell>
+                          <TableCell>{getMarhalaName(subject.marhala_id) || "-"}</TableCell>
+                          <TableCell>{getSemesterName(subject.semester_id) || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant={subject.is_elective ? "secondary" : "default"}>
+                              {subject.is_elective ? "ঐচ্ছিক" : "আবশ্যিক"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditSubject(subject)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleDeleteSubject(subject)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={isSubjectModalOpen} onOpenChange={setIsSubjectModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingSubject ? "বিষয় সম্পাদনা" : "নতুন বিষয়"}
+            </DialogTitle>
+            <DialogDescription>
+              বিষয়ের তথ্য দিন এবং মারহালা/সেমিস্টার নির্বাচন করুন
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubjectSubmit} className="space-y-4">
+            <div>
+              <Label>বিষয়ের নাম *</Label>
+              <Input
+                value={subjectForm.subject_name}
+                onChange={(e) =>
+                  setSubjectForm({ ...subjectForm, subject_name: e.target.value })
+                }
+                placeholder="যেমন: কুরআন তিলাওয়াত"
+                required
+              />
+            </div>
+            <div>
+              <Label>বিষয়ের কোড *</Label>
+              <Input
+                value={subjectForm.subject_code}
+                onChange={(e) =>
+                  setSubjectForm({ ...subjectForm, subject_code: e.target.value })
+                }
+                placeholder="যেমন: QT101"
+                required
+              />
+            </div>
+            <div>
+              <Label>মারহালা</Label>
+              <Select
+                value={subjectForm.marhala_id}
+                onValueChange={(value) =>
+                  setSubjectForm({ ...subjectForm, marhala_id: value, semester_id: "" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="মারহালা নির্বাচন করুন" />
+                </SelectTrigger>
+                <SelectContent>
+                  {hierarchy.map((marhala) => (
+                    <SelectItem key={marhala.id} value={marhala.id}>
+                      {marhala.name_bn || marhala.name_en || marhala.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {subjectForm.marhala_id && (
+              <div>
+                <Label>সেমিস্টার (ঐচ্ছিক)</Label>
+                <Select
+                  value={subjectForm.semester_id}
+                  onValueChange={(value) =>
+                    setSubjectForm({ ...subjectForm, semester_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">সকল সেমিস্টার</SelectItem>
+                    {hierarchy
+                      .find((m) => m.id === subjectForm.marhala_id)
+                      ?.departments?.flatMap((d) => d.semesters || [])
+                      .map((semester) => (
+                        <SelectItem key={semester.id} value={semester.id}>
+                          {semester.name_bn || semester.name_en || semester.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <Label>বিবরণ</Label>
+              <Input
+                value={subjectForm.description}
+                onChange={(e) =>
+                  setSubjectForm({ ...subjectForm, description: e.target.value })
+                }
+                placeholder="ঐচ্ছিক বিবরণ"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_elective"
+                checked={subjectForm.is_elective}
+                onChange={(e) =>
+                  setSubjectForm({ ...subjectForm, is_elective: e.target.checked })
+                }
+                className="h-4 w-4"
+              />
+              <Label htmlFor="is_elective">ঐচ্ছিক বিষয়</Label>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsSubjectModalOpen(false)}
               >
                 বাতিল
               </Button>

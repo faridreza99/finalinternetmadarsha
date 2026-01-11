@@ -9046,21 +9046,29 @@ async def create_subject(subject_data: SubjectCreate, current_user: User = Depen
     if not school_id:
         raise HTTPException(status_code=400, detail="School ID not found in user context")
     
-    # Check if a subject with the same code already exists for this class
-    existing_subject = await db.subjects.find_one({
+    # Check if a subject with the same code already exists for this marhala/semester or class
+    query = {
         "tenant_id": current_user.tenant_id,
         "school_id": school_id,
         "subject_code": subject_data.subject_code,
-        "class_standard": subject_data.class_standard,
         "is_active": True
-    })
+    }
+    
+    # Use marhala_id/semester_id for academic hierarchy, fallback to class_standard
+    if subject_data.marhala_id:
+        query["marhala_id"] = subject_data.marhala_id
+        if subject_data.semester_id:
+            query["semester_id"] = subject_data.semester_id
+    elif subject_data.class_standard:
+        query["class_standard"] = subject_data.class_standard
+    
+    existing_subject = await db.subjects.find_one(query)
     
     if existing_subject:
         raise HTTPException(
             status_code=400, 
-            detail=f"Subject with code '{subject_data.subject_code}' already exists for {subject_data.class_standard}"
+            detail=f"\x27{subject_data.subject_code}\x27 কোডের বিষয় ইতোমধ্যে বিদ্যমান"
         )
-    
     # Create new subject
     subject_dict = subject_data.dict()
     subject_dict["tenant_id"] = current_user.tenant_id
