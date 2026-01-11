@@ -1,0 +1,81 @@
+Hello,
+
+This system is ONLY for a Madrasha (not school / college / university).
+Please align the structure strictly according to standard Madrasha academic flow,
+without touching or breaking existing features.
+
+Required Madrasha Academic Structure
+
+Marhala (e.g. Dakhil / Alim / Fazil)
+ → Department (e.g. Science / Hadith / Tafsir)
+    → Semester (Represents Madrasha Class / Jamaat / Course-equivalent unit)
+       → Student
+            → Attendance
+            → Video Classes
+            → Exams / MCQ
+            → Fees
+
+Important Terminology Clarification (Mandatory)
+
+• Madrasha "Class / Jamaat" is treated as a complete course-equivalent unit.
+• There must be NO separate Course entity.
+• Internally, all Class / Jamaat / Course concepts MUST map to Semester.
+• semester_id is the single operational reference across the system.
+
+Very Important Rules
+
+❗ Do NOT change or refactor existing modules:
+- Attendance
+- Video Classes
+- Exam / MCQ
+- Fee Collection
+- Student Module
+
+This is structure extension only, not redesign.
+
+Expected System Behavior (Madrasha Standard)
+
+Student Enrollment
+- A student must be enrolled only in a Semester
+- Student should NOT be directly linked to Marhala or Department
+- semester_id must be the single operational reference
+
+Attendance
+- Attendance must be taken semester-wise
+- Admin / Teacher can only take attendance for assigned semesters
+
+Video Classes
+- Video lessons must be created semester-wise
+- Student should see only videos of their enrolled semester
+
+Exams / MCQ
+- Exams created per semester
+- Results stored semester-wise
+
+Fees
+- Fee setup must be: Marhala + Department + Semester based
+- Fee collection, paid, due, reports must be semester-wise
+- Same student may have different fees in different semesters
+
+Reports (No UI Redesign Needed)
+
+All reports must be generated using:
+- Semester
+- Student
+- Date range
+
+Examples:
+- Attendance Report
+- Fee Paid / Due Report
+- Exam Result Report
+- Video Progress Report
+
+Final Requirement
+
+✔ Madrasha-only academic flow
+✔ Semester-centric operations
+✔ Existing system must remain intact
+✔ Clean, real-world madrasha workflow
+
+Please confirm once the Madrasha hierarchy is properly implemented
+and all modules are aligned using semester_id.
