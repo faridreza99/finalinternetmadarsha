@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 import { useInstitution } from '../context/InstitutionContext';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -153,6 +154,18 @@ const Fees = () => {
   // Madrasah Simple Wizard State
   const [madrasahWizardStep, setMadrasahWizardStep] = useState(1); // 1=ছাত্র নির্বাচন, 2=বেতন আদায়, 3=রসিদ
   const [lastReceipt, setLastReceipt] = useState(null); // For receipt printing
+  
+  // Academic Hierarchy State (Madrasah)
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
+  
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id || '');
+    setSelectedDepartmentId(selection.department_id || '');
+    setSelectedSemesterId(selection.semester_id || '');
+    setSelectedStudent(null);
+  };
   
   // School Branding for Receipt
   const [schoolBranding, setSchoolBranding] = useState({
@@ -1744,53 +1757,40 @@ const Fees = () => {
                 <p className="text-sm text-emerald-600 mt-1">মারহালা বাছাই করে ছাত্র খুঁজুন</p>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
-                {/* Class Filter Only - Branch filter hidden (not fully implemented) */}
-                <div className="grid grid-cols-1 gap-4 mb-6">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">মারহালা নির্বাচন করুন</label>
-                    <Select value={selectedClass} onValueChange={(value) => {
-                      setSelectedClass(value);
-                      setSelectedSection('all');
-                      setSelectedStudent(null);
-                    }}>
-                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500 h-12 text-base">
-                        <SelectValue placeholder="মারহালা বাছুন..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">সকল মারহালা</SelectItem>
-                        {classes.map((cls) => (
-                          <SelectItem key={cls.id || cls._id || cls.name} value={cls.name || cls.class_name}>
-                            {cls.display_name || cls.name || cls.class_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* Branch filter hidden - sections data not fully implemented */}
+                {/* Academic Hierarchy Selector (Madrasah) */}
+                <div className="mb-6">
+                  <AcademicHierarchySelector 
+                    onSelectionChange={handleHierarchyChange}
+                    showAllOption={true}
+                    layout="horizontal"
+                  />
                 </div>
 
                 {/* Simplified Student List */}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-gray-50 px-4 py-3 border-b">
                     <h4 className="font-medium text-gray-700">ছাত্র তালিকা ({students.filter(s => 
-                      (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass || getClassName(s.class_id) === selectedClass) &&
-                      (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection || s.section_id === selectedSection)
+                      (!selectedMarhalaId || s.marhala_id === selectedMarhalaId) &&
+                      (!selectedDepartmentId || s.department_id === selectedDepartmentId) &&
+                      (!selectedSemesterId || s.semester_id === selectedSemesterId)
                     ).length} জন)</h4>
                   </div>
                   <div className="max-h-96 overflow-y-auto divide-y">
                     {students.filter(s => 
-                      (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass || getClassName(s.class_id) === selectedClass) &&
-                      (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection || s.section_id === selectedSection)
+                      (!selectedMarhalaId || s.marhala_id === selectedMarhalaId) &&
+                      (!selectedDepartmentId || s.department_id === selectedDepartmentId) &&
+                      (!selectedSemesterId || s.semester_id === selectedSemesterId)
                     ).length === 0 ? (
                       <div className="p-8 text-center text-gray-500">
                         <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                         <p className="font-medium">কোনো ছাত্র পাওয়া যায়নি</p>
-                        <p className="text-sm">মারহালা বা শাখা পরিবর্তন করুন</p>
+                        <p className="text-sm">মারহালা, বিভাগ বা সেমিস্টার পরিবর্তন করুন</p>
                       </div>
                     ) : (
                       students.filter(s => 
-                        (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass || getClassName(s.class_id) === selectedClass) &&
-                        (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection || s.section_id === selectedSection)
+                        (!selectedMarhalaId || s.marhala_id === selectedMarhalaId) &&
+                        (!selectedDepartmentId || s.department_id === selectedDepartmentId) &&
+                        (!selectedSemesterId || s.semester_id === selectedSemesterId)
                       ).map((student) => {
                         // Aggregate ALL fee records for this student (not just first one)
                         const studentFeeRecords = dueFees.filter(f => f.student_id === student.id);
@@ -1916,38 +1916,6 @@ const Fees = () => {
                   </div>
                 </div>
 
-                {/* Marhala Fee Overview Panel */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    মারহালা ফি অবস্থা
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {feeConfigurations['Tuition Fees']?.length > 0 ? (
-                      feeConfigurations['Tuition Fees'].slice(0, 6).map((config, idx) => (
-                        <div key={idx} className="bg-white p-3 rounded border flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-sm">{config.applyToClasses || 'সকল মারহালা'}</p>
-                            <p className="text-xs text-gray-500">মাসিক: {formatCurrency(config.amount || 0)}</p>
-                          </div>
-                          <Badge className="bg-green-100 text-green-700 text-xs">সক্রিয়</Badge>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center text-gray-500 py-4">
-                        <p className="text-sm">কোনো ফি কনফিগার করা হয়নি</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => handleFeeConfiguration('Tuition Fees')}
-                        >
-                          ফি সেট করুন
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </CardContent>
             </Card>
           )}
