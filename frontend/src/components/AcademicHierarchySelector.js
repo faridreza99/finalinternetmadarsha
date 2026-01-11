@@ -107,16 +107,29 @@ const AcademicHierarchySelector = ({
     return hierarchy.semesters.filter(s => s.department_id === departmentId);
   }, [hierarchy.semesters, departmentId, marhalaId]);
 
+  const getSelectionWithNames = (mId, dId, sId) => {
+    const marhala = hierarchy.marhalas.find(m => m.id === mId);
+    const department = hierarchy.departments.find(d => d.id === dId);
+    const semester = hierarchy.semesters.find(s => s.id === sId);
+    
+    const getName = (item) => item?.name_bn || item?.name_en || item?.name || item?.display_name || '';
+    
+    return {
+      marhala_id: mId || '',
+      department_id: dId || '',
+      semester_id: sId || '',
+      marhala_name: getName(marhala),
+      department_name: getName(department),
+      semester_name: getName(semester),
+    };
+  };
+
   const handleMarhalaChange = (value) => {
     const newMarhalaId = value === 'all' ? '' : value;
     setMarhalaId(newMarhalaId);
     setDepartmentId('');
     setSemesterId('');
-    onSelectionChange?.({
-      marhala_id: newMarhalaId,
-      department_id: '',
-      semester_id: '',
-    });
+    onSelectionChange?.(getSelectionWithNames(newMarhalaId, '', ''));
   };
 
   const handleDepartmentChange = (value) => {
@@ -133,11 +146,7 @@ const AcademicHierarchySelector = ({
       }
     }
     
-    onSelectionChange?.({
-      marhala_id: newMarhalaId,
-      department_id: newDepartmentId,
-      semester_id: '',
-    });
+    onSelectionChange?.(getSelectionWithNames(newMarhalaId, newDepartmentId, ''));
   };
 
   const handleSemesterChange = (value) => {
@@ -161,11 +170,7 @@ const AcademicHierarchySelector = ({
       }
     }
     
-    onSelectionChange?.({
-      marhala_id: newMarhalaId,
-      department_id: newDepartmentId,
-      semester_id: newSemesterId,
-    });
+    onSelectionChange?.(getSelectionWithNames(newMarhalaId, newDepartmentId, newSemesterId));
   };
 
   if (loading) {

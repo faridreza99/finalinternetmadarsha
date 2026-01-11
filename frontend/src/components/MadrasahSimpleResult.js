@@ -82,10 +82,17 @@ const MadrasahSimpleResult = () => {
     user?.role,
   );
 
+  const [selectedMarhalaName, setSelectedMarhalaName] = useState("");
+  const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
+  const [selectedSemesterName, setSelectedSemesterName] = useState("");
+
   const handleHierarchyChange = (selection) => {
     setSelectedMarhalaId(selection.marhala_id);
     setSelectedDepartmentId(selection.department_id);
     setSelectedSemesterId(selection.semester_id);
+    setSelectedMarhalaName(selection.marhala_name || "");
+    setSelectedDepartmentName(selection.department_name || "");
+    setSelectedSemesterName(selection.semester_name || "");
     if (!selection.semester_id) {
       setStudents([]);
       setResults([]);
@@ -228,7 +235,7 @@ const MadrasahSimpleResult = () => {
           <h1>${schoolBranding.name || "মাদ্রাসা"}</h1>
           <p class="info">${schoolBranding.address || ""}</p>
           <h2>বার্ষিক ফলাফল - ${selectedSession}</h2>
-          <p>সেমিস্টার ফলাফল</p>
+          <p>${selectedSemesterName || selectedDepartmentName || selectedMarhalaName || 'সেমিস্টার ফলাফল'}</p>
         </div>
         <table>
           <thead>

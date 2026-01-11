@@ -29,6 +29,9 @@ const MadrasahReportPage = () => {
   const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
+  const [selectedMarhalaName, setSelectedMarhalaName] = useState('');
+  const [selectedDepartmentName, setSelectedDepartmentName] = useState('');
+  const [selectedSemesterName, setSelectedSemesterName] = useState('');
   const [selectedSession, setSelectedSession] = useState('2025');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -54,6 +57,17 @@ const MadrasahReportPage = () => {
     setSelectedMarhalaId(selection.marhala_id);
     setSelectedDepartmentId(selection.department_id);
     setSelectedSemesterId(selection.semester_id);
+    setSelectedMarhalaName(selection.marhala_name || '');
+    setSelectedDepartmentName(selection.department_name || '');
+    setSelectedSemesterName(selection.semester_name || '');
+  };
+  
+  const getSelectedHierarchyLabel = () => {
+    const parts = [];
+    if (selectedMarhalaName) parts.push(selectedMarhalaName);
+    if (selectedDepartmentName) parts.push(selectedDepartmentName);
+    if (selectedSemesterName) parts.push(selectedSemesterName);
+    return parts.length > 0 ? parts.join(' / ') : 'সকল';
   };
 
   const fetchBranding = useCallback(async () => {
@@ -190,9 +204,8 @@ const MadrasahReportPage = () => {
     printWindow.print();
   };
 
-  const getClassName = (classId) => {
-    const cls = classes.find(c => c.id === classId || c._id === classId);
-    return cls?.name || cls?.class_name || classId;
+  const getDisplayName = (item) => {
+    return item?.class_name || item?.semester_name || item?.marhala_name || '-';
   };
 
   const reportCards = [
@@ -368,7 +381,7 @@ const MadrasahReportPage = () => {
                           <td className="border p-2 text-center">{idx + 1}</td>
                           <td className="border p-2">{student.name}</td>
                           <td className="border p-2 text-center">{student.roll_no || '-'}</td>
-                          <td className="border p-2 text-center">{student.class_name || getClassName(student.class_id)}</td>
+                          <td className="border p-2 text-center">{student.class_name || student.semester_name || selectedSemesterName || selectedDepartmentName || selectedMarhalaName || '-'}</td>
                           <td className="border p-2 text-center">{student.father_name || student.guardian_name || '-'}</td>
                           <td className="border p-2 text-center">{student.phone || student.guardian_phone || '-'}</td>
                         </tr>
@@ -565,7 +578,7 @@ const MadrasahReportPage = () => {
                                     <td className="border p-2 text-center">{idx + 1}</td>
                                     <td className="border p-2">{result.student_name || result.name}</td>
                                     <td className="border p-2 text-center">{result.student_roll_number || result.roll_no || result.roll || '-'}</td>
-                                    <td className="border p-2 text-center">{result.class_name || getClassName(result.class_id)}</td>
+                                    <td className="border p-2 text-center">{result.class_name || result.semester_name || selectedSemesterName || selectedDepartmentName || selectedMarhalaName || '-'}</td>
                                     <td className="border p-2 text-center">
                                       <Badge className={
                                         bengaliGrade === 'মুমতাজ' ? 'bg-green-500 text-white' :
