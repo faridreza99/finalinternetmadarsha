@@ -2027,138 +2027,79 @@ const StudentList = () => {
                     required
                   />
                 </div>
-                {/* Academic Hierarchy for Madrasah mode */}
-                {isMadrasahSimpleUI && academicHierarchy.marhalas?.length > 0 ? (
-                  <>
-                    <div>
-                      <Label htmlFor="add_marhala_id" className="text-base font-semibold">মারহালা *</Label>
-                      <Select 
-                        value={formData.marhala_id} 
-                        onValueChange={(value) => {
-                          setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''});
-                        }}
-                      >
-                        <SelectTrigger className="text-lg py-3">
-                          <SelectValue placeholder="মারহালা নির্বাচন করুন" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {academicHierarchy.marhalas?.length === 0 ? (
-                            <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                              কোনো মারহালা পাওয়া যায়নি। প্রথমে সেটিংস থেকে মারহালা যোগ করুন।
-                            </div>
-                          ) : (
-                            academicHierarchy.marhalas?.map((m) => (
-                              <SelectItem key={m.id} value={m.id}>
-                                {m.name_bn || m.name_en || m.name}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {formData.marhala_id && (
-                      <div>
-                        <Label htmlFor="add_department_id" className="text-base font-semibold">বিভাগ/জামাত</Label>
-                        <Select 
-                          value={formData.department_id} 
-                          onValueChange={(value) => {
-                            setFormData({...formData, department_id: value, semester_id: ''});
-                          }}
-                        >
-                          <SelectTrigger className="text-lg py-3">
-                            <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getFilteredDepartments().map((d) => (
-                              <SelectItem key={d.id} value={d.id}>
-                                {d.name_bn || d.name_en || d.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    {formData.department_id && (
-                      <div>
-                        <Label htmlFor="add_semester_id" className="text-base font-semibold">সেমিস্টার *</Label>
-                        <Select 
-                          value={formData.semester_id} 
-                          onValueChange={(value) => {
-                            setFormData({...formData, semester_id: value});
-                            if (autoRoll) {
-                              fetchNextRollNumber(null, null, value);
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="text-lg py-3">
-                            <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getFilteredAcademicSemesters().map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name_bn || s.name_en || s.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <Label htmlFor="add_class_id" className="text-base font-semibold">মারহালা / শ্রেণি *</Label>
-                      <Select 
-                        value={formData.class_id} 
-                        onValueChange={(value) => {
-                          setFormData({...formData, class_id: value, section_id: ''});
-                          fetchSections(value);
-                          if (autoRoll) {
-                            fetchNextRollNumber(value, null);
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="text-lg py-3">
-                          <SelectValue placeholder="মারহালা নির্বাচন করুন" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classes.length === 0 ? (
-                            <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                              কোনো মারহালা পাওয়া যায়নি। প্রথমে সেটিংস থেকে মারহালা যোগ করুন।
-                            </div>
-                          ) : (
-                            classes.map((cls) => (
-                              <SelectItem key={cls.id} value={cls.id}>
-                                {cls.name}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {formData.class_id && sections.length > 0 && (
-                      <div>
-                        <Label htmlFor="add_section_id" className="text-base font-semibold">শাখা</Label>
-                        <Select value={formData.section_id} onValueChange={(value) => {
-                          setFormData({...formData, section_id: value});
-                          if (autoRoll && formData.class_id) {
-                            fetchNextRollNumber(formData.class_id, value);
-                          }
-                        }}>
-                          <SelectTrigger className="text-lg py-3">
-                            <SelectValue placeholder="শাখা নির্বাচন করুন" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {sections.map((section) => (
-                              <SelectItem key={section.id} value={section.id}>
-                                {section.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </>
+                {/* Academic Hierarchy - Marhala → Department → Semester */}
+                <div>
+                  <Label htmlFor="add_marhala_id" className="text-base font-semibold">মারহালা *</Label>
+                  <Select 
+                    value={formData.marhala_id} 
+                    onValueChange={(value) => {
+                      setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''});
+                    }}
+                  >
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="মারহালা নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {academicHierarchy.marhalas?.length === 0 ? (
+                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                          কোনো মারহালা পাওয়া যায়নি। প্রথমে সেটিংস থেকে মারহালা যোগ করুন।
+                        </div>
+                      ) : (
+                        academicHierarchy.marhalas?.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name_bn || m.name_en || m.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formData.marhala_id && (
+                  <div>
+                    <Label htmlFor="add_department_id" className="text-base font-semibold">বিভাগ/জামাত</Label>
+                    <Select 
+                      value={formData.department_id} 
+                      onValueChange={(value) => {
+                        setFormData({...formData, department_id: value, semester_id: ''});
+                      }}
+                    >
+                      <SelectTrigger className="text-lg py-3">
+                        <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getFilteredDepartments().map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name_bn || d.name_en || d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {formData.department_id && (
+                  <div>
+                    <Label htmlFor="add_semester_id" className="text-base font-semibold">সেমিস্টার *</Label>
+                    <Select 
+                      value={formData.semester_id} 
+                      onValueChange={(value) => {
+                        setFormData({...formData, semester_id: value});
+                        if (autoRoll) {
+                          fetchNextRollNumber(null, null, value);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="text-lg py-3">
+                        <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getFilteredAcademicSemesters().map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name_bn || s.name_en || s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
                 <div>
                   <div className="flex items-center justify-between mb-2">
