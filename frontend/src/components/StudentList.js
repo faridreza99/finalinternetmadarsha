@@ -89,7 +89,6 @@ const StudentList = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isMadrasahSimpleUI } = useInstitution();
-  const [useSimpleForm, setUseSimpleForm] = useState(true);
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
@@ -418,7 +417,7 @@ const StudentList = () => {
     }
 
     // Photo is required for new students in simple form
-    if (!editingStudent && useSimpleForm && !photoFile) {
+    if (!editingStudent && isMadrasahSimpleUI && !photoFile) {
       toast.error('ছবি আপলোড করা আবশ্যক');
       return;
     }
@@ -1961,7 +1960,7 @@ const StudentList = () => {
 
       {/* Add Student Modal */}
       <Dialog open={isAddStudentModalOpen} onOpenChange={setIsAddStudentModalOpen}>
-        <DialogContent className={`${isMadrasahSimpleUI && useSimpleForm ? 'max-w-lg' : 'max-w-2xl'} max-h-[90vh] overflow-y-auto`}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>নতুন ছাত্র যোগ করুন</DialogTitle>
             <DialogDescription>
@@ -1969,33 +1968,9 @@ const StudentList = () => {
             </DialogDescription>
           </DialogHeader>
           
-          {/* Form Mode Toggle for Madrasah */}
-          {isMadrasahSimpleUI && (
-            <div className="flex items-center justify-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg mb-2">
-              <Button
-                type="button"
-                variant={useSimpleForm ? "default" : "outline"}
-                size="sm"
-                onClick={() => setUseSimpleForm(true)}
-                className={useSimpleForm ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-              >
-                সহজ ফর্ম
-              </Button>
-              <Button
-                type="button"
-                variant={!useSimpleForm ? "default" : "outline"}
-                size="sm"
-                onClick={() => setUseSimpleForm(false)}
-                className={!useSimpleForm ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-              >
-                সম্পূর্ণ ফর্ম
-              </Button>
-            </div>
-          )}
-          
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Simplified Madrasah Form */}
-            {isMadrasahSimpleUI && useSimpleForm ? (
+            {/* Enhanced Sohoj Form */}
+            {isMadrasahSimpleUI ? (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="add_name" className="text-base font-semibold">ছাত্রের নাম *</Label>
@@ -2338,298 +2313,9 @@ const StudentList = () => {
                 </details>
               </div>
             ) : (
-              /* Full Form */
-              <>
-                {/* Photo Upload Section */}
-                <div className="flex flex-col items-center space-y-3 pb-4 border-b">
-                  <div className="relative">
-                    {photoPreview ? (
-                      <img 
-                        src={photoPreview} 
-                        alt="Student" 
-                        className="w-24 h-24 rounded-full object-cover border-4 border-emerald-100"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-4 border-gray-200">
-                        <Camera className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <Label htmlFor="student-photo" className="cursor-pointer">
-                    <div className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700">
-                      <Camera className="h-4 w-4" />
-                      <span>{photoPreview ? 'ছবি পরিবর্তন' : 'ছবি আপলোড'}</span>
-                    </div>
-                    <Input
-                      id="student-photo"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                  </Label>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="add_admission_no">ভর্তি নম্বর *</Label>
-                    <Input
-                      id="add_admission_no"
-                      value={formData.admission_no}
-                      onChange={(e) => setFormData({...formData, admission_no: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="add_roll_no">রোল নম্বর *</Label>
-                    <Input
-                      id="add_roll_no"
-                      value={formData.roll_no}
-                      onChange={(e) => setFormData({...formData, roll_no: e.target.value})}
-                  required
-                />
+              <div className="text-center text-muted-foreground py-4">
+                <p>সহজ ফর্ম শুধুমাত্র মাদ্রাসা মোডে উপলব্ধ।</p>
               </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="add_name">পূর্ণ নাম *</Label>
-                <Input
-                  id="add_name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_father_name">পিতার নাম *</Label>
-                <Input
-                  id="add_father_name"
-                  value={formData.father_name}
-                  onChange={(e) => setFormData({...formData, father_name: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_father_phone">পিতার ফোন</Label>
-                <Input
-                  id="add_father_phone"
-                  value={formData.father_phone}
-                  onChange={(e) => setFormData({...formData, father_phone: e.target.value})}
-                  placeholder="পিতার ফোন নম্বর"
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_father_whatsapp">পিতার হোয়াটসঅ্যাপ</Label>
-                <Input
-                  id="add_father_whatsapp"
-                  value={formData.father_whatsapp}
-                  onChange={(e) => setFormData({...formData, father_whatsapp: e.target.value})}
-                  placeholder="পিতার হোয়াটসঅ্যাপ নম্বর"
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_mother_name">মাতার নাম *</Label>
-                <Input
-                  id="add_mother_name"
-                  value={formData.mother_name}
-                  onChange={(e) => setFormData({...formData, mother_name: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_mother_phone">মাতার ফোন</Label>
-                <Input
-                  id="add_mother_phone"
-                  value={formData.mother_phone}
-                  onChange={(e) => setFormData({...formData, mother_phone: e.target.value})}
-                  placeholder="মাতার ফোন নম্বর"
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_mother_whatsapp">মাতার হোয়াটসঅ্যাপ</Label>
-                <Input
-                  id="add_mother_whatsapp"
-                  value={formData.mother_whatsapp}
-                  onChange={(e) => setFormData({...formData, mother_whatsapp: e.target.value})}
-                  placeholder="মাতার হোয়াটসঅ্যাপ নম্বর"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label>জন্ম তারিখ *</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Select value={birthYear} onValueChange={(value) => handleDateChange('year', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="বছর" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getYearRange().map((year) => (
-                          <SelectItem key={year} value={year.toString()}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Select value={birthMonth} onValueChange={(value) => handleDateChange('month', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="মাস" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {months.map((month) => (
-                          <SelectItem key={month.value} value={month.value}>
-                            {month.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Select value={birthDay} onValueChange={(value) => handleDateChange('day', value)} disabled={!birthYear || !birthMonth}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="দিন" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: getDaysInMonth(birthYear, birthMonth) }, (_, i) => i + 1).map((day) => {
-                          const dayValue = day.toString().padStart(2, '0');
-                          return (
-                            <SelectItem key={day} value={dayValue}>
-                              {day}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {dateError && (
-                  <p className="text-sm text-red-500 mt-1">{dateError}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="add_gender">লিঙ্গ *</Label>
-                <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">পুরুষ</SelectItem>
-                    <SelectItem value="Female">মহিলা</SelectItem>
-                    <SelectItem value="Other">অন্যান্য</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="add_class_id">মারহালা *</Label>
-                <Select 
-                  value={formData.class_id} 
-                  onValueChange={(value) => {
-                    setFormData({...formData, class_id: value, section_id: ''});
-                    fetchSections(value);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="মারহালা নির্বাচন করুন" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classes.length === 0 ? (
-                      <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                        কোনো মারহালা পাওয়া যায়নি। প্রথমে মারহালা ব্যবস্থাপনায় মারহালা যোগ করুন।
-                      </div>
-                    ) : (
-                      classes.map((cls) => (
-                        <SelectItem key={cls.id} value={cls.id}>
-                          {cls.name} ({cls.standard})
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="add_section_id">শাখা *</Label>
-                <Select 
-                  value={formData.section_id} 
-                  onValueChange={(value) => setFormData({...formData, section_id: value})}
-                  disabled={!formData.class_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={formData.class_id ? "শাখা নির্বাচন করুন" : "প্রথমে মারহালা নির্বাচন করুন"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {!formData.class_id ? (
-                      <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                        প্রথমে মারহালা নির্বাচন করুন
-                      </div>
-                    ) : sections.length === 0 ? (
-                      <div className="px-2 py-6 flex flex-col items-center gap-3">
-                        <p className="text-sm text-muted-foreground text-center">
-                          এই মারহালায় কোনো শাখা পাওয়া যায়নি।
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
-                          onClick={() => setIsQuickAddSectionModalOpen(true)}
-                        >
-                          + শাখা যোগ করুন
-                        </Button>
-                      </div>
-                    ) : (
-                      sections.map((section) => (
-                        <SelectItem key={section.id} value={section.id}>
-                          {section.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="add_phone">ফোন নম্বর *</Label>
-                <Input
-                  id="add_phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_email">ইমেইল</Label>
-                <Input
-                  id="add_email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="add_address">ঠিকানা *</Label>
-                <Input
-                  id="add_address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_guardian_name">অভিভাবকের নাম *</Label>
-                <Input
-                  id="add_guardian_name"
-                  value={formData.guardian_name}
-                  onChange={(e) => setFormData({...formData, guardian_name: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="add_guardian_phone">অভিভাবকের ফোন *</Label>
-                <Input
-                  id="add_guardian_phone"
-                  value={formData.guardian_phone}
-                  onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
-                  required
-                />
-              </div>
-            </div>
-              </>
             )}
             <DialogFooter>
               <Button
