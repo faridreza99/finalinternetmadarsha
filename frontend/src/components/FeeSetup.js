@@ -131,7 +131,7 @@ const FeeSetup = () => {
   const fetchMarhalas = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/madrasha/marhalas`, {
+      const response = await axios.get(`${API}/marhalas`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMarhalas(response.data || []);
@@ -256,7 +256,11 @@ const FeeSetup = () => {
 
   const getClassLabel = (classValue) => {
     if (classValue === 'all') return isMadrasahSimpleUI ? 'সকল মারহালা' : 'All Classes';
-    const found = classes.find(c => c.name === classValue || c.class_name === classValue);
+    if (isMadrasahSimpleUI) {
+      const marhala = marhalas.find(m => m.id === classValue);
+      if (marhala) return marhala.name_bn || marhala.name;
+    }
+    const found = classes.find(c => c.id === classValue || c._id === classValue || c.name === classValue || c.class_name === classValue);
     return found?.display_name || found?.name || classValue;
   };
 
@@ -463,7 +467,7 @@ const FeeSetup = () => {
                   {isMadrasahSimpleUI ? (
                     marhalas.map((m) => (
                       <SelectItem key={m.id} value={m.id}>
-                        {m.name}
+                        {m.name_bn || m.name}
                       </SelectItem>
                     ))
                   ) : (
