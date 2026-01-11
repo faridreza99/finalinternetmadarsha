@@ -14783,7 +14783,7 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
             if report_data.get("student_details"):
                 rows = ""
                 for record in report_data["student_details"]:
-                    rows += f"<tr><td>{str(record['student_id'])[:15]}</td><td>{record['student_name'][:25]}</td><td>{record.get('class_name', '')[:15]}</td><td>{record.get('section_name', '')[:10]}</td><td>{record['status'].title()}</td></tr>"
+                    rows += f"<tr><td>{str(record.get('student_id', '') or '')[:15]}</td><td>{str(record.get('student_name', '') or '')[:25]}</td><td>{str(record.get('class_name', '') or '')[:15]}</td><td>{str(record.get('section_name', '') or '')[:10]}</td><td>{str(record.get('status', 'unknown') or 'unknown').title()}</td></tr>"
                 tables_html += f"""
                 <div class="section-title">STUDENT ATTENDANCE / শিক্ষার্থী উপস্থিতি</div>
                 <table class="data-table">
