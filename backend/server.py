@@ -449,6 +449,9 @@ class Student(BaseModel):
     semester_id: Optional[str] = None  # Primary semester for Madrasha enrollment
     marhala_id: Optional[str] = None   # Academic stage (Dakhil, Alim, Fazil)
     department_id: Optional[str] = None  # Department/Jamaat
+    marhala_name: Optional[str] = None  # Populated from marhalas collection
+    department_name: Optional[str] = None  # Populated from departments collection
+    semester_name: Optional[str] = None  # Populated from academic_semesters collection
     phone: str
     email: Optional[str] = None
     address: Optional[str] = None
@@ -477,6 +480,9 @@ class StudentCreate(BaseModel):
     semester_id: Optional[str] = None  # Primary semester for Madrasha enrollment
     marhala_id: Optional[str] = None   # Academic stage (Dakhil, Alim, Fazil)
     department_id: Optional[str] = None  # Department/Jamaat
+    marhala_name: Optional[str] = None  # Populated from marhalas collection
+    department_name: Optional[str] = None  # Populated from departments collection
+    semester_name: Optional[str] = None  # Populated from academic_semesters collection
     phone: str
     email: Optional[str] = None
     address: Optional[str] = None
@@ -507,6 +513,9 @@ class StudentCreateResponse(BaseModel):
     semester_id: Optional[str] = None  # Primary semester for Madrasha enrollment
     marhala_id: Optional[str] = None   # Academic stage (Dakhil, Alim, Fazil)
     department_id: Optional[str] = None  # Department/Jamaat
+    marhala_name: Optional[str] = None  # Populated from marhalas collection
+    department_name: Optional[str] = None  # Populated from departments collection
+    semester_name: Optional[str] = None  # Populated from academic_semesters collection
     phone: str
     email: Optional[str] = None
     address: Optional[str] = None
@@ -3877,6 +3886,31 @@ async def get_students(
                         {"id": {"$in": student_ids}},
                         {"$set": {"section_id": section_id}}
                     )
+    
+    # Fetch academic hierarchy names for all students
+    marhala_ids = list(set([s.get("marhala_id") for s in students if s.get("marhala_id")]))
+    dept_ids = list(set([s.get("department_id") for s in students if s.get("department_id")]))
+    semester_ids = list(set([s.get("semester_id") for s in students if s.get("semester_id")]))
+    
+    marhala_lookup = {}
+    dept_lookup = {}
+    semester_lookup = {}
+    
+    if marhala_ids:
+        marhalas = await db.marhalas.find({"id": {"$in": marhala_ids}}).to_list(1000)
+        marhala_lookup = {m.get("id"): m.get("name", "") for m in marhalas}
+    if dept_ids:
+        depts = await db.departments.find({"id": {"$in": dept_ids}}).to_list(1000)
+        dept_lookup = {d.get("id"): d.get("name", "") for d in depts}
+    if semester_ids:
+        semesters = await db.academic_semesters.find({"id": {"$in": semester_ids}}).to_list(1000)
+        semester_lookup = {s.get("id"): s.get("name", "") for s in semesters}
+    
+    # Add hierarchy names to each student
+    for student in students:
+        student["marhala_name"] = marhala_lookup.get(student.get("marhala_id", ""), "")
+        student["department_name"] = dept_lookup.get(student.get("department_id", ""), "")
+        student["semester_name"] = semester_lookup.get(student.get("semester_id", ""), "")
     
     # Return paginated response if pagination was explicitly requested, otherwise return array for backward compatibility
     student_list = [Student(**student) for student in students]
