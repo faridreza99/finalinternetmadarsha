@@ -325,47 +325,21 @@ const MarkStudentAttendance = () => {
 };
 
 const StudentAttendanceReport = () => {
-  const [classes, setClasses] = useState([]);
-  const [sections, setSections] = useState([]);
-  const [selectedClass, setSelectedClass] = useState('all');
-  const [selectedSection, setSelectedSection] = useState('all');
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  useEffect(() => {
-    if (selectedClass && selectedClass !== 'all') {
-      fetchSections(selectedClass);
-    }
-  }, [selectedClass]);
-
-  useEffect(() => {
-    fetchSummary();
-  }, [selectedDate, selectedClass, selectedSection]);
-
-  const fetchClasses = async () => {
-    try {
-      const response = await axios.get(`${API}/classes`);
-      setClasses(response.data);
-    } catch (error) {
-      toast.error('মারহালা লোড করতে ব্যর্থ');
-    }
+  const handleHierarchyChange = (selection) => {
+    const normalizeId = (id) => (id && id !== 'all') ? id : '';
+    setSelectedMarhalaId(normalizeId(selection.marhala_id));
+    setSelectedDepartmentId(normalizeId(selection.department_id));
+    setSelectedSemesterId(normalizeId(selection.semester_id));
   };
 
-  const fetchSections = async (classId) => {
-    try {
-      const response = await axios.get(`${API}/sections?class_id=${classId}`);
-      setSections(response.data);
-    } catch (error) {
-      toast.error('শাখা লোড করতে ব্যর্থ');
-    }
-  };
-
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -373,11 +347,12 @@ const StudentAttendanceReport = () => {
         type: 'student'
       };
       
-      if (selectedClass !== 'all') {
-        params.class_id = selectedClass;
-      }
-      if (selectedSection !== 'all') {
-        params.section_id = selectedSection;
+      if (selectedSemesterId && selectedSemesterId !== 'all') {
+        params.semester_id = selectedSemesterId;
+      } else if (selectedDepartmentId && selectedDepartmentId !== 'all') {
+        params.department_id = selectedDepartmentId;
+      } else if (selectedMarhalaId && selectedMarhalaId !== 'all') {
+        params.marhala_id = selectedMarhalaId;
       }
 
       const response = await axios.get(`${API}/attendance/summary`, { params });
@@ -387,7 +362,11 @@ const StudentAttendanceReport = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate, selectedMarhalaId, selectedDepartmentId, selectedSemesterId]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
 
   const exportReport = async (format) => {
     try {
@@ -397,11 +376,12 @@ const StudentAttendanceReport = () => {
         type: 'student'
       };
       
-      if (selectedClass !== 'all') {
-        params.class_id = selectedClass;
-      }
-      if (selectedSection !== 'all') {
-        params.section_id = selectedSection;
+      if (selectedSemesterId && selectedSemesterId !== 'all') {
+        params.semester_id = selectedSemesterId;
+      } else if (selectedDepartmentId && selectedDepartmentId !== 'all') {
+        params.department_id = selectedDepartmentId;
+      } else if (selectedMarhalaId && selectedMarhalaId !== 'all') {
+        params.marhala_id = selectedMarhalaId;
       }
 
       const response = await axios.get(`${API}/reports/attendance/student-attendance`, {
@@ -447,7 +427,7 @@ const StudentAttendanceReport = () => {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">তারিখ</label>
               <input
@@ -458,34 +438,16 @@ const StudentAttendanceReport = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">মারহালা</label>
-              <select
-                value={selectedClass}
-                onChange={(e) => {
-                  setSelectedClass(e.target.value);
-                  setSelectedSection('all');
-                }}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="all">সকল মারহালা</option>
-                {classes.map(cls => (
-                  <option key={cls.id} value={cls.id}>{cls.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">শাখা</label>
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-                disabled={selectedClass === 'all'}
-              >
-                <option value="all">সকল শাখা</option>
-                {sections.map(section => (
-                  <option key={section.id} value={section.id}>{section.name}</option>
-                ))}
-              </select>
+              <AcademicHierarchySelector
+                onSelectionChange={handleHierarchyChange}
+                selectedMarhalaId={selectedMarhalaId}
+                selectedDepartmentId={selectedDepartmentId}
+                selectedSemesterId={selectedSemesterId}
+                showLabels={true}
+                showAllOption={true}
+                allOptionLabel="সকল"
+                inline={true}
+              />
             </div>
           </div>
         </CardContent>
