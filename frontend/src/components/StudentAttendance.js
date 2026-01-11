@@ -8,52 +8,37 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Check, X, Users, UserCheck, UserX, Calendar, Download, FileSpreadsheet, Clock, AlertTriangle, Brain, Settings, Edit, History } from 'lucide-react';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const API = process.env.REACT_APP_API_URL || '/api';
 
 const MarkStudentAttendance = () => {
   const [students, setStudents] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [sections, setSections] = useState([]);
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  useEffect(() => {
-    if (selectedClass) {
-      fetchSections(selectedClass);
-    }
-  }, [selectedClass]);
-
-  useEffect(() => {
-    if (selectedClass && selectedSection) {
+    if (selectedSemesterId) {
       fetchStudents();
       fetchExistingAttendance();
+    } else {
+      setStudents([]);
+      setAttendance({});
     }
-  }, [selectedClass, selectedSection, selectedDate]);
+  }, [selectedSemesterId, selectedDate]);
 
-  const fetchClasses = async () => {
-    try {
-      const response = await axios.get(`${API}/classes`);
-      setClasses(response.data);
-    } catch (error) {
-      toast.error('মারহালা লোড করতে ব্যর্থ');
-    }
-  };
-
-  const fetchSections = async (classId) => {
-    try {
-      const response = await axios.get(`${API}/sections?class_id=${classId}`);
-      setSections(response.data);
-    } catch (error) {
-      toast.error('শাখা লোড করতে ব্যর্থ');
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id);
+    setSelectedDepartmentId(selection.department_id);
+    setSelectedSemesterId(selection.semester_id);
+    if (!selection.semester_id) {
+      setStudents([]);
+      setAttendance({});
     }
   };
 
@@ -62,12 +47,10 @@ const MarkStudentAttendance = () => {
       setLoading(true);
       const response = await axios.get(`${API}/students`, {
         params: {
-          class_id: selectedClass,
-          section_id: selectedSection,
+          semester_id: selectedSemesterId,
           is_active: true
         }
       });
-      // Deduplicate students by ID to prevent duplicates
       const studentData = response.data || [];
       const uniqueStudents = studentData.filter((student, index, self) =>
         index === self.findIndex((s) => s.id === student.id)
@@ -86,8 +69,7 @@ const MarkStudentAttendance = () => {
         params: {
           date: selectedDate,
           type: 'student',
-          class_id: selectedClass,
-          section_id: selectedSection
+          semester_id: selectedSemesterId
         }
       });
       
@@ -126,9 +108,6 @@ const MarkStudentAttendance = () => {
     try {
       setSaving(true);
       
-      const selectedClassObj = classes.find(c => c.id === selectedClass);
-      const selectedSectionObj = sections.find(s => s.id === selectedSection);
-      
       const records = Object.entries(attendance).map(([studentId, status]) => {
         const student = students.find(s => s.id === studentId);
         return {
@@ -137,16 +116,16 @@ const MarkStudentAttendance = () => {
           status: status,
           date: selectedDate,
           type: 'student',
-          class_id: selectedClass,
-          section_id: selectedSection,
-          class_name: selectedClassObj?.name || '',
-          section_name: selectedSectionObj?.name || ''
+          semester_id: selectedSemesterId,
+          marhala_id: selectedMarhalaId,
+          department_id: selectedDepartmentId
         };
       });
 
       await axios.post(`${API}/attendance/bulk`, {
         date: selectedDate,
         type: 'student',
+        semester_id: selectedSemesterId,
         records: records
       });
 
@@ -173,7 +152,7 @@ const MarkStudentAttendance = () => {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">তারিখ</label>
               <input
@@ -183,42 +162,21 @@ const MarkStudentAttendance = () => {
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">মারহালা</label>
-              <select
-                value={selectedClass}
-                onChange={(e) => {
-                  setSelectedClass(e.target.value);
-                  setSelectedSection('');
-                  setStudents([]);
-                }}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="">মারহালা নির্বাচন করুন</option>
-                {classes.map(cls => (
-                  <option key={cls.id} value={cls.id}>{cls.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">শাখা</label>
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-                disabled={!selectedClass}
-              >
-                <option value="">শাখা নির্বাচন করুন</option>
-                {sections.map(section => (
-                  <option key={section.id} value={section.id}>{section.name}</option>
-                ))}
-              </select>
+            <div className="md:col-span-3">
+              <AcademicHierarchySelector
+                onSelectionChange={handleHierarchyChange}
+                selectedMarhalaId={selectedMarhalaId}
+                selectedDepartmentId={selectedDepartmentId}
+                selectedSemesterId={selectedSemesterId}
+                showLabels={true}
+                inline={true}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {selectedClass && selectedSection && (
+      {selectedSemesterId && (
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
