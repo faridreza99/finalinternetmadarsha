@@ -173,7 +173,8 @@ const Homework = () => {
       const response = await axios.get(`${API}/academic-hierarchy`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAcademicHierarchy(response.data || { marhalas: [], departments: [], semesters: [] });
+      const hierarchy = response.data?.flat || response.data || { marhalas: [], departments: [], semesters: [] };
+      setAcademicHierarchy(hierarchy);
     } catch (error) {
       console.error('Failed to fetch academic hierarchy:', error);
       setAcademicHierarchy({ marhalas: [], departments: [], semesters: [] });

@@ -205,7 +205,8 @@ const StudentList = () => {
       setStudents(studentsRes.data);
       setClasses(classesRes.data);
       setSemesters(semestersRes.data?.semesters || []);
-      setAcademicHierarchy(hierarchyRes.data || { marhalas: [], departments: [], semesters: [] });
+      const hierarchy = hierarchyRes.data?.flat || hierarchyRes.data || { marhalas: [], departments: [], semesters: [] };
+      setAcademicHierarchy(hierarchy);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       toast.error('Failed to load data');
