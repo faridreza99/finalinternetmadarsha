@@ -658,13 +658,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           path: "/system-settings",
           roles: ["super_admin"],
         },
-        {
-          title: "School Branding",
-          madrasahTitle: "ব্র্যান্ডিং",
-          path: "/school-branding",
-          roles: ["super_admin", "admin"],
-          hideInMadrasah: true,
-        },
+
         {
           title: "Vehicle/Transport",
           path: "/transport/routes",

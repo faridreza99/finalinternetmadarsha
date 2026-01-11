@@ -49,7 +49,6 @@ const AcademicCMS = lazy(() => import("./components/AcademicCMS"));
 const QuizTool = lazy(() => import("./components/QuizTool"));
 const TestGenerator = lazy(() => import("./components/TestGenerator"));
 const QuestionPaperBuilder = lazy(() => import("./components/QuestionPaperBuilder"));
-const SchoolBranding = lazy(() => import("./components/SchoolBranding"));
 const AISummary = lazy(() => import("./components/AISummary"));
 const AINotes = lazy(() => import("./components/AINotes"));
 const Notifications = lazy(() => import("./components/Notifications"));
@@ -741,14 +740,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path="/school-branding"
-                  element={
-                    <ProtectedRoute>
-                      <SchoolBranding />
-                    </ProtectedRoute>
-                  }
-                />
+
                 <Route
                   path="/subscription-history"
                   element={

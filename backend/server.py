@@ -3668,24 +3668,7 @@ async def update_institution(
         "tenant_id": current_user.tenant_id,
         "is_active": True
     })
-    
-    # Sync to school_branding collection for sidebar/dashboard
-    if updated_institution:
-        branding_update = {
-            "school_name": updated_institution.get("name", ""),
-            "school_name_bn": updated_institution.get("name", ""),
-            "school_address": updated_institution.get("address", ""),
-            "school_phone": updated_institution.get("phone", ""),
-            "school_email": updated_institution.get("email", ""),
-            "logo_url": updated_institution.get("logo_url", ""),
-            "muhtamim_name": updated_institution.get("principal_name", ""),
-            "updated_at": datetime.utcnow()
-        }
-        await db.school_branding.update_one(
-            {"tenant_id": current_user.tenant_id},
-            {"$set": branding_update},
-            upsert=True
-        )
+
     
     return Institution(**updated_institution)
 
@@ -13538,17 +13521,18 @@ async def generate_custom_transport_report(
 
 async def get_school_branding_for_reports(tenant_id: str) -> dict:
     """
-    Fetch school branding settings for report generation.
+    Fetch school branding settings for report generation from institutions collection.
     Returns complete branding with logo path, colors, and contact info.
+    Uses institution settings from সহজ সেটিংস (Simple Settings) as the single source of truth.
     """
     try:
-        branding_collection = db["school_branding"]
-        branding = await branding_collection.find_one({"tenant_id": tenant_id})
+        # Fetch from institutions collection (সহজ সেটিংস)
+        institution = await db.institutions.find_one({"tenant_id": tenant_id, "is_active": True})
         
-        if not branding:
+        if not institution:
             return {
-                "school_name": "School ERP",
-                "tagline": "Smart School Management System",
+                "school_name": "ইন্টারনেট মাদ্রাসা",
+                "tagline": "",
                 "logo_url": None,
                 "logo_path": None,
                 "primary_color": "#10B981",
@@ -13561,11 +13545,12 @@ async def get_school_branding_for_reports(tenant_id: str) -> dict:
                 "eiin_number": "",
                 "established_year": "",
                 "principal_name": "",
+                "muhtamim_name": "",
                 "principal_signature_url": None
             }
         
         logo_path = None
-        logo_url = branding.get("logo_url")
+        logo_url = institution.get("logo_url")
         logo_path = logo_url  # Use logo_url as logo_path for PDF header
         if logo_url:
             if logo_url.startswith("data:image"):
@@ -13585,26 +13570,27 @@ async def get_school_branding_for_reports(tenant_id: str) -> dict:
                 logo_path = logo_url if os.path.exists(logo_url) else None
         
         return {
-            "school_name": branding.get("school_name", "School ERP"),
-            "tagline": branding.get("tagline", ""),
+            "school_name": institution.get("school_name") or institution.get("name", "ইন্টারনেট মাদ্রাসা"),
+            "tagline": institution.get("tagline", ""),
             "logo_url": logo_url,
             "logo_path": logo_path,
-            "primary_color": branding.get("primary_color", "#10B981"),
-            "secondary_color": branding.get("secondary_color", "#3B82F6"),
-            "accent_color": branding.get("accent_color", "#8B5CF6"),
-            "address": branding.get("address", ""),
-            "phone": branding.get("phone", ""),
-            "email": branding.get("email", ""),
-            "website": branding.get("website", ""),
-            "eiin_number": branding.get("eiin_number", ""),
-            "established_year": branding.get("established_year", ""),
-            "principal_name": branding.get("principal_name", ""),
-            "principal_signature_url": branding.get("principal_signature_url")
+            "primary_color": institution.get("primary_color", "#10B981"),
+            "secondary_color": institution.get("secondary_color", "#3B82F6"),
+            "accent_color": institution.get("accent_color", "#8B5CF6"),
+            "address": institution.get("address", ""),
+            "phone": institution.get("phone", ""),
+            "email": institution.get("email", ""),
+            "website": institution.get("website", ""),
+            "eiin_number": institution.get("eiin_number") or institution.get("institution_code", ""),
+            "established_year": institution.get("established_year", ""),
+            "principal_name": institution.get("principal_name", ""),
+            "muhtamim_name": institution.get("principal_name", ""),
+            "principal_signature_url": institution.get("principal_signature_url")
         }
     except Exception as e:
         logging.error(f"Error fetching school branding: {e}")
         return {
-            "school_name": "School ERP",
+            "school_name": "ইন্টারনেট মাদ্রাসা",
             "logo_path": None,
             "primary_color": "#10B981",
             "secondary_color": "#3B82F6",
@@ -29128,17 +29114,15 @@ async def get_printable_paper(
     if not paper:
         raise HTTPException(status_code=404, detail="Question paper not found")
     
-    # Get school branding
-    branding = await db.school_branding.find_one({"tenant_id": current_user.tenant_id})
-    if not branding:
-        # Default branding
-        branding = {
-            "school_name_bn": "বিদ্যালয়ের নাম",
-            "school_name_en": "School Name",
-            "logo_url": None,
-            "primary_color": "#1e40af",
-            "secondary_color": "#3b82f6"
-        }
+    # Get school branding from institutions (সহজ সেটিংস)
+    institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id, "is_active": True})
+    branding = {
+        "school_name_bn": institution.get("school_name") if institution else "বিদ্যালয়ের নাম",
+        "school_name_en": institution.get("school_name") if institution else "School Name",
+        "logo_url": institution.get("logo_url") if institution else None,
+        "primary_color": institution.get("primary_color", "#1e40af") if institution else "#1e40af",
+        "secondary_color": institution.get("secondary_color", "#3b82f6") if institution else "#3b82f6"
+    }
     
     # Get institution info
     institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
@@ -29562,18 +29546,18 @@ async def get_school_branding(
     tenant_id: str = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get school branding settings"""
+    """Get school branding settings from institutions collection (সহজ সেটিংস)"""
     try:
         tid = tenant_id or current_user.tenant_id
-        branding_collection = db["school_branding"]
         
-        branding = await branding_collection.find_one({"tenant_id": tid})
+        # Fetch from institutions collection (সহজ সেটিংস as single source of truth)
+        institution = await db.institutions.find_one({"tenant_id": tid, "is_active": True})
         
-        if not branding:
+        if not institution:
             return {
                 "tenant_id": tid,
-                "school_name": "School ERP",
-                "tagline": "Smart School Management System",
+                "school_name": "ইন্টারনেট মাদ্রাসা",
+                "tagline": "",
                 "logo_url": None,
                 "favicon_url": None,
                 "primary_color": "#10B981",
@@ -29589,44 +29573,50 @@ async def get_school_branding(
                 "principal_signature_url": None
             }
         
-        branding.pop("_id", None)
-        return branding
+        return {
+            "tenant_id": tid,
+            "school_name": institution.get("school_name") or institution.get("name", "ইন্টারনেট মাদ্রাসা"),
+            "tagline": institution.get("tagline", ""),
+            "logo_url": institution.get("logo_url"),
+            "favicon_url": institution.get("favicon_url"),
+            "primary_color": institution.get("primary_color", "#10B981"),
+            "secondary_color": institution.get("secondary_color", "#3B82F6"),
+            "accent_color": institution.get("accent_color", "#8B5CF6"),
+            "address": institution.get("address", ""),
+            "phone": institution.get("phone", ""),
+            "email": institution.get("email", ""),
+            "website": institution.get("website", ""),
+            "eiin_number": institution.get("eiin_number") or institution.get("institution_code", ""),
+            "established_year": institution.get("established_year", ""),
+            "principal_name": institution.get("principal_name", ""),
+            "principal_signature_url": institution.get("principal_signature_url")
+        }
     except Exception as e:
         logger.error(f"School branding fetch failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/school-branding/public/{tenant_code}")
 async def get_public_school_branding(tenant_code: str):
-    """Get public school branding for login page (no auth required)"""
+    """Get public school branding for login page from institutions (no auth required)"""
     try:
-        branding_collection = db["school_branding"]
+        # Fetch from institutions collection (সহজ সেটিংস)
+        institution = await db.institutions.find_one({"tenant_id": tenant_code, "is_active": True})
         
-        branding = await branding_collection.find_one({"tenant_id": tenant_code})
-        
-        if not branding:
-            school = await db.schools.find_one({"tenant_id": tenant_code})
-            if school:
-                return {
-                    "school_name": school.get("name", "School ERP"),
-                    "tagline": school.get("tagline", "Smart School Management System"),
-                    "logo_url": school.get("logo_url"),
-                    "primary_color": "#10B981",
-                    "tenant_id": tenant_code
-                }
+        if not institution:
             return {
-                "school_name": "School ERP",
-                "tagline": "Smart School Management System",
+                "school_name": "ইন্টারনেট মাদ্রাসা",
+                "tagline": "",
                 "logo_url": None,
                 "primary_color": "#10B981",
                 "tenant_id": tenant_code
             }
         
         return {
-            "school_name": branding.get("school_name", "School ERP"),
-            "tagline": branding.get("tagline", "Smart School Management System"),
-            "logo_url": branding.get("logo_url"),
-            "primary_color": branding.get("primary_color", "#10B981"),
-            "favicon_url": branding.get("favicon_url"),
+            "school_name": institution.get("school_name") or institution.get("name", "ইন্টারনেট মাদ্রাসা"),
+            "tagline": institution.get("tagline", ""),
+            "logo_url": institution.get("logo_url"),
+            "primary_color": institution.get("primary_color", "#10B981"),
+            "favicon_url": institution.get("favicon_url"),
             "tenant_id": tenant_code
         }
     except Exception as e:
@@ -29638,17 +29628,16 @@ async def update_school_branding(
     data: dict,
     current_user: User = Depends(get_current_user)
 ):
-    """Update school branding settings"""
+    """Update school branding settings - saves to institutions collection (সহজ সেটিংস)"""
     if current_user.role not in ["super_admin", "admin"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     try:
         tenant_id = current_user.tenant_id
-        branding_collection = db["school_branding"]
         
-        branding_data = {
-            "tenant_id": tenant_id,
-            "school_name": data.get("school_name", "School ERP"),
+        # Update institutions collection (সহজ সেটিংস as single source of truth)
+        branding_update = {
+            "school_name": data.get("school_name", "ইন্টারনেট মাদ্রাসা"),
             "tagline": data.get("tagline", ""),
             "logo_url": data.get("logo_url"),
             "favicon_url": data.get("favicon_url"),
@@ -29663,18 +29652,26 @@ async def update_school_branding(
             "established_year": data.get("established_year", ""),
             "principal_name": data.get("principal_name", ""),
             "principal_signature_url": data.get("principal_signature_url"),
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow(),
             "updated_by": current_user.id
         }
         
-        await branding_collection.update_one(
+        # Include tenant_id and is_active in the branding update for upsert
+        branding_update["tenant_id"] = tenant_id
+        branding_update["is_active"] = True
+        
+        # Upsert to ensure branding can be saved even for new tenants
+        await db.institutions.update_one(
             {"tenant_id": tenant_id},
-            {"$set": branding_data},
+            {
+                "$set": branding_update,
+                "$setOnInsert": {"created_at": datetime.utcnow()}
+            },
             upsert=True
         )
         
         logger.info(f"School branding updated by {current_user.email}")
-        return {"message": "School branding updated successfully", "branding": branding_data}
+        return {"message": "School branding updated successfully", "branding": branding_update}
     except Exception as e:
         logger.error(f"School branding update failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -31744,14 +31741,13 @@ async def generate_fee_receipt_pdf(
             "tenant_id": current_user.tenant_id
         })
         
-        # Get school branding
-        branding = await db.school_branding.find_one({"tenant_id": current_user.tenant_id})
-        institution = await db.institution.find_one({"tenant_id": current_user.tenant_id})
+        # Get school branding from institutions (সহজ সেটিংস)
+        institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id, "is_active": True})
         
-        school_name = branding.get("school_name") if branding else (institution.get("name") if institution else "School ERP")
-        school_address = branding.get("address") if branding else (institution.get("address") if institution else "")
-        school_phone = branding.get("phone") if branding else (institution.get("phone") if institution else "")
-        school_email = branding.get("email") if branding else (institution.get("email") if institution else "")
+        school_name = institution.get("school_name") or institution.get("name", "ইন্টারনেট মাদ্রাসা") if institution else "ইন্টারনেট মাদ্রাসা"
+        school_address = institution.get("address", "") if institution else ""
+        school_phone = institution.get("phone", "") if institution else ""
+        school_email = institution.get("email", "") if institution else ""
         
         # Get currency
         currency_code = institution.get("currency", "BDT") if institution else "BDT"

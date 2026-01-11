@@ -144,29 +144,18 @@ payroll_router = APIRouter(prefix="/payroll", tags=["Payroll Management"])
 # ================================
 
 async def get_school_branding_for_reports(db, tenant_id: str) -> dict:
-    """Get school branding for PDF reports"""
-    branding = await db.school_branding.find_one({"tenant_id": tenant_id})
-    if branding:
-        return {
-            "school_name": branding.get("school_name", "School ERP"),
-            "address": branding.get("address", ""),
-            "phone": branding.get("phone", ""),
-            "email": branding.get("email", ""),
-            "logo_path": branding.get("logo_url", None),
-            "primary_color": branding.get("primary_color", "#1e40af"),
-            "secondary_color": branding.get("secondary_color", "#3b82f6")
-        }
-    
-    institution = await db.institution.find_one({"tenant_id": tenant_id})
+    """Get school branding for PDF reports from institutions collection (সহজ সেটিংস)"""
+    # Use institutions as the single source of truth
+    institution = await db.institutions.find_one({"tenant_id": tenant_id, "is_active": True})
     if institution:
         return {
-            "school_name": institution.get("name", "School ERP"),
+            "school_name": institution.get("school_name") or institution.get("name", "ইন্টারনেট মাদ্রাসা"),
             "address": institution.get("address", ""),
             "phone": institution.get("phone", ""),
             "email": institution.get("email", ""),
             "logo_path": institution.get("logo_url", None),
-            "primary_color": "#1e40af",
-            "secondary_color": "#3b82f6"
+            "primary_color": institution.get("primary_color", "#1e40af"),
+            "secondary_color": institution.get("secondary_color", "#3b82f6")
         }
     
     return {
@@ -181,7 +170,7 @@ async def get_school_branding_for_reports(db, tenant_id: str) -> dict:
 
 async def get_currency_symbol(db, tenant_id: str) -> str:
     """Get currency symbol from institution settings - PDF-safe text format"""
-    institution = await db.institution.find_one({"tenant_id": tenant_id})
+    institution = await db.institutions.find_one({"tenant_id": tenant_id})
     currency = institution.get("currency", "BDT") if institution else "BDT"
     
     # Use PDF-safe text representations to avoid font encoding issues

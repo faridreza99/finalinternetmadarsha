@@ -81,4 +81,4 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: React Native 0.81.5 with Expo SDK 54.
 - **Navigation**: React Navigation.
 - **Dependencies**: axios, @react-native-async-storage/async-storage, expo-linear-gradient, @react-native-picker/picker.
-- **API Integration**: Centralized API service layer with axios interceptors for JWT token and tenant ID.
+- **API Integration**: Centralized API service layer with axios interceptors for JWT token and tenant ID.    - **Consolidated Branding System**: Single source of truth for school branding via institutions collection (সহজ সেটিংস). All reports, PDFs, and frontend components read branding data from the institution settings. Removed separate SchoolBranding component and school_branding collection dependency.
