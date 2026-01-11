@@ -7057,6 +7057,20 @@ async def generate_student_attendance_report(
                 file_path = await generate_attendance_pdf_report("student_attendance", empty_report_data, current_user, filename)
                 return FileResponse(path=file_path, filename=f"{filename}.pdf", media_type="application/pdf", background=BackgroundTask(cleanup_temp_file, file_path))
         
+        # Fetch student academic hierarchy info for all person_ids
+        person_ids = list(set([r.get("person_id") for r in attendance_records if r.get("person_id")]))
+        students_cursor = await db.students.find({"id": {"$in": person_ids}}).to_list(10000)
+        student_lookup = {s.get("id"): s for s in students_cursor}
+        
+        # Fetch academic hierarchy names
+        semester_ids = list(set([s.get("semester_id") for s in students_cursor if s.get("semester_id")]))
+        dept_ids = list(set([s.get("department_id") for s in students_cursor if s.get("department_id")]))
+        marhala_ids = list(set([s.get("marhala_id") for s in students_cursor if s.get("marhala_id")]))
+        
+        semesters = {s.get("id"): s.get("name", "") for s in await db.academic_semesters.find({"id": {"$in": semester_ids}}).to_list(1000)}
+        departments = {d.get("id"): d.get("name", "") for d in await db.departments.find({"id": {"$in": dept_ids}}).to_list(1000)}
+        marhalas = {m.get("id"): m.get("name", "") for m in await db.marhalas.find({"id": {"$in": marhala_ids}}).to_list(1000)}
+        
         # Aggregate student statistics
         student_stats = {}
         class_stats = {}
@@ -7064,17 +7078,20 @@ async def generate_student_attendance_report(
         for record in attendance_records:
             try:
                 student_id = record.get("person_id", "")
+                student_info = student_lookup.get(student_id, {})
                 student_name = record.get("person_name", f"Student {student_id}")
-                class_name = record.get("class_name", "Unknown Class")
-                section_name = record.get("section_name", "Unknown Section")
+                marhala_name = marhalas.get(student_info.get("marhala_id", ""), "")
+                department_name = departments.get(student_info.get("department_id", ""), "")
+                semester_name = semesters.get(student_info.get("semester_id", ""), "")
                 status = record.get("status", "present")
                 
                 # Student statistics
                 if student_id not in student_stats:
                     student_stats[student_id] = {
                         "student_name": student_name,
-                        "class_name": class_name,
-                        "section_name": section_name,
+                        "marhala_name": marhala_name,
+                        "department_name": department_name,
+                        "semester_name": semester_name,
                         "status": status
                     }
                 
@@ -14812,11 +14829,11 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
             if report_data.get("student_details"):
                 rows = ""
                 for record in report_data["student_details"]:
-                    rows += f"<tr><td>{str(record.get('student_id', '') or '')[:15]}</td><td>{str(record.get('student_name', '') or '')[:25]}</td><td>{str(record.get('class_name', '') or '')[:15]}</td><td>{str(record.get('section_name', '') or '')[:10]}</td><td>{str(record.get('status', 'unknown') or 'unknown').title()}</td></tr>"
+                    rows += f"<tr><td>{str(record.get('student_id', '') or '')[:15]}</td><td>{str(record.get('student_name', '') or '')[:25]}</td><td>{str(record.get('marhala_name', '') or '')[:15]}</td><td>{str(record.get('department_name', '') or '')[:15]}</td><td>{str(record.get('semester_name', '') or '')[:15]}</td><td>{str(record.get('status', 'unknown') or 'unknown').title()}</td></tr>"
                 tables_html += f"""
                 <div class="section-title">STUDENT ATTENDANCE / শিক্ষার্থী উপস্থিতি</div>
                 <table class="data-table">
-                    <thead><tr><th>Student ID / আইডি</th><th>Name / নাম</th><th>Class / শ্রেণি</th><th>Section / শাখা</th><th>Status / অবস্থা</th></tr></thead>
+                    <thead><tr><th>আইডি</th><th>নাম</th><th>মারহালা</th><th>বিভাগ</th><th>সেমিস্টার</th><th>অবস্থা</th></tr></thead>
                     <tbody>{rows}</tbody>
                 </table>
                 """
