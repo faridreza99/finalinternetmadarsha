@@ -6973,9 +6973,9 @@ async def generate_student_attendance_report(
             "tenant_id": current_user.tenant_id,
             "type": "student",
             "$or": [
-                {"date": date_obj},
-                {"date_str": date_str},
-                {"তারিখ": date_str}
+                {"date": date_str},
+                {"date": {"$regex": f"^{date_str}"}},
+                {"date": date_obj}
             ]
         }
         
