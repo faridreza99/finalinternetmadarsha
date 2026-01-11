@@ -1161,16 +1161,16 @@ const AcademicHierarchy = () => {
               <div>
                 <Label>সেমিস্টার (ঐচ্ছিক)</Label>
                 <Select
-                  value={subjectForm.semester_id}
+                  value={subjectForm.semester_id || "__all__"}
                   onValueChange={(value) =>
-                    setSubjectForm({ ...subjectForm, semester_id: value })
+                    setSubjectForm({ ...subjectForm, semester_id: value === "__all__" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">সকল সেমিস্টার</SelectItem>
+                    <SelectItem value="__all__">সকল সেমিস্টার</SelectItem>
                     {hierarchy
                       .find((m) => m.id === subjectForm.marhala_id)
                       ?.departments?.flatMap((d) => d.semesters || [])
