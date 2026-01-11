@@ -134,9 +134,10 @@ const FeeSetup = () => {
       const response = await axios.get(`${API}/marhalas`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMarhalas(response.data || []);
+      setMarhalas(response.data?.marhalas || []);
     } catch (error) {
       console.error('Error fetching marhalas:', error);
+      setMarhalas([]);
     }
   }, []);
 
