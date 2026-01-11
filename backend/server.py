@@ -968,7 +968,9 @@ class Subject(BaseModel):
     school_id: Optional[str] = None
     subject_name: str
     subject_code: str
-    class_standard: str  # "6th", "7th", "8th", etc.
+    class_standard: Optional[str] = None  # "6th", "7th", "8th", etc.
+    marhala_id: Optional[str] = None  # Academic hierarchy marhala
+    semester_id: Optional[str] = None  # Academic hierarchy semester
     credits: Optional[float] = None
     description: Optional[str] = None
     syllabus: List[SyllabusUnit] = []
@@ -985,7 +987,9 @@ class SubjectCreate(BaseModel):
     """Data required to create a new subject"""
     subject_name: str
     subject_code: str
-    class_standard: str
+    class_standard: Optional[str] = None
+    marhala_id: Optional[str] = None
+    semester_id: Optional[str] = None
     credits: Optional[float] = None
     description: Optional[str] = None
     syllabus: List[SyllabusUnit] = []
@@ -1005,6 +1009,8 @@ class SubjectUpdate(BaseModel):
     total_hours: Optional[float] = None
     is_elective: Optional[bool] = None
     prerequisites: Optional[List[str]] = None
+    marhala_id: Optional[str] = None
+    semester_id: Optional[str] = None
     is_active: Optional[bool] = None
 
 # ==================== VEHICLE MODELS ====================

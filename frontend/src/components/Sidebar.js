@@ -322,6 +322,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           madrasahTitle: "মারহালা / শ্রেণি",
           path: "/classes",
           roles: ["super_admin", "admin", "teacher"],
+          hideInMadrasah: true,
         },
         {
           title: "Video Lessons",
