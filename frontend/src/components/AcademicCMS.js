@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "/api";
@@ -52,6 +53,9 @@ const initialBookForm = {
   author: "",
   subject: "",
   class_standard: "",
+  marhala_id: "",
+  department_id: "",
+  semester_id: "",
   board: "মাদ্রাসা বোর্ড",
   prelims_file_url: "",
   prelims_file_name: "",
@@ -74,6 +78,9 @@ const initialPaperForm = {
   title: "",
   subject: "",
   class_standard: "",
+  marhala_id: "",
+  department_id: "",
+  semester_id: "",
   chapter: "",
   exam_year: new Date().getFullYear().toString(),
   paper_type: "বার্ষিক পরীক্ষা",
@@ -806,70 +813,74 @@ const AcademicCMS = () => {
                 required
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <select
-                value={formState.subject}
-                onChange={(e) =>
-                  handleFormChange(formType, "subject", e.target.value)
-                }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              >
-                <option value="">বিষয় নির্বাচন করুন *</option>
-                {[
-                  "কুরআন",
-                  "হাদিস",
-                  "ফিকহ",
-                  "আরবি",
-                  "বাংলা",
-                  "ইংরেজি",
-                  "গণিত",
-                  "বিজ্ঞান",
-                  "সামাজিক বিজ্ঞান",
-                  "ইতিহাস",
-                ].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={formState.class_standard}
-                onChange={(e) =>
-                  handleFormChange(formType, "class_standard", e.target.value)
-                }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              >
-                <option value="">মারহালা নির্বাচন করুন *</option>
-                {[
-                  "ইবতেদায়ী ১",
-                  "ইবতেদায়ী ২",
-                  "ইবতেদায়ী ৩",
-                  "ইবতেদায়ী ৪",
-                  "ইবতেদায়ী ৫",
-                  "মুতাওয়াসসিতা ১",
-                  "মুতাওয়াসসিতা ২",
-                  "মুতাওয়াসসিতা ৩",
-                  "সানাবিয়া ১",
-                  "সানাবিয়া ২",
-                ].map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={formState.board}
-                onChange={(e) =>
-                  handleFormChange(formType, "board", e.target.value)
-                }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="মাদ্রাসা বোর্ড">মাদ্রাসা বোর্ড</option>
-                <option value="কওমি বোর্ড">কওমি বোর্ড</option>
-                <option value="আলিয়া বোর্ড">আলিয়া বোর্ড</option>
-              </select>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <select
+                  value={formState.subject}
+                  onChange={(e) =>
+                    handleFormChange(formType, "subject", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                >
+                  <option value="">বিষয় নির্বাচন করুন *</option>
+                  {[
+                    "কুরআন",
+                    "হাদিস",
+                    "ফিকহ",
+                    "আরবি",
+                    "বাংলা",
+                    "ইংরেজি",
+                    "গণিত",
+                    "বিজ্ঞান",
+                    "সামাজিক বিজ্ঞান",
+                    "ইতিহাস",
+                  ].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={formState.board}
+                  onChange={(e) =>
+                    handleFormChange(formType, "board", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="মাদ্রাসা বোর্ড">মাদ্রাসা বোর্ড</option>
+                  <option value="কওমি বোর্ড">কওমি বোর্ড</option>
+                  <option value="আলিয়া বোর্ড">আলিয়া বোর্ড</option>
+                </select>
+              </div>
+              <AcademicHierarchySelector
+                onSelectionChange={(selection) => {
+                  const parts = [];
+                  if (selection.marhala_name) parts.push(selection.marhala_name);
+                  if (selection.department_name) parts.push(selection.department_name);
+                  if (selection.semester_name) parts.push(selection.semester_name);
+                  const displayValue = parts.join(' | ') || '';
+                  if (formType === 'book') {
+                    setBookForm(prev => ({
+                      ...prev,
+                      class_standard: displayValue,
+                      marhala_id: selection.marhala_id || '',
+                      department_id: selection.department_id || '',
+                      semester_id: selection.semester_id || ''
+                    }));
+                  } else if (formType === 'reference') {
+                    setReferenceBookForm(prev => ({
+                      ...prev,
+                      class_standard: displayValue,
+                      marhala_id: selection.marhala_id || '',
+                      department_id: selection.department_id || '',
+                      semester_id: selection.semester_id || ''
+                    }));
+                  }
+                }}
+                showAllOption={false}
+                layout="horizontal"
+              />
             </div>
 
             <div className="border p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
@@ -1816,7 +1827,7 @@ const AcademicCMS = () => {
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     required
                   />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <select
                       value={paperForm.subject}
                       onChange={(e) =>
@@ -1844,35 +1855,23 @@ const AcademicCMS = () => {
                         </option>
                       ))}
                     </select>
-                    <select
-                      value={paperForm.class_standard}
-                      onChange={(e) =>
-                        setPaperForm({
-                          ...paperForm,
-                          class_standard: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      required
-                    >
-                      <option value="">মারহালা নির্বাচন করুন *</option>
-                      {[
-                        "ইবতেদায়ী ১",
-                        "ইবতেদায়ী ২",
-                        "ইবতেদায়ী ৩",
-                        "ইবতেদায়ী ৪",
-                        "ইবতেদায়ী ৫",
-                        "মুতাওয়াসসিতা ১",
-                        "মুতাওয়াসসিতা ২",
-                        "মুতাওয়াসসিতা ৩",
-                        "সানাবিয়া ১",
-                        "সানাবিয়া ২",
-                      ].map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
+                    <AcademicHierarchySelector
+                      onSelectionChange={(selection) => {
+                        const parts = [];
+                        if (selection.marhala_name) parts.push(selection.marhala_name);
+                        if (selection.department_name) parts.push(selection.department_name);
+                        if (selection.semester_name) parts.push(selection.semester_name);
+                        setPaperForm(prev => ({
+                          ...prev,
+                          class_standard: parts.join(' | ') || '',
+                          marhala_id: selection.marhala_id || '',
+                          department_id: selection.department_id || '',
+                          semester_id: selection.semester_id || ''
+                        }));
+                      }}
+                      showAllOption={false}
+                      layout="horizontal"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <input

@@ -81,7 +81,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         if (response?.ok) {
           const data = await response.json();
           setSchoolBranding({
-            school_name: data.school_name || data.name || data.site_title || "School ERP",
+            school_name:
+              data.school_name || data.name || data.site_title || "School ERP",
             logo_url: data.logo_url || data.logo || null,
             primary_color: data.primary_color || "#10B981",
           });
@@ -433,12 +434,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           path: "/accounts",
           roles: ["super_admin", "admin"],
         },
-        {
-          title: "Payroll",
-          madrasahTitle: "বেতন",
-          path: "/payroll",
-          roles: ["super_admin", "admin", "accountant"],
-        },
+        // {
+        //   title: "Payroll",
+        //   madrasahTitle: "বেতন",
+        //   path: "/payroll",
+        //   roles: ["super_admin", "admin", "accountant"],
+        // },
         {
           title: "Certificates",
           madrasahTitle: "সনদ",
@@ -493,11 +494,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           path: "/test-generator",
           roles: ["super_admin", "admin", "teacher"],
         },
-        {
-          title: "প্রশ্নপত্র তৈরি",
-          path: "/question-paper-builder",
-          roles: ["super_admin", "admin", "teacher"],
-        },
+        // {
+        //   title: "প্রশ্নপত্র তৈরি",
+        //   path: "/question-paper-builder",
+        //   roles: ["super_admin", "admin", "teacher"],
+        // },
         {
           title: "AI Summary",
           madrasahTitle: "এআই সারাংশ",

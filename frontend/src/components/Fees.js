@@ -3287,29 +3287,17 @@ const Fees = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
-                {/* Step 1: Class Selection - Branch filter hidden */}
-                <div className="grid grid-cols-1 gap-4 mb-6">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">মারহালা নির্বাচন করুন *</label>
-                    <Select value={selectedClass} onValueChange={(value) => {
-                      setSelectedClass(value);
+                {/* Step 1: Academic Hierarchy Selection */}
+                <div className="mb-6">
+                  <AcademicHierarchySelector
+                    onSelectionChange={(selection) => {
+                      setSelectedClass(selection.semester_id || selection.marhala_id || 'all');
                       setSelectedSection('all');
                       setSelectedStudent(null);
-                    }}>
-                      <SelectTrigger className="border-emerald-300 focus:border-emerald-500">
-                        <SelectValue placeholder="মারহালা বাছুন..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">সকল মারহালা</SelectItem>
-                        {classes.map((cls) => (
-                          <SelectItem key={cls.id || cls._id || cls.name} value={cls.name || cls.class_name}>
-                            {cls.display_name || cls.name || cls.class_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* Branch filter hidden - sections data not fully implemented */}
+                    }}
+                    showAllOption={true}
+                    layout="horizontal"
+                  />
                 </div>
 
                 {/* Step 2: Student List with Paid/Due Status */}

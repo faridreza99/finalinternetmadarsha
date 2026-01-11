@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "/api";
@@ -408,26 +409,21 @@ Source: ${currentNotes.source === "cms" ? "Library" : "AI Generated"}
             </h2>
 
             <div className="space-y-4">
-              {/* Class */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  মারহালা *
-                </label>
-                <select
-                  value={selectedClassId}
-                  onChange={handleClassChange}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">
-                    {classLoading ? "মারহালা লোড হচ্ছে..." : "মারহালা নির্বাচন করুন"}
-                  </option>
-                  {classOptions.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name || `Class ${getClassValue(cls)}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Academic Hierarchy Selection */}
+              <AcademicHierarchySelector
+                onSelectionChange={(selection) => {
+                  setSelectedClassId(selection.marhala_id || '');
+                  setFormData(prev => ({
+                    ...prev,
+                    class_standard: selection.marhala_name || '',
+                    marhala_id: selection.marhala_id || '',
+                    department_id: selection.department_id || '',
+                    semester_id: selection.semester_id || ''
+                  }));
+                }}
+                showAllOption={false}
+                layout="vertical"
+              />
 
               {/* Subject (dynamic from backend) */}
               <div>

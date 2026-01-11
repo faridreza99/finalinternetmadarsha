@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 import { useInstitution } from '../context/InstitutionContext';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -79,10 +80,34 @@ const AdmissionFees = () => {
     student_id: '',
     student_name: '',
     class_name: '',
+    marhala_id: '',
+    department_id: '',
+    semester_id: '',
+    marhala_name: '',
+    department_name: '',
+    semester_name: '',
     amount: '',
     payment_mode: 'Cash',
     remarks: ''
   });
+
+  const handleAcademicSelection = (selection) => {
+    const parts = [];
+    if (selection.marhala_name) parts.push(selection.marhala_name);
+    if (selection.department_name) parts.push(selection.department_name);
+    if (selection.semester_name) parts.push(selection.semester_name);
+    
+    setFormData(prev => ({
+      ...prev,
+      marhala_id: selection.marhala_id || '',
+      department_id: selection.department_id || '',
+      semester_id: selection.semester_id || '',
+      marhala_name: selection.marhala_name || '',
+      department_name: selection.department_name || '',
+      semester_name: selection.semester_name || '',
+      class_name: parts.join(' | ') || ''
+    }));
+  };
   
   const [lastReceipt, setLastReceipt] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -159,6 +184,12 @@ const AdmissionFees = () => {
         student_id: '',
         student_name: '',
         class_name: '',
+        marhala_id: '',
+        department_id: '',
+        semester_id: '',
+        marhala_name: '',
+        department_name: '',
+        semester_name: '',
         amount: '',
         payment_mode: 'Cash',
         remarks: ''
@@ -436,20 +467,28 @@ const AdmissionFees = () => {
             </div>
             
             <div>
-              <Label>{t('admissionFees.class')} *</Label>
-              <Select 
-                value={formData.class_name} 
-                onValueChange={(value) => setFormData({...formData, class_name: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('admissionFees.selectClass')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map(cls => (
-                    <SelectItem key={cls.id} value={cls.name}>{cls.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>{isMadrasahSimpleUI ? 'জামাত/মারহালা *' : t('admissionFees.class') + ' *'}</Label>
+              {isMadrasahSimpleUI ? (
+                <AcademicHierarchySelector
+                  onSelectionChange={handleAcademicSelection}
+                  showAllOption={false}
+                  layout="vertical"
+                />
+              ) : (
+                <Select 
+                  value={formData.class_name} 
+                  onValueChange={(value) => setFormData({...formData, class_name: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('admissionFees.selectClass')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map(cls => (
+                      <SelectItem key={cls.id} value={cls.name}>{cls.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <div>

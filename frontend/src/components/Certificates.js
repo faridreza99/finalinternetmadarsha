@@ -3041,31 +3041,38 @@ const Certificates = () => {
                         onChange={(e) => setTcFormData({...tcFormData, date_of_admission: e.target.value})}
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">{isMadrasah ? 'সর্বশেষ মারহালা / শ্রেণি' : 'Last Attended Class'}</label>
-                      <select
-                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        value={tcFormData.last_class}
-                        onChange={(e) => setTcFormData({...tcFormData, last_class: e.target.value})}
-                      >
-                        <option value="">{isMadrasah ? 'মারহালা নির্বাচন করুন' : 'Select Class'}</option>
-                        {isMadrasah ? (
-                          <>
-                            <option value="1">ইবতেদায়ী ১ম বর্ষ</option>
-                            <option value="2">ইবতেদায়ী ২য় বর্ষ</option>
-                            <option value="3">ইবতেদায়ী ৩য় বর্ষ</option>
-                            <option value="4">ইবতেদায়ী ৪র্থ বর্ষ</option>
-                            <option value="5">ইবতেদায়ী ৫ম বর্ষ</option>
-                            <option value="6">দাখিল ৬ষ্ঠ শ্রেণি</option>
-                            <option value="7">দাখিল ৭ম শ্রেণি</option>
-                            <option value="8">দাখিল ৮ম শ্রেণি</option>
-                            <option value="9">দাখিল ৯ম শ্রেণি</option>
-                            <option value="10">দাখিল ১০ম শ্রেণি</option>
-                            <option value="11">আলিম ১ম বর্ষ</option>
-                            <option value="12">আলিম ২য় বর্ষ</option>
-                          </>
-                        ) : (
-                          <>
+                    {isMadrasah ? (
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium mb-2">সর্বশেষ মারহালা | বিভাগ | সেমিস্টার</label>
+                        <AcademicHierarchySelector
+                          onSelectionChange={(selection) => {
+                            const parts = [];
+                            if (selection.marhala_name) parts.push(selection.marhala_name);
+                            if (selection.department_name) parts.push(selection.department_name);
+                            if (selection.semester_name) parts.push(selection.semester_name);
+                            setTcFormData({
+                              ...tcFormData, 
+                              last_class: parts.join(' | ') || '',
+                              last_section: selection.department_name || '',
+                              marhala_id: selection.marhala_id || '',
+                              department_id: selection.department_id || '',
+                              semester_id: selection.semester_id || ''
+                            });
+                          }}
+                          showAllOption={false}
+                          layout="horizontal"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Last Attended Class</label>
+                          <select
+                            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            value={tcFormData.last_class}
+                            onChange={(e) => setTcFormData({...tcFormData, last_class: e.target.value})}
+                          >
+                            <option value="">Select Class</option>
                             <option value="1">Class I</option>
                             <option value="2">Class II</option>
                             <option value="3">Class III</option>
@@ -3078,35 +3085,24 @@ const Certificates = () => {
                             <option value="10">Class X</option>
                             <option value="11">Class XI</option>
                             <option value="12">Class XII</option>
-                          </>
-                        )}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">{isMadrasah ? 'সর্বশেষ শাখা' : 'Last Section'}</label>
-                      <select
-                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        value={tcFormData.last_section}
-                        onChange={(e) => setTcFormData({...tcFormData, last_section: e.target.value})}
-                      >
-                        <option value="">{isMadrasah ? 'শাখা নির্বাচন করুন' : 'Select Section'}</option>
-                        {isMadrasah ? (
-                          <>
-                            <option value="A">শাখা - ক</option>
-                            <option value="B">শাখা - খ</option>
-                            <option value="C">শাখা - গ</option>
-                            <option value="D">শাখা - ঘ</option>
-                          </>
-                        ) : (
-                          <>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Last Section</label>
+                          <select
+                            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            value={tcFormData.last_section}
+                            onChange={(e) => setTcFormData({...tcFormData, last_section: e.target.value})}
+                          >
+                            <option value="">Select Section</option>
                             <option value="A">Section A</option>
                             <option value="B">Section B</option>
                             <option value="C">Section C</option>
                             <option value="D">Section D</option>
-                          </>
-                        )}
-                      </select>
-                    </div>
+                          </select>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <label className="block text-sm font-medium mb-2">{isMadrasah ? 'বিদায়ের তারিখ *' : 'Date of Leaving *'}</label>
                       <input

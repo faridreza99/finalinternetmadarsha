@@ -13,11 +13,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
+import AcademicHierarchySelector from './AcademicHierarchySelector';
+import { useInstitution } from '../context/InstitutionContext';
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "/api";
 
 const QuizTool = () => {
+  const { isMadrasahSimpleUI } = useInstitution();
   const [activeTab, setActiveTab] = useState("generate");
   const [loading, setLoading] = useState(false);
 
@@ -429,56 +432,99 @@ const QuizTool = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4">Generate Custom Quiz</h2>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {/* Class */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Class *</label>
-              <select
-                value={filters.class_standard}
-                onChange={handleClassChange}
-                className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
-                disabled={classLoading}
-              >
-                <option value="">
-                  {classLoading ? "Loading classes..." : "Select Class"}
-                </option>
-                {classOptions.map((c) => (
-                  <option key={c.id} value={c.standard}>
-                    {c.name || c.standard}
-                  </option>
-                ))}
-              </select>
+          {isMadrasahSimpleUI ? (
+            <div className="mb-6">
+              <AcademicHierarchySelector
+                onSelectionChange={(selection) => {
+                  setFilters(prev => ({
+                    ...prev,
+                    class_standard: selection.marhala_name || '',
+                    marhala_id: selection.marhala_id || '',
+                    department_id: selection.department_id || '',
+                    semester_id: selection.semester_id || ''
+                  }));
+                  if (selection.marhala_name) {
+                    fetchSubjectsForClass(selection.marhala_name);
+                  }
+                }}
+                showAllOption={false}
+                layout="horizontal"
+              />
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                {/* Subject */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">বিষয় *</label>
+                  <select
+                    value={filters.subject}
+                    onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
+                    className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
+                    disabled={!filters.class_standard || subjectsLoading}
+                  >
+                    <option value="">
+                      {subjectsLoading ? "বিষয় লোড হচ্ছে..." : !filters.class_standard ? "প্রথমে মারহালা নির্বাচন করুন" : "বিষয় নির্বাচন করুন"}
+                    </option>
+                    {subjectOptions.map((s) => (
+                      <option key={s.id || s.subject_name} value={s.subject_name}>{s.subject_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div></div>
+              </div>
             </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {/* Class */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Class *</label>
+                <select
+                  value={filters.class_standard}
+                  onChange={handleClassChange}
+                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
+                  disabled={classLoading}
+                >
+                  <option value="">
+                    {classLoading ? "Loading classes..." : "Select Class"}
+                  </option>
+                  {classOptions.map((c) => (
+                    <option key={c.id} value={c.standard}>
+                      {c.name || c.standard}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Subject */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Subject *
-              </label>
-              <select
-                value={filters.subject}
-                onChange={(e) =>
-                  setFilters({ ...filters, subject: e.target.value })
-                }
-                className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
-                disabled={!filters.class_standard || subjectsLoading}
-              >
-                <option value="">
-                  {subjectsLoading
-                    ? "Loading subjects..."
-                    : !filters.class_standard
-                    ? "Select class first"
-                    : subjectOptions.length === 0
-                    ? "No subjects available"
-                    : "Select Subject"}
-                </option>
-                {subjectOptions.map((s) => (
-                  <option key={s.id || s.subject_name} value={s.subject_name}>
-                    {s.subject_name}
+              {/* Subject */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Subject *
+                </label>
+                <select
+                  value={filters.subject}
+                  onChange={(e) =>
+                    setFilters({ ...filters, subject: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
+                  disabled={!filters.class_standard || subjectsLoading}
+                >
+                  <option value="">
+                    {subjectsLoading
+                      ? "Loading subjects..."
+                      : !filters.class_standard
+                      ? "Select class first"
+                      : subjectOptions.length === 0
+                      ? "No subjects available"
+                      : "Select Subject"}
                   </option>
-                ))}
-              </select>
+                  {subjectOptions.map((s) => (
+                    <option key={s.id || s.subject_name} value={s.subject_name}>
+                      {s.subject_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+          )}
+          <div className="grid grid-cols-2 gap-4 mb-6">
 
             {/* Chapter – now required */}
             <div>
