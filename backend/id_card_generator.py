@@ -461,14 +461,23 @@ def generate_back_side(c, student, institution):
                          centered=True, width=CARD_WIDTH)
 
 
-def generate_student_id_card_pdf(student: dict, institution: dict, class_name: str = "") -> bytes:
+def generate_student_id_card_pdf(student: dict, institution: dict, class_name: str = "", academic_info: dict = None) -> bytes:
     """Generate complete student ID card PDF with front and back sides"""
     register_fonts()
     
     buffer = BytesIO()
     c = pdf_canvas.Canvas(buffer, pagesize=(CARD_WIDTH, CARD_HEIGHT))
     
-    generate_front_side(c, student, institution, class_name)
+    display_class = class_name
+    if academic_info:
+        marhala = academic_info.get("marhala_name", "")
+        department = academic_info.get("department_name", "")
+        semester = academic_info.get("semester_name", "")
+        parts = [p for p in [marhala, department, semester] if p]
+        if parts:
+            display_class = " | ".join(parts)
+    
+    generate_front_side(c, student, institution, display_class)
     c.showPage()
     
     generate_back_side(c, student, institution)
