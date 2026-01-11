@@ -3937,8 +3937,9 @@ async def get_next_roll_number(
         
         return {
             "next_roll": next_roll,
-            "class_id": class_id,
-            "section_id": section_id,
+            "মারহালা": marhala_name,
+            "বিভাগ": department_name,
+                "সেমিস্টার": semester_name,
             "semester_id": semester_id,
             "total_students": len(students)
         }
@@ -4013,7 +4014,7 @@ async def check_roll_duplicate(
     try:
         query = {
             "tenant_id": current_user.tenant_id,
-            "class_id": class_id,
+            "মারহালা": marhala_name,
             "roll_no": roll_no,
             "is_active": True
         }
@@ -6974,7 +6975,7 @@ async def generate_student_attendance_report(
             "$or": [
                 {"date": date_obj},
                 {"date_str": date_str},
-                {"date": date_str}
+                {"তারিখ": date_str}
             ]
         }
         
@@ -6996,6 +6997,20 @@ async def generate_student_attendance_report(
         
         logging.info(f"Retrieved {len(attendance_records)} student attendance records for date {date_str}")
         
+        # Fetch academic hierarchy names for filters
+        marhala_name = "সকল"
+        department_name = "সকল"
+        semester_name = "সকল"
+        if marhala_id and marhala_id != "all":
+            marhala_doc = await db.marhalas.find_one({"id": marhala_id})
+            marhala_name = marhala_doc.get("name", marhala_id) if marhala_doc else marhala_id
+        if department_id and department_id != "all":
+            dept_doc = await db.departments.find_one({"id": department_id})
+            department_name = dept_doc.get("name", department_id) if dept_doc else department_id
+        if semester_id and semester_id != "all":
+            sem_doc = await db.academic_semesters.find_one({"id": semester_id})
+            semester_name = sem_doc.get("name", semester_id) if sem_doc else semester_id
+        
         # Handle case when no attendance data is found
         if not attendance_records:
             logging.warning(f"No student attendance records found for date {date_str} for tenant {current_user.tenant_id}")
@@ -7003,12 +7018,13 @@ async def generate_student_attendance_report(
             empty_report_data = {
                 "title": f"Student Attendance Report - {date_str}",
                 "generated_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "date": date_str,
+                "তারিখ": date_str,
                 "message": "No student attendance records found for this date",
                 "filters": {
-                    "class_id": class_id,
-                    "section_id": section_id,
-                    "date": date_str
+                    "মারহালা": marhala_name,
+                    "বিভাগ": department_name,
+                    "সেমিস্টার": semester_name,
+                    "তারিখ": date_str
                 },
                 "summary": {
                     "total_students": 0,
@@ -7073,11 +7089,12 @@ async def generate_student_attendance_report(
         report_data = {
             "title": f"Student Attendance Report - {date_str}",
             "generated_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "date": date_str,
+            "তারিখ": date_str,
             "filters": {
-                "class_id": class_id,
-                "section_id": section_id,
-                "date": date_str
+                "মারহালা": marhala_name,
+                "বিভাগ": department_name,
+                "সেমিস্টার": semester_name,
+                "তারিখ": date_str
             },
             "summary": {
                 "total_students": total_students,
@@ -7956,7 +7973,8 @@ async def delete_section(section_id: str, current_user: User = Depends(get_curre
     
     # Check if any students are assigned to this section
     students_in_section = await db.students.count_documents({
-        "section_id": section_id,
+        "বিভাগ": department_name,
+                "সেমিস্টার": semester_name,
         "tenant_id": current_user.tenant_id,
         "is_active": True
     })
@@ -8197,7 +8215,7 @@ async def check_class_usage(class_id: str, current_user: User = Depends(get_curr
     has_data = student_count > 0 or exam_count > 0 or result_count > 0 or attendance_count > 0
     
     return {
-        "class_id": class_id,
+        "মারহালা": marhala_name,
         "has_data": has_data,
         "can_delete": not has_data,
         "usage": {
@@ -8234,7 +8252,7 @@ async def toggle_class_status(class_id: str, current_user: User = Depends(get_cu
     )
     
     return {
-        "class_id": class_id,
+        "মারহালা": marhala_name,
         "is_active": new_status,
         "message": f"Class {'enabled' if new_status else 'disabled'} successfully"
     }
@@ -8480,7 +8498,7 @@ async def get_timetables(current_user: User = Depends(get_current_user)):
 async def get_timetable_by_class(class_id: str, current_user: User = Depends(get_current_user)):
     """Get timetable for a specific class"""
     timetable = await db.timetables.find_one({
-        "class_id": class_id,
+        "মারহালা": marhala_name,
         "tenant_id": current_user.tenant_id,
         "is_active": True
     })
@@ -11803,7 +11821,7 @@ async def get_biometric_calendar(
             attendance_pct = round((present_count / total_staff) * 100, 1) if total_staff > 0 else 0
             
             calendar_data.append({
-                "date": date_str,
+                "তারিখ": date_str,
                 "day_name": current_date.strftime("%A"),
                 "is_weekend": current_date.weekday() >= 5,
                 "total_staff": total_staff,
@@ -14697,6 +14715,7 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
         school_contact = f"Phone: {school_phone} | Email: {school_email}" if school_phone or school_email else ""
         primary_color = branding.get("primary_color", "#1e3a8a")
         secondary_color = branding.get("secondary_color", "#059669")
+        logo_url = branding.get("logo_url", "")
         
         # Build summary HTML
         summary_html = ""
@@ -14804,7 +14823,9 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
                 * {{ font-family: 'NotoSans', 'NotoSansBengali', Arial, sans-serif; }}
                 @page {{ size: A4; margin: 1.5cm 1cm; }}
                 body {{ font-size: 11pt; line-height: 1.4; color: #333; }}
-                .header {{ background: linear-gradient(135deg, {primary_color}, {secondary_color}); color: white; padding: 15px 20px; margin: -1.5cm -1cm 20px -1cm; }}
+                .header {{ background: linear-gradient(135deg, {primary_color}, {secondary_color}); color: white; padding: 15px 20px; margin: -1.5cm -1cm 20px -1cm; display: flex; align-items: center; }}
+                .header-logo {{ width: 60px; height: 60px; margin-right: 15px; border-radius: 8px; background: white; object-fit: contain; }}
+                .header-content {{ flex: 1; }}
                 .school-name {{ font-size: 20pt; font-weight: bold; margin-bottom: 5px; }}
                 .school-address {{ font-size: 10pt; opacity: 0.9; }}
                 .report-title {{ text-align: center; color: {primary_color}; font-size: 16pt; font-weight: bold; margin: 20px 0 15px 0; }}
@@ -14823,9 +14844,12 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
         </head>
         <body>
             <div class="header">
-                <div class="school-name">{school_name}</div>
-                <div class="school-address">{school_address}</div>
-                <div class="school-address">{school_contact}</div>
+                {"<img src='" + logo_url + "' class='header-logo' alt='Logo' />" if logo_url else ""}
+                <div class="header-content">
+                    <div class="school-name">{school_name}</div>
+                    <div class="school-address">{school_address}</div>
+                    <div class="school-address">{school_contact}</div>
+                </div>
             </div>
             
             <div class="report-title">{report_data.get("title", "Attendance Report")}</div>
@@ -15441,6 +15465,7 @@ async def download_transfer_certificate_pdf(
         school_email = branding.get("email", "")
         primary_color = branding.get("primary_color", "#1e3a8a")
         secondary_color = branding.get("secondary_color", "#059669")
+        logo_url = branding.get("logo_url", "")
         
         contact_info = []
         if school_phone:
@@ -18768,7 +18793,7 @@ async def create_student_fees_from_config(fee_config: FeeConfiguration, current_
                     logging.info(f"Resolved class name '{fee_config.apply_to_classes}' to ID: {class_id}")
                     students = await db.students.find({
                         "tenant_id": current_user.tenant_id,
-                        "class_id": class_id,
+                        "মারহালা": marhala_name,
                         "is_active": True
                     }).to_list(1000)
         
@@ -26550,8 +26575,9 @@ async def download_result_template(
         
         # Get students in the class/section
         students = await db.students.find({
-            "class_id": class_id,
-            "section_id": section_id,
+            "মারহালা": marhala_name,
+            "বিভাগ": department_name,
+                "সেমিস্টার": semester_name,
             "tenant_id": current_user.tenant_id,
             "school_id": current_user.school_id,
             "is_active": True
@@ -27388,7 +27414,7 @@ async def get_teacher_assigned_classes(current_user: User = Depends(get_current_
                             subjects.add(period.get("subject", ""))
                 
                 assigned_classes[key] = {
-                    "class_id": class_id,
+                    "মারহালা": marhala_name,
                     "class_name": class_name,
                     "section_name": section_name,
                     "subjects": list(subjects),
@@ -27515,9 +27541,10 @@ async def create_homework(
             "school_id": school_id,
             "title": title,
             "description": description,
-            "class_id": class_id,
+            "মারহালা": marhala_name,
             "class_name": class_doc.get("name", "") if class_doc else "",
-            "section_id": section_id,
+            "বিভাগ": department_name,
+                "সেমিস্টার": semester_name,
             "section_name": section_doc.get("name", "") if section_doc else "",
             "subject": subject,
             "due_date": due_date,
@@ -27707,9 +27734,10 @@ async def create_lesson_plan(
             "tenant_id": current_user.tenant_id,
             "school_id": school_id,
             "title": title,
-            "class_id": class_id,
+            "মারহালা": marhala_name,
             "class_name": class_doc.get("name", "") if class_doc else "",
-            "section_id": section_id,
+            "বিভাগ": department_name,
+                "সেমিস্টার": semester_name,
             "section_name": section_doc.get("name", "") if section_doc else "",
             "subject": subject,
             "topic": topic,
