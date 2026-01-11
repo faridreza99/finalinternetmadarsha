@@ -68,6 +68,7 @@ const FeeSetup = () => {
   
   const [feeConfigs, setFeeConfigs] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [marhalas, setMarhalas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
@@ -127,10 +128,23 @@ const FeeSetup = () => {
     }
   }, []);
 
+  const fetchMarhalas = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/madrasha/marhalas`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMarhalas(response.data || []);
+    } catch (error) {
+      console.error('Error fetching marhalas:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchFeeConfigs();
     fetchClasses();
-  }, [fetchFeeConfigs, fetchClasses]);
+    fetchMarhalas();
+  }, [fetchFeeConfigs, fetchClasses, fetchMarhalas]);
 
   const handleSubmit = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -446,11 +460,19 @@ const FeeSetup = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{isMadrasahSimpleUI ? 'সকল মারহালা' : 'All Classes'}</SelectItem>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
-                      {cls.display_name || cls.name || cls.class_name}
-                    </SelectItem>
-                  ))}
+                  {isMadrasahSimpleUI ? (
+                    marhalas.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    classes.map((cls) => (
+                      <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
+                        {cls.display_name || cls.name || cls.class_name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
