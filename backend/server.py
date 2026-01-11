@@ -31406,7 +31406,7 @@ async def generate_student_id_card(
         # Fetch institution data
         institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
         
-        # Get class name
+        # Get class name (legacy)
         class_name = ""
         if student.get("class_id"):
             class_doc = await db.classes.find_one({
@@ -31416,8 +31416,37 @@ async def generate_student_id_card(
             if class_doc:
                 class_name = class_doc.get("display_name") or class_doc.get("name", "")
         
+        # Get academic hierarchy names (Madrasah)
+        academic_info = None
+        if student.get("marhala_id") or student.get("department_id") or student.get("semester_id"):
+            marhala_name = ""
+            department_name = ""
+            semester_name = ""
+            
+            if student.get("marhala_id"):
+                marhala_doc = await db.marhalas.find_one({"id": student.get("marhala_id"), "tenant_id": current_user.tenant_id})
+                if marhala_doc:
+                    marhala_name = marhala_doc.get("name", "")
+            
+            if student.get("department_id"):
+                dept_doc = await db.departments.find_one({"id": student.get("department_id"), "tenant_id": current_user.tenant_id})
+                if dept_doc:
+                    department_name = dept_doc.get("name", "")
+            
+            if student.get("semester_id"):
+                sem_doc = await db.academic_semesters.find_one({"id": student.get("semester_id"), "tenant_id": current_user.tenant_id})
+                if sem_doc:
+                    semester_name = sem_doc.get("name", "")
+            
+            if marhala_name or department_name or semester_name:
+                academic_info = {
+                    "marhala_name": marhala_name,
+                    "department_name": department_name,
+                    "semester_name": semester_name
+                }
+        
         # Generate the ID card PDF using the new generator
-        pdf_bytes = generate_student_id_card_pdf(student, institution, class_name)
+        pdf_bytes = generate_student_id_card_pdf(student, institution, class_name, academic_info)
         pdf_buffer = BytesIO(pdf_bytes)
         
         # Return PDF response - use roll number/ID for filename to avoid encoding issues
@@ -31499,9 +31528,18 @@ async def get_students_for_id_cards(
     institution = await db.institutions.find_one({"tenant_id": current_user.tenant_id})
     institution_type = institution.get("institution_type", "school") if institution else "school"
     
-    # Fetch class and section names
+    # Fetch class and section names (for legacy)
     classes = await db.classes.find({"tenant_id": current_user.tenant_id}).to_list(100)
     sections = await db.sections.find({"tenant_id": current_user.tenant_id}).to_list(100)
+    
+    # Fetch academic hierarchy for Madrasah
+    marhalas = await db.marhalas.find({"tenant_id": current_user.tenant_id}).to_list(100)
+    departments = await db.departments.find({"tenant_id": current_user.tenant_id}).to_list(100)
+    semesters = await db.academic_semesters.find({"tenant_id": current_user.tenant_id}).to_list(100)
+    
+    marhala_map = {m["id"]: m.get("name", "") for m in marhalas}
+    dept_map = {d["id"]: d.get("name", "") for d in departments}
+    semester_map = {s["id"]: s.get("name", "") for s in semesters}
     
     # For Madrasah, prefer display_name (Bengali)
     if institution_type == "madrasah":
@@ -31520,7 +31558,13 @@ async def get_students_for_id_cards(
             "section_name": section_map.get(s.get("section_id"), ""),
             "roll_no": s.get("roll_no", ""),
             "admission_no": s.get("admission_no", ""),
-            "photo_url": s.get("photo_url", "")
+            "photo_url": s.get("photo_url", ""),
+            "marhala_id": s.get("marhala_id", ""),
+            "department_id": s.get("department_id", ""),
+            "semester_id": s.get("semester_id", ""),
+            "marhala_name": marhala_map.get(s.get("marhala_id", ""), ""),
+            "department_name": dept_map.get(s.get("department_id", ""), ""),
+            "semester_name": semester_map.get(s.get("semester_id", ""), "")
         })
     
     return result

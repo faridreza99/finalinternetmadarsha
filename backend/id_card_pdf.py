@@ -58,7 +58,7 @@ def draw_card_back(c, institution):
 # --------------------------------------------------
 
 
-def draw_student_front(c, student, institution, class_name):
+def draw_student_front(c, student, institution, class_name, academic_info=None):
     # Header
     c.setFillColor(colors.HexColor("#0f7c3e"))
     c.rect(0, CARD_HEIGHT - 32, CARD_WIDTH, 32, fill=True, stroke=False)
@@ -88,11 +88,25 @@ def draw_student_front(c, student, institution, class_name):
 
     y = CARD_HEIGHT - 105
 
-    draw_bn_text(c, f"পিতা: {student.get('father_name', '')}", 20, y,
-                 CARD_WIDTH - 40, 7)
-    y -= 12
-    draw_bn_text(c, f"শ্রেণী: {class_name}", 20, y, CARD_WIDTH - 40, 7)
-    y -= 12
+    # Use academic hierarchy if available (Madrasah), otherwise use class_name
+    if academic_info:
+        marhala = academic_info.get("marhala_name", "")
+        department = academic_info.get("department_name", "")
+        semester = academic_info.get("semester_name", "")
+        
+        if marhala:
+            draw_bn_text(c, f"মারহালা: {marhala}", 20, y, CARD_WIDTH - 40, 7)
+            y -= 12
+        if department:
+            draw_bn_text(c, f"বিভাগ: {department}", 20, y, CARD_WIDTH - 40, 7)
+            y -= 12
+        if semester:
+            draw_bn_text(c, f"সেমিস্টার: {semester}", 20, y, CARD_WIDTH - 40, 7)
+            y -= 12
+    else:
+        draw_bn_text(c, f"শ্রেণী: {class_name}", 20, y, CARD_WIDTH - 40, 7)
+        y -= 12
+    
     draw_bn_text(c, f"রোল: {student.get('roll_number', '')}", 20, y,
                  CARD_WIDTH - 40, 7)
     y -= 12
@@ -156,12 +170,12 @@ def draw_staff_front(c, staff, institution):
 # --------------------------------------------------
 
 
-def generate_student_id_card_pdf(student, institution, class_name):
+def generate_student_id_card_pdf(student, institution, class_name, academic_info=None):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=(CARD_WIDTH, CARD_HEIGHT))
     register_bengali_fonts()
 
-    draw_student_front(c, student, institution, class_name)
+    draw_student_front(c, student, institution, class_name, academic_info)
     c.showPage()
 
     draw_card_back(c, institution)

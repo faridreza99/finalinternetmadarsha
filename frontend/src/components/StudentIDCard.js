@@ -436,10 +436,13 @@ const StudentIDCard = () => {
                       {t("common.fatherName") || "পিতার নাম"}
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {t("common.class") || "মারহালা"}
+                      মারহালা
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {t("common.section") || "শাখা"}
+                      বিভাগ
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      সেমিস্টার
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                       {t("common.rollNo") || "রোল"}
@@ -487,10 +490,13 @@ const StudentIDCard = () => {
                         {student.father_name}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                        {student.class_name}
+                        {student.marhala_name || student.class_name || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                        {student.section_name || "-"}
+                        {student.department_name || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                        {student.semester_name || student.section_name || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                         {student.roll_no || student.admission_no || "-"}
