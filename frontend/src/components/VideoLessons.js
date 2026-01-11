@@ -27,6 +27,12 @@ const VideoLessons = () => {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(false);
   
+  // Academic hierarchy for Madrasah mode
+  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
+  const [selectedMarhala, setSelectedMarhala] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [useAcademicHierarchy, setUseAcademicHierarchy] = useState(false);
+  
   // Modal states
   const [showSemesterModal, setShowSemesterModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
@@ -62,6 +68,55 @@ const VideoLessons = () => {
       console.error('Error fetching classes:', err);
     }
   }, []);
+
+  // Fetch academic hierarchy (Madrasah mode)
+  const fetchAcademicHierarchy = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/academic-hierarchy`, { headers });
+      const data = res.data || {};
+      setAcademicHierarchy({
+        marhalas: data.marhalas || [],
+        departments: data.departments || [],
+        semesters: data.semesters || []
+      });
+      // Use academic hierarchy if marhalas exist
+      if (data.marhalas?.length > 0) {
+        setUseAcademicHierarchy(true);
+      }
+    } catch (err) {
+      console.error('Error fetching academic hierarchy:', err);
+    }
+  }, []);
+
+  // Get filtered departments based on selected marhala
+  const getFilteredDepartments = useCallback(() => {
+    if (!selectedMarhala) return [];
+    return academicHierarchy.departments.filter(d => d.marhala_id === selectedMarhala);
+  }, [selectedMarhala, academicHierarchy.departments]);
+
+  // Get filtered semesters based on selected department
+  const getFilteredAcademicSemesters = useCallback(() => {
+    if (!selectedDepartment) return [];
+    return academicHierarchy.semesters.filter(s => s.department_id === selectedDepartment);
+  }, [selectedDepartment, academicHierarchy.semesters]);
+
+  // Get marhala name by ID
+  const getMarhalaName = (id) => {
+    const m = academicHierarchy.marhalas.find(m => m.id === id);
+    return m?.name_bn || m?.name_en || m?.name || '';
+  };
+
+  // Get department name by ID
+  const getDepartmentName = (id) => {
+    const d = academicHierarchy.departments.find(d => d.id === id);
+    return d?.name_bn || d?.name_en || d?.name || '';
+  };
+
+  // Get semester name by ID (for academic hierarchy)
+  const getAcademicSemesterName = (id) => {
+    const s = academicHierarchy.semesters.find(s => s.id === id);
+    return s?.name_bn || s?.name_en || s?.name || '';
+  };
 
   // Fetch subjects
   const fetchSubjects = useCallback(async () => {
@@ -152,7 +207,8 @@ const VideoLessons = () => {
   useEffect(() => {
     fetchClasses();
     fetchSubjects();
-  }, [fetchClasses, fetchSubjects]);
+    fetchAcademicHierarchy();
+  }, [fetchClasses, fetchSubjects, fetchAcademicHierarchy]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -161,6 +217,23 @@ const VideoLessons = () => {
       setLessons([]);
     }
   }, [selectedClass, fetchSemesters]);
+
+  // Academic hierarchy: when marhala changes, reset department and semester
+  useEffect(() => {
+    if (useAcademicHierarchy) {
+      setSelectedDepartment(null);
+      setSelectedSemester(null);
+      setLessons([]);
+    }
+  }, [selectedMarhala, useAcademicHierarchy]);
+
+  // Academic hierarchy: when department changes, reset semester
+  useEffect(() => {
+    if (useAcademicHierarchy) {
+      setSelectedSemester(null);
+      setLessons([]);
+    }
+  }, [selectedDepartment, useAcademicHierarchy]);
 
   useEffect(() => {
     if (selectedSemester) {
@@ -408,22 +481,59 @@ const VideoLessons = () => {
       </div>
 
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 mb-6 text-sm">
-        <button
-          onClick={() => { setSelectedClass(null); setSelectedSemester(null); setSelectedLesson(null); }}
-          className={`px-3 py-1.5 rounded-lg ${!selectedClass ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
-        >
-          জামাত
-        </button>
-        {selectedClass && (
+      <div className="flex items-center gap-2 mb-6 text-sm flex-wrap">
+        {useAcademicHierarchy ? (
           <>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
+            {/* Academic Hierarchy Breadcrumb */}
             <button
-              onClick={() => { setSelectedSemester(null); setSelectedLesson(null); }}
-              className={`px-3 py-1.5 rounded-lg ${!selectedSemester ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
+              onClick={() => { setSelectedMarhala(null); setSelectedDepartment(null); setSelectedSemester(null); setSelectedLesson(null); }}
+              className={`px-3 py-1.5 rounded-lg ${!selectedMarhala ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
             >
-              সেমিস্টার ({getClassName(selectedClass)})
+              মারহালা
             </button>
+            {selectedMarhala && (
+              <>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <button
+                  onClick={() => { setSelectedDepartment(null); setSelectedSemester(null); setSelectedLesson(null); }}
+                  className={`px-3 py-1.5 rounded-lg ${!selectedDepartment ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
+                >
+                  বিভাগ ({getMarhalaName(selectedMarhala)})
+                </button>
+              </>
+            )}
+            {selectedDepartment && (
+              <>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <button
+                  onClick={() => { setSelectedSemester(null); setSelectedLesson(null); }}
+                  className={`px-3 py-1.5 rounded-lg ${!selectedSemester ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
+                >
+                  সেমিস্টার ({getDepartmentName(selectedDepartment)})
+                </button>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Legacy Class-based Breadcrumb */}
+            <button
+              onClick={() => { setSelectedClass(null); setSelectedSemester(null); setSelectedLesson(null); }}
+              className={`px-3 py-1.5 rounded-lg ${!selectedClass ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
+            >
+              জামাত
+            </button>
+            {selectedClass && (
+              <>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <button
+                  onClick={() => { setSelectedSemester(null); setSelectedLesson(null); }}
+                  className={`px-3 py-1.5 rounded-lg ${!selectedSemester ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
+                >
+                  সেমিস্টার ({getClassName(selectedClass)})
+                </button>
+              </>
+            )}
           </>
         )}
         {selectedSemester && (
@@ -433,7 +543,7 @@ const VideoLessons = () => {
               onClick={() => setSelectedLesson(null)}
               className={`px-3 py-1.5 rounded-lg ${!selectedLesson ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
             >
-              পাঠ ({getSemesterName(selectedSemester)})
+              পাঠ ({useAcademicHierarchy ? getAcademicSemesterName(selectedSemester) : getSemesterName(selectedSemester)})
             </button>
           </>
         )}
@@ -447,8 +557,102 @@ const VideoLessons = () => {
         )}
       </div>
 
-      {/* Class Selection */}
-      {!selectedClass && (
+      {/* Academic Hierarchy Selection (Madrasah mode) */}
+      {useAcademicHierarchy && !selectedMarhala && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {academicHierarchy.marhalas.map(m => (
+            <button
+              key={m.id}
+              onClick={() => setSelectedMarhala(m.id)}
+              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-800 dark:text-white">{m.name_bn || m.name_en || m.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {toBengaliNumeral(academicHierarchy.departments.filter(d => d.marhala_id === m.id).length)}টি বিভাগ
+                  </p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </div>
+            </button>
+          ))}
+          {academicHierarchy.marhalas.length === 0 && (
+            <div className="col-span-full text-center py-12 text-gray-500">
+              কোনো মারহালা পাওয়া যায়নি। প্রথমে একাডেমিক স্ট্রাকচার সেটআপ করুন।
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Department Selection (Madrasah mode) */}
+      {useAcademicHierarchy && selectedMarhala && !selectedDepartment && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+            বিভাগ সমূহ - {getMarhalaName(selectedMarhala)}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {getFilteredDepartments().map(d => (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDepartment(d.id)}
+                className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 dark:text-white">{d.name_bn || d.name_en || d.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {toBengaliNumeral(academicHierarchy.semesters.filter(s => s.department_id === d.id).length)}টি সেমিস্টার
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </div>
+              </button>
+            ))}
+            {getFilteredDepartments().length === 0 && (
+              <div className="col-span-full text-center py-12 text-gray-500 bg-white dark:bg-gray-800 rounded-xl">
+                এই মারহালায় কোনো বিভাগ নেই।
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Semester Selection (Madrasah mode - from academic hierarchy) */}
+      {useAcademicHierarchy && selectedDepartment && !selectedSemester && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+            সেমিস্টার সমূহ - {getDepartmentName(selectedDepartment)}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {getFilteredAcademicSemesters().map(s => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedSemester(s.id)}
+                className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 dark:text-white">{s.name_bn || s.name_en || s.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      ভিডিও পাঠ দেখতে ক্লিক করুন
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </div>
+              </button>
+            ))}
+            {getFilteredAcademicSemesters().length === 0 && (
+              <div className="col-span-full text-center py-12 text-gray-500 bg-white dark:bg-gray-800 rounded-xl">
+                এই বিভাগে কোনো সেমিস্টার নেই।
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Legacy Class Selection (non-Madrasah mode) */}
+      {!useAcademicHierarchy && !selectedClass && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {classes.map(cls => (
             <button
@@ -475,8 +679,8 @@ const VideoLessons = () => {
         </div>
       )}
 
-      {/* Semester List */}
-      {selectedClass && !selectedSemester && (
+      {/* Legacy Semester List (non-Madrasah mode) */}
+      {!useAcademicHierarchy && selectedClass && !selectedSemester && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">

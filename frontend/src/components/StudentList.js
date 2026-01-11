@@ -1156,7 +1156,8 @@ const StudentList = () => {
                   </>
                 )}
                 
-                {semesters.length > 0 && (
+                {/* Legacy semester enrollment - only show when NOT using academic hierarchy */}
+                {!(isMadrasahSimpleUI && academicHierarchy.marhalas?.length > 0) && semesters.length > 0 && (
                   <div className="col-span-2">
                     <Label>সেমিস্টার ভর্তি (ভিডিও পাঠের জন্য)</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-800">
@@ -2169,31 +2170,6 @@ const StudentList = () => {
                     )}
                   </>
                 )}
-                {semesters.length > 0 && (
-                  <div>
-                    <Label className="text-base font-semibold">সেমিস্টার ভর্তি</Label>
-                    <div className="grid grid-cols-1 gap-2 mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-800 max-h-40 overflow-y-auto">
-                      {semesters.map((sem) => (
-                        <label key={sem.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedSemesterIds.includes(sem.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSemesterIds([...selectedSemesterIds, sem.id]);
-                              } else {
-                                setSelectedSemesterIds(selectedSemesterIds.filter(id => id !== sem.id));
-                              }
-                            }}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <span className="text-sm">{sem.title_bn} ({sem.class_name})</span>
-                        </label>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">ভিডিও পাঠ দেখার জন্য সেমিস্টারে ভর্তি করুন</p>
-                  </div>
-                )}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="add_roll_no" className="text-base font-semibold">রোল নম্বর *</Label>
@@ -3134,31 +3110,6 @@ const StudentList = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                )}
-                {semesters.length > 0 && (
-                  <div>
-                    <Label className="text-base font-semibold">সেমিস্টার ভর্তি</Label>
-                    <div className="grid grid-cols-1 gap-2 mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-800 max-h-40 overflow-y-auto">
-                      {semesters.map((sem) => (
-                        <label key={sem.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedSemesterIds.includes(sem.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSemesterIds([...selectedSemesterIds, sem.id]);
-                              } else {
-                                setSelectedSemesterIds(selectedSemesterIds.filter(id => id !== sem.id));
-                              }
-                            }}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <span className="text-sm">{sem.title_bn} ({sem.class_name})</span>
-                        </label>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">ভিডিও পাঠ দেখার জন্য সেমিস্টারে ভর্তি করুন</p>
                   </div>
                 )}
                 <div>
