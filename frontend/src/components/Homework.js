@@ -70,13 +70,15 @@ const Homework = () => {
   const [homework, setHomework] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
   const [showDialog, setShowDialog] = useState(false);
   const [selectedClass, setSelectedClass] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    class_id: '',
-    section_id: '',
+    marhala_id: '',
+    department_id: '',
+    semester_id: '',
     subject: '',
     due_date: '',
     instructions: ''
@@ -164,14 +166,37 @@ const Homework = () => {
     }
   }, []);
 
+  const fetchAcademicHierarchy = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await axios.get(`${API}/academic-hierarchy`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAcademicHierarchy(response.data || { marhalas: [], departments: [], semesters: [] });
+    } catch (error) {
+      console.error('Failed to fetch academic hierarchy:', error);
+      setAcademicHierarchy({ marhalas: [], departments: [], semesters: [] });
+    }
+  }, []);
+
   useEffect(() => {
     fetchHomework();
     fetchClasses();
-  }, [fetchHomework, fetchClasses]);
+    fetchAcademicHierarchy();
+  }, [fetchHomework, fetchClasses, fetchAcademicHierarchy]);
+
+  const getFilteredDepartments = () => {
+    return academicHierarchy.departments?.filter(d => d.marhala_id === formData.marhala_id) || [];
+  };
+
+  const getFilteredSemesters = () => {
+    return academicHierarchy.semesters?.filter(s => s.department_id === formData.department_id) || [];
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.class_id || !formData.subject || !formData.due_date) {
+    if (!formData.title || !formData.semester_id || !formData.subject || !formData.due_date) {
       toast.error('সমস্ত প্রয়োজনীয় ক্ষেত্র পূরণ করুন');
       return;
     }
@@ -183,8 +208,9 @@ const Homework = () => {
       const formPayload = new FormData();
       formPayload.append('title', formData.title);
       formPayload.append('description', formData.description || '');
-      formPayload.append('class_id', formData.class_id);
-      formPayload.append('section_id', formData.section_id || '');
+      formPayload.append('marhala_id', formData.marhala_id || '');
+      formPayload.append('department_id', formData.department_id || '');
+      formPayload.append('semester_id', formData.semester_id);
       formPayload.append('subject', formData.subject);
       formPayload.append('due_date', formData.due_date);
       formPayload.append('instructions', formData.instructions || '');
@@ -205,8 +231,9 @@ const Homework = () => {
       setFormData({
         title: '',
         description: '',
-        class_id: '',
-        section_id: '',
+        marhala_id: '',
+        department_id: '',
+        semester_id: '',
         subject: '',
         due_date: '',
         instructions: ''
@@ -311,48 +338,82 @@ const Homework = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Academic Hierarchy - Marhala → Department → Semester */}
+              <div>
+                <Label htmlFor="marhala_id">মারহালা *</Label>
+                <Select
+                  value={formData.marhala_id}
+                  onValueChange={(value) => setFormData({ ...formData, marhala_id: value, department_id: '', semester_id: '' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="মারহালা নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicHierarchy.marhalas?.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name_bn || m.name_en || m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {formData.marhala_id && (
                 <div>
-                  <Label htmlFor="class">ক্লাস *</Label>
+                  <Label htmlFor="department_id">বিভাগ/জামাত</Label>
                   <Select
-                    value={formData.class_id}
-                    onValueChange={(value) => setFormData({ ...formData, class_id: value })}
+                    value={formData.department_id}
+                    onValueChange={(value) => setFormData({ ...formData, department_id: value, semester_id: '' })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="ক্লাস নির্বাচন করুন" />
+                      <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes.map((cls, index) => {
-                        const classId = getClassId(cls);
-                        const className = getClassName(cls);
-                        return (
-                          <SelectItem key={classId || `class-${index}`} value={classId}>
-                            {className}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="subject">বিষয় *</Label>
-                  <Select
-                    value={formData.subject}
-                    onValueChange={(value) => setFormData({ ...formData, subject: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="বিষয় নির্বাচন করুন" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.map((subject, index) => (
-                        <SelectItem key={`subject-${index}`} value={String(subject)}>
-                          {String(subject)}
+                      {getFilteredDepartments().map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name_bn || d.name_en || d.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+              {formData.department_id && (
+                <div>
+                  <Label htmlFor="semester_id">সেমিস্টার *</Label>
+                  <Select
+                    value={formData.semester_id}
+                    onValueChange={(value) => setFormData({ ...formData, semester_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getFilteredSemesters().map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name_bn || s.name_en || s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div>
+                <Label htmlFor="subject">বিষয় *</Label>
+                <Select
+                  value={formData.subject}
+                  onValueChange={(value) => setFormData({ ...formData, subject: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="বিষয় নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((subject, index) => (
+                      <SelectItem key={`subject-${index}`} value={String(subject)}>
+                        {String(subject)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

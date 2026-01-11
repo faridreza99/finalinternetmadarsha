@@ -58,13 +58,15 @@ const toBengaliNumeral = (num) => {
 const LiveClassManagement = () => {
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [jamaats, setJamaats] = useState([]); // Class/Jamaat list
+  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [formData, setFormData] = useState({
     class_name: '',
-    class_id: '', // Link to specific jamaat
+    marhala_id: '',
+    department_id: '',
+    semester_id: '',
     gender: '',
     start_time: '',
     end_time: '',
@@ -121,26 +123,33 @@ const LiveClassManagement = () => {
     }
   }, []);
 
-  const fetchJamaats = useCallback(async () => {
+  const fetchAcademicHierarchy = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await axios.get(`${API}/classes`, {
+      const response = await axios.get(`${API}/academic-hierarchy`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const classList = response.data?.classes || response.data || [];
-      setJamaats(classList);
+      setAcademicHierarchy(response.data || { marhalas: [], departments: [], semesters: [] });
     } catch (error) {
-      console.error('Failed to fetch jamaats:', error);
-      setJamaats([]);
+      console.error('Failed to fetch academic hierarchy:', error);
+      setAcademicHierarchy({ marhalas: [], departments: [], semesters: [] });
     }
   }, []);
 
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
-    fetchJamaats();
-  }, [fetchClasses, fetchTeachers, fetchJamaats]);
+    fetchAcademicHierarchy();
+  }, [fetchClasses, fetchTeachers, fetchAcademicHierarchy]);
+  
+  const getFilteredDepartments = () => {
+    return academicHierarchy.departments?.filter(d => d.marhala_id === formData.marhala_id) || [];
+  };
+
+  const getFilteredSemesters = () => {
+    return academicHierarchy.semesters?.filter(s => s.department_id === formData.department_id) || [];
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -174,7 +183,9 @@ const LiveClassManagement = () => {
     setEditingClass(liveClass);
     setFormData({
       class_name: liveClass.class_name || '',
-      class_id: liveClass.class_id || '',
+      marhala_id: liveClass.marhala_id || '',
+      department_id: liveClass.department_id || '',
+      semester_id: liveClass.semester_id || '',
       gender: liveClass.gender || '',
       start_time: liveClass.start_time || '',
       end_time: liveClass.end_time || '',
@@ -209,7 +220,9 @@ const LiveClassManagement = () => {
   const resetForm = () => {
     setFormData({
       class_name: '',
-      class_id: '',
+      marhala_id: '',
+      department_id: '',
+      semester_id: '',
       gender: '',
       start_time: '',
       end_time: '',
@@ -296,28 +309,65 @@ const LiveClassManagement = () => {
                 />
               </div>
 
+              {/* Academic Hierarchy - Marhala → Department → Semester */}
               <div>
-                <Label htmlFor="class_id">জামাত নির্বাচন (ঐচ্ছিক)</Label>
+                <Label htmlFor="marhala_id">মারহালা</Label>
                 <Select
-                  value={formData.class_id}
-                  onValueChange={(value) => setFormData({...formData, class_id: value === 'all' ? '' : value})}
+                  value={formData.marhala_id}
+                  onValueChange={(value) => setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''})}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="সকল জামাত" />
+                    <SelectValue placeholder="মারহালা নির্বাচন করুন" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">সকল জামাত</SelectItem>
-                    {jamaats.map((jamaat) => (
-                      <SelectItem key={jamaat.id || jamaat.class_id} value={jamaat.id || jamaat.class_id}>
-                        {jamaat.display_name || jamaat.name || jamaat.class_name}
+                    {academicHierarchy.marhalas?.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name_bn || m.name_en || m.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500 mt-1">
-                  নির্দিষ্ট জামাতের জন্য ক্লাস হলে নির্বাচন করুন
-                </p>
               </div>
+              {formData.marhala_id && (
+                <div>
+                  <Label htmlFor="department_id">বিভাগ/জামাত</Label>
+                  <Select
+                    value={formData.department_id}
+                    onValueChange={(value) => setFormData({...formData, department_id: value, semester_id: ''})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getFilteredDepartments().map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name_bn || d.name_en || d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {formData.department_id && (
+                <div>
+                  <Label htmlFor="semester_id">সেমিস্টার</Label>
+                  <Select
+                    value={formData.semester_id}
+                    onValueChange={(value) => setFormData({...formData, semester_id: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getFilteredSemesters().map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name_bn || s.name_en || s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="gender">লিঙ্গ</Label>
