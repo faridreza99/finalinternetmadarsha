@@ -1549,8 +1549,8 @@ const StudentList = () => {
                       </TableCell>
                       <TableCell className="px-2 sm:px-4">
                         <div className="text-xs sm:text-sm">
-                          <p className="font-medium">{getClassName(student.class_id)}</p>
-                          <p className="text-gray-500 text-xs">Sec {getSectionName(student.section_id)}</p>
+                          <p className="font-medium">{student.marhala_name || getClassName(student.class_id)}</p>
+                          <p className="text-gray-500 text-xs">{student.department_name || student.semester_name || `Sec ${getSectionName(student.section_id)}`}</p>
                         </div>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4 hidden lg:table-cell">
