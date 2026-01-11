@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import AcademicHierarchySelector from "./AcademicHierarchySelector";
 
 const API = process.env.REACT_APP_API_URL || "/api";
 
@@ -11,11 +12,12 @@ const MONTHS = [
 const MonthlyPayments = () => {
   const [payments, setPayments] = useState([]);
   const [students, setStudents] = useState([]);
-  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [filterClass, setFilterClass] = useState("");
+  const [filterMarhalaId, setFilterMarhalaId] = useState("");
+  const [filterDepartmentId, setFilterDepartmentId] = useState("");
+  const [filterSemesterId, setFilterSemesterId] = useState("");
   const [filterMonth, setFilterMonth] = useState(new Date().toLocaleString('en-US', { month: 'long' }));
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [formData, setFormData] = useState({
@@ -31,21 +33,32 @@ const MonthlyPayments = () => {
 
   useEffect(() => {
     fetchData();
-  }, [filterClass, filterMonth, filterYear]);
+  }, [filterSemesterId, filterMonth, filterYear]);
+
+  const handleHierarchyChange = (selection) => {
+    setFilterMarhalaId(selection.marhala_id);
+    setFilterDepartmentId(selection.department_id);
+    setFilterSemesterId(selection.semester_id);
+  };
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
-      const [paymentsRes, studentsRes, classesRes] = await Promise.all([
-        axios.get(`${API}/monthly-payments?month=${filterMonth}&year=${filterYear}${filterClass ? `&class_name=${filterClass}` : ""}`, { headers }),
-        axios.get(`${API}/students`, { headers }),
-        axios.get(`${API}/classes`, { headers })
+      
+      let paymentsUrl = `${API}/monthly-payments?month=${filterMonth}&year=${filterYear}`;
+      if (filterSemesterId) paymentsUrl += `&semester_id=${filterSemesterId}`;
+      
+      let studentsUrl = `${API}/students`;
+      if (filterSemesterId) studentsUrl += `?semester_id=${filterSemesterId}`;
+      
+      const [paymentsRes, studentsRes] = await Promise.all([
+        axios.get(paymentsUrl, { headers }),
+        axios.get(studentsUrl, { headers })
       ]);
       setPayments(paymentsRes.data.payments || []);
       setStudents(studentsRes.data.students || studentsRes.data || []);
-      setClasses(classesRes.data.classes || classesRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -92,10 +105,7 @@ const MonthlyPayments = () => {
     return payments.find(p => p.student_id === studentId && p.status === "completed");
   };
 
-  const filteredStudents = students.filter(s => {
-    if (!filterClass) return true;
-    return (s.class_standard || s.class_name) === filterClass;
-  });
+  const filteredStudents = students;
 
   if (loading) {
     return (
@@ -117,23 +127,18 @@ const MonthlyPayments = () => {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              ক্লাস / মারহালা
-            </label>
-            <select
-              value={filterClass}
-              onChange={(e) => setFilterClass(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            >
-              <option value="">সব ক্লাস</option>
-              {classes.map((cls) => (
-                <option key={cls.id || cls._id} value={cls.name}>
-                  {cls.name}
-                </option>
-              ))}
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="md:col-span-3">
+            <AcademicHierarchySelector
+              onSelectionChange={handleHierarchyChange}
+              selectedMarhalaId={filterMarhalaId}
+              selectedDepartmentId={filterDepartmentId}
+              selectedSemesterId={filterSemesterId}
+              showLabels={true}
+              showAllOption={true}
+              allOptionLabel="সকল"
+              inline={true}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

@@ -21,6 +21,7 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
+import AcademicHierarchySelector from "./AcademicHierarchySelector";
 
 const MADRASAH_GRADES = [
   {
@@ -59,12 +60,13 @@ const MADRASAH_GRADES = [
 
 const MadrasahSimpleResult = () => {
   const { user } = useAuth();
-  const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedClass, setSelectedClass] = useState("");
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState("");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const [selectedSemesterId, setSelectedSemesterId] = useState("");
   const [selectedSession, setSelectedSession] = useState(
     new Date().getFullYear().toString(),
   );
@@ -80,57 +82,36 @@ const MadrasahSimpleResult = () => {
     user?.role,
   );
 
-  const fetchClasses = useCallback(async () => {
-    try {
-      const response = await axios.get("/api/classes");
-      // Include all classes - custom marhalas and standard madrasah classes
-      // Filter for madrasah institution type, any category (custom marhalas), or known madrasah names
-      const madrasahClasses = response.data.filter(
-        (c) =>
-          c.institution_type === "madrasah" ||
-          (c.category && c.category.toLowerCase().includes("custom")) ||
-          c.category === "Ebtedayee" ||
-          c.category === "Dakhil" ||
-          c.category === "Alim" ||
-          c.category === "Fazil" ||
-          c.category === "Kamil" ||
-          c.category === "Special" ||
-          c.display_name?.includes("ইবতেদায়ী") ||
-          c.display_name?.includes("দাখিল") ||
-          c.display_name?.includes("আলিম") ||
-          c.display_name?.includes("ফাজিল") ||
-          c.display_name?.includes("কামিল") ||
-          c.display_name?.includes("তাকমিল") ||
-          c.display_name?.includes("হেফজ") ||
-          c.display_name?.includes("নূরানী") ||
-          c.display_name?.includes("কিতাব"),
-      );
-      setClasses(madrasahClasses.length > 0 ? madrasahClasses : response.data);
-    } catch (error) {
-      console.error("Error fetching classes:", error);
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id);
+    setSelectedDepartmentId(selection.department_id);
+    setSelectedSemesterId(selection.semester_id);
+    if (!selection.semester_id) {
+      setStudents([]);
+      setResults([]);
     }
-  }, []);
+  };
 
   const fetchStudents = useCallback(async () => {
-    if (!selectedClass) {
+    if (!selectedSemesterId) {
       setStudents([]);
       return;
     }
     try {
       const response = await axios.get(
-        `/api/students?class_id=${selectedClass}`,
+        `/api/students?semester_id=${selectedSemesterId}`,
       );
       setStudents(response.data.students || response.data || []);
     } catch (error) {
       console.error("Error fetching students:", error);
     }
-  }, [selectedClass]);
+  }, [selectedSemesterId]);
 
   const fetchResults = useCallback(async () => {
-    if (!selectedClass) return;
+    if (!selectedSemesterId) return;
     try {
       const response = await axios.get(
-        `/api/madrasah/simple-results?class_id=${selectedClass}&session=${selectedSession}`,
+        `/api/madrasah/simple-results?semester_id=${selectedSemesterId}&session=${selectedSession}`,
       );
       setResults(response.data || []);
     } catch (error) {
@@ -139,7 +120,7 @@ const MadrasahSimpleResult = () => {
       }
       setResults([]);
     }
-  }, [selectedClass, selectedSession]);
+  }, [selectedSemesterId, selectedSession]);
 
   const fetchSchoolBranding = useCallback(async () => {
     try {
@@ -159,18 +140,18 @@ const MadrasahSimpleResult = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchClasses(), fetchSchoolBranding()]);
+      await fetchSchoolBranding();
       setLoading(false);
     };
     init();
-  }, [fetchClasses, fetchSchoolBranding]);
+  }, [fetchSchoolBranding]);
 
   useEffect(() => {
-    if (selectedClass) {
+    if (selectedSemesterId) {
       fetchStudents();
       fetchResults();
     }
-  }, [selectedClass, selectedSession, fetchStudents, fetchResults]);
+  }, [selectedSemesterId, selectedSession, fetchStudents, fetchResults]);
 
   const getStudentResult = (studentId) => {
     return results.find((r) => r.student_id === studentId);
@@ -194,10 +175,9 @@ const MadrasahSimpleResult = () => {
         await axios.post("/api/madrasah/simple-results", {
           student_id: studentId,
           student_name: student.name,
-          class_id: selectedClass,
-          class_name:
-            classes.find((c) => c.id === selectedClass)?.display_name ||
-            classes.find((c) => c.id === selectedClass)?.name,
+          semester_id: selectedSemesterId,
+          marhala_id: selectedMarhalaId,
+          department_id: selectedDepartmentId,
           grade,
           session: selectedSession,
         });
@@ -248,7 +228,7 @@ const MadrasahSimpleResult = () => {
           <h1>${schoolBranding.name || "মাদ্রাসা"}</h1>
           <p class="info">${schoolBranding.address || ""}</p>
           <h2>বার্ষিক ফলাফল - ${selectedSession}</h2>
-          <p>মারহালা: ${classes.find((c) => c.id === selectedClass)?.display_name || ""}</p>
+          <p>সেমিস্টার ফলাফল</p>
         </div>
         <table>
           <thead>
@@ -349,46 +329,51 @@ const MadrasahSimpleResult = () => {
           </p>
         </CardHeader>
         <CardContent className="p-4 md:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                মারহালা নির্বাচন করুন
-              </label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder="মারহালা বাছাই করুন" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((cls) => (
-                    <SelectItem
-                      key={cls.id}
-                      value={cls.id}
-                      className="text-base py-3"
-                    >
-                      {cls.display_name || cls.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                ছাত্র খুঁজুন
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  placeholder="নাম বা রোল দিয়ে খুঁজুন..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-12 text-base"
-                />
+          <div className="grid grid-cols-1 gap-4 mb-6">
+            <AcademicHierarchySelector
+              onSelectionChange={handleHierarchyChange}
+              selectedMarhalaId={selectedMarhalaId}
+              selectedDepartmentId={selectedDepartmentId}
+              selectedSemesterId={selectedSemesterId}
+              showLabels={true}
+              inline={true}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  শিক্ষাবর্ষ
+                </label>
+                <Select value={selectedSession} onValueChange={setSelectedSession}>
+                  <SelectTrigger className="h-12 text-base">
+                    <SelectValue placeholder="বছর বাছাই করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sessionOptions.map((year) => (
+                      <SelectItem key={year} value={year} className="text-base py-3">
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  ছাত্র খুঁজুন
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    placeholder="নাম বা রোল দিয়ে খুঁজুন..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 h-12 text-base"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {selectedClass && (
+          {selectedSemesterId && (
             <div className="flex justify-end mb-4">
               <Button
                 onClick={handlePrint}
@@ -403,7 +388,7 @@ const MadrasahSimpleResult = () => {
         </CardContent>
       </Card>
 
-      {selectedClass && (
+      {selectedSemesterId && (
         <Card ref={printRef}>
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -530,15 +515,15 @@ const MadrasahSimpleResult = () => {
         </Card>
       )}
 
-      {!selectedClass && (
+      {!selectedSemesterId && (
         <Card className="border-dashed border-2 border-gray-300 dark:border-gray-700">
           <CardContent className="py-16 text-center">
             <GraduationCap className="h-16 w-16 mx-auto mb-4 text-gray-400" />
             <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400 mb-2">
-              মারহালা নির্বাচন করুন
+              সেমিস্টার নির্বাচন করুন
             </h3>
             <p className="text-gray-500">
-              উপরে থেকে মারহালা বাছাই করলে ছাত্রদের তালিকা দেখাবে
+              উপরে থেকে মারহালা, বিভাগ ও সেমিস্টার বাছাই করলে ছাত্রদের তালিকা দেখাবে
             </p>
           </CardContent>
         </Card>

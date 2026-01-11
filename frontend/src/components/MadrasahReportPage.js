@@ -21,14 +21,14 @@ import {
   Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const MadrasahReportPage = () => {
   const [activeReport, setActiveReport] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [classes, setClasses] = useState([]);
-  const [sections, setSections] = useState([]);
-  const [selectedClass, setSelectedClass] = useState('all');
-  const [selectedSection, setSelectedSection] = useState('all');
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedSession, setSelectedSession] = useState('2025');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -50,27 +50,11 @@ const MadrasahReportPage = () => {
   
   const printRef = useRef();
 
-  const fetchClasses = useCallback(async () => {
-    try {
-      const response = await axios.get('/api/classes');
-      setClasses(response.data || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-    }
-  }, []);
-
-  const fetchSections = useCallback(async (classId) => {
-    if (!classId || classId === 'all') {
-      setSections([]);
-      return;
-    }
-    try {
-      const response = await axios.get(`/api/sections?class_id=${classId}`);
-      setSections(response.data || []);
-    } catch (error) {
-      console.error('Error fetching sections:', error);
-    }
-  }, []);
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id);
+    setSelectedDepartmentId(selection.department_id);
+    setSelectedSemesterId(selection.semester_id);
+  };
 
   const fetchBranding = useCallback(async () => {
     try {
@@ -82,20 +66,16 @@ const MadrasahReportPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchClasses();
     fetchBranding();
-  }, [fetchClasses, fetchBranding]);
-
-  useEffect(() => {
-    fetchSections(selectedClass);
-  }, [selectedClass, fetchSections]);
+  }, [fetchBranding]);
 
   const fetchStudentReport = useCallback(async () => {
     setLoading(true);
     try {
       let url = '/api/students?';
-      if (selectedClass !== 'all') url += `class_id=${selectedClass}&`;
-      if (selectedSection !== 'all') url += `section_id=${selectedSection}&`;
+      if (selectedSemesterId) url += `semester_id=${selectedSemesterId}&`;
+      else if (selectedDepartmentId) url += `department_id=${selectedDepartmentId}&`;
+      else if (selectedMarhalaId) url += `marhala_id=${selectedMarhalaId}&`;
       const response = await axios.get(url);
       setStudents(response.data?.students || response.data || []);
     } catch (error) {
@@ -103,15 +83,15 @@ const MadrasahReportPage = () => {
       toast.error('ছাত্র তথ্য লোড করতে সমস্যা হয়েছে');
     }
     setLoading(false);
-  }, [selectedClass, selectedSection]);
+  }, [selectedMarhalaId, selectedDepartmentId, selectedSemesterId]);
 
   const fetchAttendanceReport = useCallback(async () => {
     setLoading(true);
     try {
       let studentUrl = '/api/attendance?type=student&';
       let staffUrl = '/api/attendance?type=staff&';
-      if (selectedClass !== 'all') {
-        studentUrl += `class_id=${selectedClass}&`;
+      if (selectedSemesterId) {
+        studentUrl += `semester_id=${selectedSemesterId}&`;
       }
       if (dateFrom) {
         studentUrl += `date_from=${dateFrom}&`;
@@ -134,13 +114,13 @@ const MadrasahReportPage = () => {
       toast.error('হাজিরা তথ্য লোড করতে সমস্যা হয়েছে');
     }
     setLoading(false);
-  }, [selectedClass, dateFrom, dateTo]);
+  }, [selectedSemesterId, dateFrom, dateTo]);
 
   const fetchResultReport = useCallback(async () => {
     setLoading(true);
     try {
       let url = '/api/madrasah/simple-results?';
-      if (selectedClass !== 'all') url += `class_id=${selectedClass}&`;
+      if (selectedSemesterId) url += `semester_id=${selectedSemesterId}&`;
       url += `session=${selectedSession}`;
       const response = await axios.get(url);
       setResultData(response.data || []);
@@ -149,7 +129,7 @@ const MadrasahReportPage = () => {
       toast.error('ফলাফল তথ্য লোড করতে সমস্যা হয়েছে');
     }
     setLoading(false);
-  }, [selectedClass, selectedSession]);
+  }, [selectedSemesterId, selectedSession]);
 
   const fetchPaymentReport = useCallback(async () => {
     setLoading(true);
@@ -298,42 +278,19 @@ const MadrasahReportPage = () => {
 
       <Card className="mb-6">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium text-gray-700 mb-1 block">মারহালা</label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
-                  <SelectValue placeholder="মারহালা নির্বাচন করুন" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সকল মারহালা</SelectItem>
-                  {classes.map(cls => (
-                    <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
-                      {cls.name || cls.class_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[400px]">
+              <AcademicHierarchySelector
+                onSelectionChange={handleHierarchyChange}
+                selectedMarhalaId={selectedMarhalaId}
+                selectedDepartmentId={selectedDepartmentId}
+                selectedSemesterId={selectedSemesterId}
+                showLabels={true}
+                showAllOption={true}
+                allOptionLabel="সকল"
+                inline={true}
+              />
             </div>
-
-            {activeReport === 'student' && (
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium text-gray-700 mb-1 block">শাখা</label>
-                <Select value={selectedSection} onValueChange={setSelectedSection}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="শাখা নির্বাচন করুন" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">সকল শাখা</SelectItem>
-                    {sections.map(sec => (
-                      <SelectItem key={sec.id || sec._id} value={sec.id || sec._id}>
-                        {sec.name || sec.section_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             {activeReport === 'attendance' && (
               <>
