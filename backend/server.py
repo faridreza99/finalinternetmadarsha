@@ -6986,12 +6986,22 @@ async def generate_student_attendance_report(
             filter_criteria["section_id"] = section_id
         
         # Academic hierarchy filtering for Madrasah
+        # Note: Filter by looking up students in that semester first
         if semester_id and semester_id != "all":
-            filter_criteria["semester_id"] = semester_id
+            students_in_semester = await db.students.find({"tenant_id": current_user.tenant_id, "semester_id": semester_id}).to_list(10000)
+            student_ids = [s.get("id") for s in students_in_semester]
+            if student_ids:
+                filter_criteria["person_id"] = {"$in": student_ids}
         elif department_id and department_id != "all":
-            filter_criteria["department_id"] = department_id
+            students_in_dept = await db.students.find({"tenant_id": current_user.tenant_id, "department_id": department_id}).to_list(10000)
+            student_ids = [s.get("id") for s in students_in_dept]
+            if student_ids:
+                filter_criteria["person_id"] = {"$in": student_ids}
         elif marhala_id and marhala_id != "all":
-            filter_criteria["marhala_id"] = marhala_id
+            students_in_marhala = await db.students.find({"tenant_id": current_user.tenant_id, "marhala_id": marhala_id}).to_list(10000)
+            student_ids = [s.get("id") for s in students_in_marhala]
+            if student_ids:
+                filter_criteria["person_id"] = {"$in": student_ids}
         
         attendance_records = await db.attendance.find(filter_criteria).to_list(10000)
         
