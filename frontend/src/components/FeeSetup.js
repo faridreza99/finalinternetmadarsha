@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 import { useInstitution } from '../context/InstitutionContext';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -78,6 +79,12 @@ const FeeSetup = () => {
     amount: '',
     frequency: 'monthly',
     apply_to_classes: 'all',
+    marhala_id: '',
+    department_id: '',
+    semester_id: '',
+    marhala_name: '',
+    department_name: '',
+    semester_name: '',
     due_date: 10,
     late_fee: 0,
     discount: 0,
@@ -192,6 +199,12 @@ const FeeSetup = () => {
       amount: config.amount?.toString() || '',
       frequency: config.frequency || 'monthly',
       apply_to_classes: config.apply_to_classes || 'all',
+      marhala_id: config.marhala_id || '',
+      department_id: config.department_id || '',
+      semester_id: config.semester_id || '',
+      marhala_name: config.marhala_name || '',
+      department_name: config.department_name || '',
+      semester_name: config.semester_name || '',
       due_date: config.due_date || 10,
       late_fee: config.late_fee || 0,
       discount: config.discount || 0,
@@ -238,11 +251,30 @@ const FeeSetup = () => {
       amount: '',
       frequency: 'monthly',
       apply_to_classes: 'all',
+      marhala_id: '',
+      department_id: '',
+      semester_id: '',
+      marhala_name: '',
+      department_name: '',
+      semester_name: '',
       due_date: 10,
       late_fee: 0,
       discount: 0,
       is_active: true
     });
+  };
+
+  const handleAcademicSelection = (selection) => {
+    setFormData(prev => ({
+      ...prev,
+      marhala_id: selection.marhala_id || '',
+      department_id: selection.department_id || '',
+      semester_id: selection.semester_id || '',
+      marhala_name: selection.marhala_name || '',
+      department_name: selection.department_name || '',
+      semester_name: selection.semester_name || '',
+      apply_to_classes: selection.marhala_id || 'all'
+    }));
   };
 
   const getFeeTypeLabel = (type) => {
@@ -255,9 +287,14 @@ const FeeSetup = () => {
     return isMadrasahSimpleUI ? (found?.label || freq) : (found?.labelEn || freq);
   };
 
-  const getClassLabel = (classValue) => {
+  const getClassLabel = (classValue, config = null) => {
     if (classValue === 'all') return isMadrasahSimpleUI ? 'সকল মারহালা' : 'All Classes';
-    if (isMadrasahSimpleUI) {
+    if (isMadrasahSimpleUI && config) {
+      const parts = [];
+      if (config.marhala_name) parts.push(config.marhala_name);
+      if (config.department_name) parts.push(config.department_name);
+      if (config.semester_name) parts.push(config.semester_name);
+      if (parts.length > 0) return parts.join(' | ');
       const marhala = marhalas.find(m => m.id === classValue);
       if (marhala) return marhala.name_bn || marhala.name;
     }
@@ -336,7 +373,7 @@ const FeeSetup = () => {
                   <CardHeader className="bg-gray-50 py-3">
                     <CardTitle className="flex items-center gap-2 text-gray-700 text-base">
                       <GraduationCap className="h-5 w-5" />
-                      {getClassLabel(classKey)}
+                      {getClassLabel(classKey, configs[0])}
                       <Badge className="ml-2 bg-blue-100 text-blue-700">
                         {configs.length} {isMadrasahSimpleUI ? 'টি ফি' : 'fees'}
                       </Badge>
@@ -452,35 +489,35 @@ const FeeSetup = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                {isMadrasahSimpleUI ? 'মারহালা *' : 'Apply to Class *'}
-              </label>
-              <Select 
-                value={formData.apply_to_classes} 
-                onValueChange={(value) => setFormData({...formData, apply_to_classes: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{isMadrasahSimpleUI ? 'সকল মারহালা' : 'All Classes'}</SelectItem>
-                  {isMadrasahSimpleUI ? (
-                    marhalas.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name_bn || m.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    classes.map((cls) => (
+            {isMadrasahSimpleUI ? (
+              <AcademicHierarchySelector
+                onSelectionChange={handleAcademicSelection}
+                showAllOption={true}
+                layout="vertical"
+              />
+            ) : (
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Apply to Class *
+                </label>
+                <Select 
+                  value={formData.apply_to_classes} 
+                  onValueChange={(value) => setFormData({...formData, apply_to_classes: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    {classes.map((cls) => (
                       <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
                         {cls.display_name || cls.name || cls.class_name}
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
