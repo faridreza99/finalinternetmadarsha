@@ -6945,6 +6945,9 @@ async def generate_student_attendance_report(
     date: str = None,
     class_id: str = "all",
     section_id: str = "all",
+    marhala_id: str = None,
+    department_id: str = None,
+    semester_id: str = None,
     current_user: User = Depends(get_current_user)
 ):
     """Generate student attendance report for a specific date"""
@@ -6980,6 +6983,14 @@ async def generate_student_attendance_report(
         
         if section_id and section_id != "all":
             filter_criteria["section_id"] = section_id
+        
+        # Academic hierarchy filtering for Madrasah
+        if semester_id and semester_id != "all":
+            filter_criteria["semester_id"] = semester_id
+        elif department_id and department_id != "all":
+            filter_criteria["department_id"] = department_id
+        elif marhala_id and marhala_id != "all":
+            filter_criteria["marhala_id"] = marhala_id
         
         attendance_records = await db.attendance.find(filter_criteria).to_list(10000)
         
