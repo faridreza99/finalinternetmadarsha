@@ -3971,10 +3971,9 @@ async def get_next_roll_number(
         
         return {
             "next_roll": next_roll,
-            "মারহালা": marhala_name,
-            "বিভাগ": department_name,
-                "সেমিস্টার": semester_name,
             "semester_id": semester_id,
+            "class_id": class_id,
+            "section_id": section_id,
             "total_students": len(students)
         }
     except Exception as e:
