@@ -207,19 +207,19 @@ const Fees = () => {
     fetchSchoolBranding();
   }, []);
   
-  // Fetch school branding for receipt
+  // Fetch school branding for receipt from institution
   const fetchSchoolBranding = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await axios.get(`${API}/school-branding`, {
+      const response = await axios.get(`${API}/institution`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data) {
         setSchoolBranding({
-          school_name: response.data.school_name || '',
-          school_name_bn: response.data.school_name_bn || response.data.school_name || '',
-          logo_url: response.data.logo_url || '',
+          school_name: response.data.school_name || response.data.name || '',
+          school_name_bn: response.data.school_name_bn || response.data.school_name || response.data.name || '',
+          logo_url: response.data.logo_url || response.data.logo || '',
           address: response.data.address || '',
           phone: response.data.phone || '',
           email: response.data.email || '',
@@ -227,7 +227,7 @@ const Fees = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching school branding:', error);
+      console.error('Error fetching institution:', error);
     }
   };
   

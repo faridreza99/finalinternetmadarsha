@@ -58,13 +58,12 @@ const MadrasahDashboard = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [studentsRes, feesRes, attendanceRes, classesRes, paymentsRes, brandingRes, institutionRes] = await Promise.all([
+      const [studentsRes, feesRes, attendanceRes, classesRes, paymentsRes, institutionRes] = await Promise.all([
         axios.get(`${API}/students`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API}/fees/dashboard`, { headers }).catch(() => ({ data: {} })),
         axios.get(`${API}/attendance/summary?type=student`, { headers }).catch(() => ({ data: {} })),
         axios.get(`${API}/classes`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API}/fees/payments/recent?limit=5`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API}/school-branding`, { headers }).catch(() => ({ data: {} })),
         axios.get(`${API}/institution`, { headers }).catch(() => ({ data: {} })),
       ]);
 
@@ -112,12 +111,11 @@ const MadrasahDashboard = () => {
         weeklyAttendance: Array.isArray(attendance.weekly) ? attendance.weekly : [],
       });
 
-      const branding = brandingRes.data || {};
       const institution = institutionRes.data || {};
       setSchoolBranding({
-        school_name: institution.school_name || institution.name || branding.school_name || branding.site_title || '',
-        logo_url: institution.logo_url || institution.logo || branding.logo_url || '',
-        primary_color: branding.primary_color || '#10B981'
+        school_name: institution.school_name || institution.name || institution.site_title || '',
+        logo_url: institution.logo_url || institution.logo || '',
+        primary_color: institution.primary_color || '#10B981'
       });
     } catch (error) {
       console.error("Dashboard fetch error:", error);

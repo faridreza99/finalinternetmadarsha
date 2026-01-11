@@ -55,15 +55,20 @@ const AdmissionFeeReport = () => {
       if (dateTo) params.append("date_to", dateTo);
       if (params.toString()) url += `?${params.toString()}`;
 
-      const [feesRes, brandingRes] = await Promise.all([
+      const [feesRes, institutionRes] = await Promise.all([
         axios.get(url, { headers }),
-        axios.get("/api/school-branding", { headers })
+        axios.get("/api/institution", { headers })
       ]);
 
       const feesData = feesRes.data.fees || feesRes.data || [];
       setFees(feesData);
       setFilteredFees(feesData);
-      setSchoolBranding(brandingRes.data || {});
+      const inst = institutionRes.data || {};
+      setSchoolBranding({
+        school_name: inst.school_name || inst.name || '',
+        logo_url: inst.logo_url || inst.logo || '',
+        address: inst.address || ''
+      });
 
       const total = feesData.reduce((sum, f) => sum + (f.amount || 0), 0);
       setSummary({ total, count: feesData.length });

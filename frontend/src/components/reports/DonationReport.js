@@ -51,11 +51,11 @@ const DonationReport = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [donationsRes, committeesRes, donorsRes, brandingRes] = await Promise.all([
+      const [donationsRes, committeesRes, donorsRes, institutionRes] = await Promise.all([
         axios.get("/api/donation-payments", { headers }).catch(() => ({ data: { payments: [] } })),
         axios.get("/api/committees", { headers }).catch(() => ({ data: { committees: [] } })),
         axios.get("/api/donors", { headers }).catch(() => ({ data: { donors: [] } })),
-        axios.get("/api/school-branding", { headers })
+        axios.get("/api/institution", { headers })
       ]);
 
       const donationsData = donationsRes.data.payments || donationsRes.data || [];
@@ -65,7 +65,12 @@ const DonationReport = () => {
       setDonations(donationsData);
       setCommittees(committeesData);
       setDonors(donorsData);
-      setSchoolBranding(brandingRes.data || {});
+      const inst = institutionRes.data || {};
+      setSchoolBranding({
+        school_name: inst.school_name || inst.name || '',
+        logo_url: inst.logo_url || inst.logo || '',
+        address: inst.address || ''
+      });
 
       const totalDonations = donationsData.reduce((sum, d) => sum + (d.amount || 0), 0);
       setSummary({

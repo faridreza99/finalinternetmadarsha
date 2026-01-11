@@ -48,15 +48,20 @@ const MonthlyFeeReport = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [paymentsRes, brandingRes] = await Promise.all([
+      const [paymentsRes, institutionRes] = await Promise.all([
         axios.get(`/api/fees/payments/recent?limit=500&month=${selectedMonth}`, { headers }),
-        axios.get("/api/school-branding", { headers })
+        axios.get("/api/institution", { headers })
       ]);
 
       const paymentsData = paymentsRes.data.payments || paymentsRes.data || [];
       setPayments(paymentsData);
       setFilteredPayments(paymentsData);
-      setSchoolBranding(brandingRes.data || {});
+      const inst = institutionRes.data || {};
+      setSchoolBranding({
+        school_name: inst.school_name || inst.name || '',
+        logo_url: inst.logo_url || inst.logo || '',
+        address: inst.address || ''
+      });
 
       const total = paymentsData.reduce((sum, p) => sum + (p.amount || 0), 0);
       setSummary({ total, count: paymentsData.length, pending: 0 });

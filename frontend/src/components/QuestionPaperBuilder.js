@@ -689,11 +689,17 @@ const QuestionPaperBuilder = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      // Fetch school branding
-      const brandingResponse = await axios.get(`${API_BASE_URL}/school-branding`, {
+      // Fetch institution branding
+      const brandingResponse = await axios.get(`${API_BASE_URL}/institution`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const branding = brandingResponse.data;
+      const inst = brandingResponse.data || {};
+      const branding = {
+        school_name: inst.school_name || inst.name || '',
+        logo_url: inst.logo_url || inst.logo || '',
+        address: inst.address || '',
+        primary_color: inst.primary_color || '#1e40af'
+      };
       
       const printWindow = window.open('', '_blank', 'width=800,height=600');
       if (!printWindow) {

@@ -43,13 +43,20 @@ const FinancialSummary = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [summaryRes, brandingRes] = await Promise.all([
+      const [summaryRes, institutionRes] = await Promise.all([
         axios.get("/api/reports/financial-summary", { headers }),
-        axios.get("/api/school-branding", { headers })
+        axios.get("/api/institution", { headers })
       ]);
 
       setSummary(summaryRes.data);
-      setSchoolBranding(brandingRes.data || {});
+      const inst = institutionRes.data || {};
+      setSchoolBranding({
+        school_name: inst.school_name || inst.name || '',
+        logo_url: inst.logo_url || inst.logo || '',
+        address: inst.address || '',
+        phone: inst.phone || '',
+        email: inst.email || ''
+      });
     } catch (error) {
       console.error("Error fetching summary:", error);
       toast.error(isBangla ? "সারাংশ লোড করতে ব্যর্থ" : "Failed to load summary");

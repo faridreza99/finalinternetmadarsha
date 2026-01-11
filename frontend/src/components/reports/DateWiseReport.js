@@ -53,9 +53,9 @@ const DateWiseReport = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [reportRes, brandingRes] = await Promise.all([
+      const [reportRes, institutionRes] = await Promise.all([
         axios.get(`/api/reports/date-wise?date_from=${dateFrom}&date_to=${dateTo}`, { headers }),
-        axios.get("/api/school-branding", { headers })
+        axios.get("/api/institution", { headers })
       ]);
 
       const data = reportRes.data || {};
@@ -76,7 +76,12 @@ const DateWiseReport = () => {
         grandTotal: totalAdmission + totalMonthly + totalDonation
       });
 
-      setSchoolBranding(brandingRes.data || {});
+      const inst = institutionRes.data || {};
+      setSchoolBranding({
+        school_name: inst.school_name || inst.name || '',
+        logo_url: inst.logo_url || inst.logo || '',
+        address: inst.address || ''
+      });
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error(isBangla ? "তথ্য লোড করতে ব্যর্থ" : "Failed to load data");
