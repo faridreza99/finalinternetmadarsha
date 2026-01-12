@@ -205,6 +205,29 @@ async def validation_exception_handler(request, exc):
         content={"detail": exc.errors()}
     )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import logging
+    import traceback
+    
+    error_msg = f"Global Error: {str(exc)}"
+    logging.error(error_msg)
+    
+    # Write to file for immediate visibility
+    try:
+        with open("backend_global_error.txt", "w", encoding="utf-8") as f:
+            f.write(f"URL: {str(request.url)}\n")
+            f.write(f"Method: {request.method}\n")
+            f.write(f"Error: {str(exc)}\n\n")
+            traceback.print_exc(file=f)
+    except:
+        pass
+        
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "message": str(exc)}
+    )
+
 # Root route redirect to help users find the frontend
 @app.get("/")
 async def root():
@@ -1546,6 +1569,12 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         return user_obj
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    except Exception as e:
+        import traceback
+        with open("backend_auth_debug.txt", "w", encoding="utf-8") as f:
+            f.write(f"Error in get_current_user: {str(e)}\n\n")
+            traceback.print_exc(file=f)
+        raise HTTPException(status_code=500, detail=f"Auth Error: {str(e)}")
 
 async def get_current_tenant(user: User = Depends(get_current_user)):
     tenant = await db.tenants.find_one({"id": user.tenant_id})
@@ -2218,6 +2247,8 @@ async def get_all_users_with_details(current_user: User = Depends(get_current_us
         current_short_name = institution["short_name"].lower()
     elif school and school.get("short_name"):
         current_short_name = school["short_name"].lower()
+    else:
+        current_short_name = None
     
     result_users = []
     for user in users:
@@ -14757,7 +14788,16 @@ async def generate_attendance_pdf_report(report_type: str, report_data: dict, cu
     try:
         import tempfile
         import os
-        from weasyprint import HTML
+        try:
+            from weasyprint import HTML
+            WEASYPRINT_AVAILABLE = True
+        except (OSError, ImportError) as e:
+            WEASYPRINT_AVAILABLE = False
+            HTML = None
+            raise HTTPException(
+                status_code=503,
+                detail=f"PDF generation is not available. WeasyPrint requires GTK libraries. Error: {str(e)}"
+            )
         
         FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts')
         
@@ -15504,7 +15544,16 @@ async def download_transfer_certificate_pdf(
 ):
     """Download transfer certificate as PDF with school branding using WeasyPrint"""
     try:
-        from weasyprint import HTML
+        try:
+            from weasyprint import HTML
+            WEASYPRINT_AVAILABLE = True
+        except (OSError, ImportError) as e:
+            WEASYPRINT_AVAILABLE = False
+            HTML = None
+            raise HTTPException(
+                status_code=503,
+                detail=f"PDF generation is not available. WeasyPrint requires GTK libraries. Error: {str(e)}"
+            )
         import os
         
         FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts')
@@ -27563,19 +27612,29 @@ async def get_teacher_students(
 @api_router.post("/homework")
 async def create_homework(
     title: str = Form(...),
-    description: str = Form(None),
-    class_id: str = Form(...),
-    section_id: str = Form(None),
+    description: str = Form(default=""),
+    marhala_id: str = Form(default=""),
+    department_id: str = Form(default=""),
+    semester_id: str = Form(...),
     subject: str = Form(...),
     due_date: str = Form(...),
-    instructions: str = Form(None),
-    file: UploadFile = File(None),
+    instructions: str = Form(default=""),
+    class_id: Optional[str] = Form(None),  # Optional - handle None
+    section_id: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user)
 ):
     """Create a new homework assignment"""
     try:
         if current_user.role not in ["teacher", "admin", "super_admin"]:
             raise HTTPException(status_code=403, detail="Not authorized")
+        
+        # Handle None values for optional fields - convert to empty string for database
+        class_id = class_id if class_id is not None else ""
+        section_id = section_id if section_id is not None else ""
+        
+        # Debug logging
+        logger.info(f"Homework creation - class_id: '{class_id}', section_id: '{section_id}'")
         
         school_id = getattr(current_user, 'school_id', None)
         
@@ -27591,9 +27650,42 @@ async def create_homework(
             file_name = file.filename
             file_url = f"data:{file.content_type};base64,{base64.b64encode(file_content).decode()}"
         
-        # Get class and section names
-        class_doc = await db.classes.find_one({"id": class_id})
-        section_doc = await db.sections.find_one({"id": section_id}) if section_id else None
+        # Get academic hierarchy names
+        marhala_name = ""
+        department_name = ""
+        semester_name = ""
+        class_name = ""
+        section_name = ""
+        
+        if marhala_id and marhala_id.strip() and marhala_id != "":
+            marhala = await db.marhalas.find_one({"id": marhala_id})
+            if marhala:
+                marhala_name = marhala.get("name_bn") or marhala.get("name_en") or marhala.get("name", "")
+        
+        if department_id and department_id.strip() and department_id != "":
+            department = await db.departments.find_one({"id": department_id})
+            if department:
+                department_name = department.get("name_bn") or department.get("name_en") or department.get("name", "")
+        
+        if semester_id and semester_id.strip():
+            try:
+                semester = await db.academic_semesters.find_one({"id": semester_id})
+                if semester:
+                    semester_name = semester.get("name_bn") or semester.get("name_en") or semester.get("name", "")
+            except Exception as e:
+                logger.error(f"Error fetching semester: {e}")
+                semester_name = ""
+        
+        # Get class and section names (for backward compatibility)
+        if class_id and class_id.strip() and class_id != "":
+            class_doc = await db.classes.find_one({"id": class_id})
+            if class_doc:
+                class_name = class_doc.get("name", "")
+        
+        if section_id and section_id.strip() and section_id != "":
+            section_doc = await db.sections.find_one({"id": section_id})
+            if section_doc:
+                section_name = section_doc.get("name", "")
         
         homework = {
             "id": str(uuid.uuid4()),
@@ -27601,11 +27693,16 @@ async def create_homework(
             "school_id": school_id,
             "title": title,
             "description": description,
-            "মারহালা": marhala_name,
-            "class_name": class_doc.get("name", "") if class_doc else "",
-            "বিভাগ": department_name,
-                "সেমিস্টার": semester_name,
-            "section_name": section_doc.get("name", "") if section_doc else "",
+            "marhala_id": marhala_id or "",
+            "marhala_name": marhala_name,
+            "department_id": department_id or "",
+            "department_name": department_name,
+            "semester_id": semester_id,
+            "semester_name": semester_name,
+            "class_id": class_id if class_id else "",
+            "class_name": class_name,
+            "section_id": section_id if section_id else "",
+            "section_name": section_name,
             "subject": subject,
             "due_date": due_date,
             "instructions": instructions,
@@ -27619,15 +27716,32 @@ async def create_homework(
             "is_active": True
         }
         
-        await db.homework.insert_one(homework)
+        # Debug: Log what's being saved
+        logger.info(f"Homework being saved - class_id: '{homework.get('class_id')}', section_id: '{homework.get('section_id')}'")
         
-        logger.info(f"Homework created: {title} by {current_user.full_name}")
-        return {"message": "Homework created successfully", "homework": sanitize_mongo_data(homework)}
+        # Debug: Log what's being saved
+        logger.info(f"Homework being saved - class_id: '{homework.get('class_id')}', section_id: '{homework.get('section_id')}', semester_id: '{homework.get('semester_id')}'")
+        
+        try:
+            await db.homework.insert_one(homework)
+            logger.info(f"Homework created: {title} by {current_user.full_name}")
+            return {"message": "Homework created successfully", "homework": sanitize_mongo_data(homework)}
+        except Exception as db_error:
+            logger.error(f"Database insert error: {db_error}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to save homework to database: {str(db_error)}")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error creating homework: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create homework")
+        import traceback
+        with open("backend_homework_debug.txt", "w", encoding="utf-8") as f:
+            f.write(f"Error creating homework: {str(e)}\n\n")
+            traceback.print_exc(file=f)
+            
+        logger.error(f"Error creating homework: {e}", exc_info=True)
+        import traceback
+        error_trace = traceback.format_exc()
+        logger.error(f"Full traceback: {error_trace}")
+        raise HTTPException(status_code=500, detail=f"Failed to create homework: {str(e)}")
 
 @api_router.get("/homework")
 async def get_homework_list(
@@ -27636,7 +27750,7 @@ async def get_homework_list(
     status: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of homework assignments"""
+    """Get list of homework assignments with academic hierarchy names"""
     try:
         query = {
             "tenant_id": current_user.tenant_id,
@@ -27655,6 +27769,27 @@ async def get_homework_list(
             query["status"] = status
         
         homework_list = await db.homework.find(query).sort("created_at", -1).to_list(100)
+        
+        # Populate academic hierarchy names
+        for hw in homework_list:
+            # Get marhala name
+            if hw.get("marhala_id"):
+                marhala = await db.marhalas.find_one({"id": hw["marhala_id"]})
+                if marhala:
+                    hw["marhala_name"] = marhala.get("name_bn") or marhala.get("name_en") or marhala.get("name", "")
+            
+            # Get department name
+            if hw.get("department_id"):
+                department = await db.departments.find_one({"id": hw["department_id"]})
+                if department:
+                    hw["department_name"] = department.get("name_bn") or department.get("name_en") or department.get("name", "")
+            
+            # Get semester name
+            if hw.get("semester_id"):
+                semester = await db.academic_semesters.find_one({"id": hw["semester_id"]})
+                if semester:
+                    hw["semester_name"] = semester.get("name_bn") or semester.get("name_en") or semester.get("name", "")
+        
         return {"homework": [sanitize_mongo_data(hw) for hw in homework_list]}
     except Exception as e:
         logger.error(f"Error fetching homework: {e}")
@@ -31426,17 +31561,17 @@ async def generate_student_id_card(
             if student.get("marhala_id"):
                 marhala_doc = await db.marhalas.find_one({"id": student.get("marhala_id"), "tenant_id": current_user.tenant_id})
                 if marhala_doc:
-                    marhala_name = marhala_doc.get("name", "")
+                    marhala_name = marhala_doc.get("name_bn") or marhala_doc.get("display_name") or marhala_doc.get("name", "")
             
             if student.get("department_id"):
                 dept_doc = await db.departments.find_one({"id": student.get("department_id"), "tenant_id": current_user.tenant_id})
                 if dept_doc:
-                    department_name = dept_doc.get("name", "")
+                    department_name = dept_doc.get("name_bn") or dept_doc.get("display_name") or dept_doc.get("name", "")
             
             if student.get("semester_id"):
                 sem_doc = await db.academic_semesters.find_one({"id": student.get("semester_id"), "tenant_id": current_user.tenant_id})
                 if sem_doc:
-                    semester_name = sem_doc.get("name", "")
+                    semester_name = sem_doc.get("name_bn") or sem_doc.get("display_name") or sem_doc.get("name", "")
             
             if marhala_name or department_name or semester_name:
                 academic_info = {

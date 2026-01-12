@@ -297,20 +297,43 @@ async def get_student_payment_summary(db, tenant_id: str, student: Dict[str, Any
         year = datetime.now().year
     
     student_id = student.get('student_id') or student.get('admission_no') or student.get('id')
+    admission_no = student.get('admission_no') or student.get('student_id')
     
     # Get all payments for this student in the year
-    payments = await db.monthly_payments.find({
+    # We query by student_id as primary link, but also consider admission_no for robustness
+    payments_cursor = db.monthly_payments.find({
         "tenant_id": tenant_id,
-        "student_id": student_id,
-        "year": year
-    }).to_list(100)
+        "year": year,
+        "$or": [
+            {"student_id": student_id},
+            {"student_id": admission_no}
+        ]
+    })
+    payments = await payments_cursor.to_list(100)
     
     # Get fee structure
     fee_structure = await get_student_fee_structure(db, tenant_id, student)
     monthly_total = fee_structure['monthly_total']
     
-    total_paid = sum(p.get('amount', 0) for p in payments)
-    paid_months = [p.get('month') for p in payments if p.get('status') == 'paid']
+    # Status can be 'paid' or 'completed' depending on which module recorded it
+    total_paid = sum(p.get('amount', 0) for p in payments if p.get('status') in ['paid', 'completed'])
+    
+    # Month mapping: Admin uses English, Student portal uses Bengali
+    month_translation = {
+        'January': 'জানুয়ারি', 'February': 'ফেব্রুয়ারি', 'March': 'মার্চ',
+        'April': 'এপ্রিল', 'May': 'মে', 'June': 'জুন',
+        'July': 'জুলাই', 'August': 'আগস্ট', 'September': 'সেপ্টেম্বর',
+        'October': 'অক্টোবর', 'November': 'নভেম্বর', 'December': 'ডিসেম্বর'
+    }
+    
+    # Collected paid months, normalized to Bengali for comparison
+    paid_months = []
+    for p in payments:
+        if p.get('status') in ['paid', 'completed']:
+            m = p.get('month', '')
+            # Translate if it's English
+            normalized_m = month_translation.get(m, m)
+            paid_months.append(normalized_m)
     
     # Bengali month names
     all_months = [

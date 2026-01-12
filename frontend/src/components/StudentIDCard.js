@@ -39,6 +39,7 @@ const StudentIDCard = () => {
   const [selectedStudents, setSelectedStudents] = useState(new Set());
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
 
   const handleHierarchyChange = (selection) => {
     setSelectedMarhalaId(selection.marhala_id);
@@ -100,9 +101,23 @@ const StudentIDCard = () => {
     }
   }, [selectedClass, selectedSection]);
 
+  const fetchAcademicHierarchy = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API}/academic-hierarchy`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const hierarchy = response.data?.flat || response.data || { marhalas: [], departments: [], semesters: [] };
+      setAcademicHierarchy(hierarchy);
+    } catch (error) {
+      console.error("Failed to fetch academic hierarchy:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchClasses();
-  }, [fetchClasses]);
+    fetchAcademicHierarchy();
+  }, [fetchClasses, fetchAcademicHierarchy]);
 
   useEffect(() => {
     fetchSections(selectedClass);
@@ -170,12 +185,12 @@ const StudentIDCard = () => {
       student.father_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.roll_no?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.admission_no?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     // Semester-based filtering (Madrasah hierarchy)
     const matchesMarhala = !selectedMarhalaId || student.marhala_id === selectedMarhalaId || student.class_id === selectedMarhalaId;
     const matchesDepartment = !selectedDepartmentId || student.department_id === selectedDepartmentId;
     const matchesSemester = !selectedSemesterId || student.semester_id === selectedSemesterId;
-    
+
     return matchesSearch && matchesMarhala && matchesDepartment && matchesSemester;
   });
 
@@ -254,6 +269,24 @@ const StudentIDCard = () => {
     }
   };
 
+  const getMarhalaName = (id) => {
+    if (!id) return '';
+    const item = academicHierarchy.marhalas?.find(m => m.id === id);
+    return item ? (item.name_bn || item.name_en || item.name) : '-';
+  };
+
+  const getDepartmentName = (id) => {
+    if (!id) return '';
+    const item = academicHierarchy.departments?.find(d => d.id === id);
+    return item ? (item.name_bn || item.name_en || item.name) : '-';
+  };
+
+  const getSemesterName = (id) => {
+    if (!id) return '';
+    const item = academicHierarchy.semesters?.find(s => s.id === id);
+    return item ? (item.name_bn || item.name_en || item.name) : '-';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <Card className="dark:bg-gray-800 dark:border-gray-700">
@@ -298,16 +331,16 @@ const StudentIDCard = () => {
                 />
               </div>
             </div>
-            
+
             {/* Academic Hierarchy Selector for Madrasah */}
             {isMadrasahSimpleUI && (
-              <AcademicHierarchySelector 
+              <AcademicHierarchySelector
                 onSelectionChange={handleHierarchyChange}
                 showAllOption={true}
                 layout="horizontal"
               />
             )}
-            
+
             {/* Legacy Class/Section Filter (for non-Madrasah) */}
             {!isMadrasahSimpleUI && (
               <div className="flex flex-wrap gap-4">
@@ -419,7 +452,7 @@ const StudentIDCard = () => {
                         className="text-gray-600 dark:text-gray-300 hover:text-emerald-600"
                       >
                         {selectedStudents.size === filteredStudents.length &&
-                        filteredStudents.length > 0 ? (
+                          filteredStudents.length > 0 ? (
                           <CheckSquare className="h-5 w-5 text-emerald-600" />
                         ) : (
                           <Square className="h-5 w-5" />
@@ -490,13 +523,13 @@ const StudentIDCard = () => {
                         {student.father_name}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                        {student.marhala_name || student.class_name || "-"}
+                        {getMarhalaName(student.marhala_id) || student.class_name || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                        {student.department_name || "-"}
+                        {getDepartmentName(student.department_id) || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                        {student.semester_name || student.section_name || "-"}
+                        {getSemesterName(student.semester_id) || student.section_name || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                         {student.roll_no || student.admission_no || "-"}

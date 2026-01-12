@@ -42,7 +42,10 @@ def get_current_month_bengali():
 
 class LiveClassCreate(BaseModel):
     class_name: str
-    class_id: Optional[str] = None  # Link to class/jamaat for proper filtering
+    class_id: Optional[str] = None
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
+    semester_id: Optional[str] = None
     gender: str = Field(..., pattern="^(male|female)$")
     start_time: str
     end_time: str
@@ -56,6 +59,9 @@ class LiveClassCreate(BaseModel):
 class LiveClassUpdate(BaseModel):
     class_name: Optional[str] = None
     class_id: Optional[str] = None
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
+    semester_id: Optional[str] = None
     gender: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
@@ -192,10 +198,33 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
             
             tenant_id = current_user.tenant_id
             
+            # Fetch hierarchy names if IDs are provided
+            marhala_name = ""
+            department_name = ""
+            semester_name = ""
+            
+            if data.marhala_id:
+                m = await db.marhalas.find_one({"id": data.marhala_id})
+                if m: marhala_name = m.get("name_bn") or m.get("name") or ""
+                
+            if data.department_id:
+                d = await db.departments.find_one({"id": data.department_id})
+                if d: department_name = d.get("name_bn") or d.get("name") or ""
+                
+            if data.semester_id:
+                s = await db.academic_semesters.find_one({"id": data.semester_id})
+                if s: semester_name = s.get("name_bn") or s.get("name") or ""
+
             live_class = {
                 "tenant_id": tenant_id,
                 "class_name": data.class_name,
                 "class_id": data.class_id,  # Link to class/jamaat
+                "marhala_id": data.marhala_id,
+                "department_id": data.department_id,
+                "semester_id": data.semester_id,
+                "marhala_name": marhala_name,
+                "department_name": department_name,
+                "semester_name": semester_name,
                 "gender": data.gender,
                 "start_time": data.start_time,
                 "end_time": data.end_time,

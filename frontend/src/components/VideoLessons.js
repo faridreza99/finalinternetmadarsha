@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import {
-  Video, BookOpen, Plus, Edit, Trash2, Users, ChevronRight,
-  Play, CheckCircle, Circle, Clock, Award, FileQuestion,
-  ArrowLeft, Save, Eye, EyeOff, GripVertical, BarChart3, RefreshCw
+  Video, Plus, Edit, Trash2,
+  Play, Clock, FileQuestion,
+  ChevronRight, BarChart3, ArrowLeft, Eye, EyeOff
 } from 'lucide-react';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const API_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -16,7 +17,6 @@ const toBengaliNumeral = (num) => {
 };
 
 const VideoLessons = () => {
-  const [activeTab, setActiveTab] = useState('semesters');
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [semesters, setSemesters] = useState([]);
@@ -26,13 +26,13 @@ const VideoLessons = () => {
   const [questions, setQuestions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Academic hierarchy for Madrasah mode
-  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
-  const [selectedMarhala, setSelectedMarhala] = useState(null);
-  const [selectedDepartment, setSelectedDepartment] = useState(null);
-  const [useAcademicHierarchy, setUseAcademicHierarchy] = useState(false);
-  
+  const [selectedMarhala, setSelectedMarhala] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  // We use selectedSemester for both modes
+  const [useAcademicHierarchy, setUseAcademicHierarchy] = useState(true); // Default to true or logic to detect mode
+
   // Modal states
   const [showSemesterModal, setShowSemesterModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
@@ -40,7 +40,7 @@ const VideoLessons = () => {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [lessonResults, setLessonResults] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  
+
   // Form states
   const [semesterForm, setSemesterForm] = useState({
     title_bn: '', title_en: '', order: 1, is_active: true
@@ -69,66 +69,21 @@ const VideoLessons = () => {
     }
   }, []);
 
-  // Fetch academic hierarchy (Madrasah mode)
-  const fetchAcademicHierarchy = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API_URL}/academic-hierarchy`, { headers });
-      const data = res.data || {};
-      setAcademicHierarchy({
-        marhalas: data.marhalas || [],
-        departments: data.departments || [],
-        semesters: data.semesters || []
-      });
-      // Use academic hierarchy if marhalas exist
-      if (data.marhalas?.length > 0) {
-        setUseAcademicHierarchy(true);
-      }
-    } catch (err) {
-      console.error('Error fetching academic hierarchy:', err);
-    }
-  }, []);
-
-  // Get filtered departments based on selected marhala
-  const getFilteredDepartments = useCallback(() => {
-    if (!selectedMarhala) return [];
-    return academicHierarchy.departments.filter(d => d.marhala_id === selectedMarhala);
-  }, [selectedMarhala, academicHierarchy.departments]);
-
-  // Get filtered semesters based on selected department
-  const getFilteredAcademicSemesters = useCallback(() => {
-    if (!selectedDepartment) return [];
-    return academicHierarchy.semesters.filter(s => s.department_id === selectedDepartment);
-  }, [selectedDepartment, academicHierarchy.semesters]);
-
-  // Get marhala name by ID
-  const getMarhalaName = (id) => {
-    const m = academicHierarchy.marhalas.find(m => m.id === id);
-    return m?.name_bn || m?.name_en || m?.name || '';
-  };
-
-  // Get department name by ID
-  const getDepartmentName = (id) => {
-    const d = academicHierarchy.departments.find(d => d.id === id);
-    return d?.name_bn || d?.name_en || d?.name || '';
-  };
-
-  // Get semester name by ID (for academic hierarchy)
-  const getAcademicSemesterName = (id) => {
-    const s = academicHierarchy.semesters.find(s => s.id === id);
-    return s?.name_bn || s?.name_en || s?.name || '';
-  };
-
   // Fetch subjects
   const fetchSubjects = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/subjects`, { headers });
-      setSubjects(res.data.subjects || res.data || []);
+      console.log('Subjects response:', res.data); // Debug log
+      const subjectList = res.data.subjects || res.data.data || (Array.isArray(res.data) ? res.data : []);
+      setSubjects(subjectList);
     } catch (err) {
       console.error('Error fetching subjects:', err);
+      // Fallback or empty if error
+      setSubjects([]);
     }
   }, []);
 
-  // Fetch semesters for a class
+  // Fetch semesters for a class (Legacy)
   const fetchSemesters = useCallback(async (classId) => {
     if (!classId) return;
     setLoading(true);
@@ -152,7 +107,6 @@ const VideoLessons = () => {
       setLessons(res.data.lessons || []);
     } catch (err) {
       console.error('Error fetching lessons:', err);
-      toast.error('পাঠ লোড করতে সমস্যা হয়েছে');
     } finally {
       setLoading(false);
     }
@@ -207,8 +161,7 @@ const VideoLessons = () => {
   useEffect(() => {
     fetchClasses();
     fetchSubjects();
-    fetchAcademicHierarchy();
-  }, [fetchClasses, fetchSubjects, fetchAcademicHierarchy]);
+  }, [fetchClasses, fetchSubjects]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -217,23 +170,6 @@ const VideoLessons = () => {
       setLessons([]);
     }
   }, [selectedClass, fetchSemesters]);
-
-  // Academic hierarchy: when marhala changes, reset department and semester
-  useEffect(() => {
-    if (useAcademicHierarchy) {
-      setSelectedDepartment(null);
-      setSelectedSemester(null);
-      setLessons([]);
-    }
-  }, [selectedMarhala, useAcademicHierarchy]);
-
-  // Academic hierarchy: when department changes, reset semester
-  useEffect(() => {
-    if (useAcademicHierarchy) {
-      setSelectedSemester(null);
-      setLessons([]);
-    }
-  }, [selectedDepartment, useAcademicHierarchy]);
 
   useEffect(() => {
     if (selectedSemester) {
@@ -248,6 +184,24 @@ const VideoLessons = () => {
       fetchQuestions(selectedLesson);
     }
   }, [selectedLesson, fetchQuestions]);
+
+  const handleHierarchyChange = useCallback((selection) => {
+    console.log('Hierarchy selection changed:', selection);
+    setSelectedMarhala(selection.marhala_id);
+    setSelectedDepartment(selection.department_id);
+    setSelectedSemester(selection.semester_id);
+
+    // Clear lessons if semester is deselected or changed
+    if (!selection.semester_id) {
+      setLessons([]);
+      setSelectedLesson(null);
+    }
+  }, []);
+
+  // Helper to get names for display - these will come from selector in future if needed but currently we rely on IDs
+  // ... (Removed old helpers as they relied on fetched hierarchy object)
+
+  // ... (Keeping CRUD functions same)
 
   // === SEMESTER CRUD ===
   const handleSaveSemester = async () => {
@@ -336,7 +290,7 @@ const VideoLessons = () => {
       toast.error('প্রশ্ন লিখুন');
       return;
     }
-    
+
     const payload = {
       lesson_id: selectedLesson,
       question_type: questionForm.question_type,
@@ -461,7 +415,7 @@ const VideoLessons = () => {
     return sub?.name_bn || sub?.name || 'Unknown';
   };
 
-  // Get semester name
+  // Get semester name - only for legacy/fallback
   const getSemesterName = (semesterId) => {
     const sem = semesters.find(s => s.id === semesterId);
     return sem?.title_bn || 'Unknown';
@@ -480,200 +434,123 @@ const VideoLessons = () => {
         </p>
       </div>
 
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 mb-6 text-sm flex-wrap">
+      {/* Mode Switch (Optional, keeping enabled based on defaults) */}
+      <div className="mb-6">
+
         {useAcademicHierarchy ? (
-          <>
-            {/* Academic Hierarchy Breadcrumb */}
-            <button
-              onClick={() => { setSelectedMarhala(null); setSelectedDepartment(null); setSelectedSemester(null); setSelectedLesson(null); }}
-              className={`px-3 py-1.5 rounded-lg ${!selectedMarhala ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
-            >
-              মারহালা
-            </button>
-            {selectedMarhala && (
-              <>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-                <button
-                  onClick={() => { setSelectedDepartment(null); setSelectedSemester(null); setSelectedLesson(null); }}
-                  className={`px-3 py-1.5 rounded-lg ${!selectedDepartment ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
-                >
-                  বিভাগ ({getMarhalaName(selectedMarhala)})
-                </button>
-              </>
-            )}
-            {selectedDepartment && (
-              <>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-                <button
-                  onClick={() => { setSelectedSemester(null); setSelectedLesson(null); }}
-                  className={`px-3 py-1.5 rounded-lg ${!selectedSemester ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
-                >
-                  সেমিস্টার ({getDepartmentName(selectedDepartment)})
-                </button>
-              </>
-            )}
-          </>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">ক্লাস নির্বাচন</h2>
+            <AcademicHierarchySelector
+              onSelectionChange={handleHierarchyChange}
+              selectedMarhalaId={selectedMarhala}
+              selectedDepartmentId={selectedDepartment}
+              selectedSemesterId={selectedSemester}
+              inline={false}
+            />
+          </div>
         ) : (
-          <>
-            {/* Legacy Class-based Breadcrumb */}
-            <button
-              onClick={() => { setSelectedClass(null); setSelectedSemester(null); setSelectedLesson(null); }}
-              className={`px-3 py-1.5 rounded-lg ${!selectedClass ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
-            >
-              জামাত
-            </button>
-            {selectedClass && (
-              <>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+          /* Legacy Class Selection (non-Madrasah mode) */
+          !selectedClass && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {classes.map(cls => (
                 <button
-                  onClick={() => { setSelectedSemester(null); setSelectedLesson(null); }}
-                  className={`px-3 py-1.5 rounded-lg ${!selectedSemester ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
+                  key={cls.id}
+                  onClick={() => setSelectedClass(cls.id)}
+                  className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
                 >
-                  সেমিস্টার ({getClassName(selectedClass)})
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 dark:text-white">{cls.display_name || cls.name}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {cls.semester_count !== undefined ? `${toBengaliNumeral(cls.semester_count)}টি সেমিস্টার` : 'সেমিস্টার নেই'}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
                 </button>
-              </>
-            )}
-          </>
-        )}
-        {selectedSemester && (
-          <>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-            <button
-              onClick={() => setSelectedLesson(null)}
-              className={`px-3 py-1.5 rounded-lg ${!selectedLesson ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}
-            >
-              পাঠ ({useAcademicHierarchy ? getAcademicSemesterName(selectedSemester) : getSemesterName(selectedSemester)})
-            </button>
-          </>
-        )}
-        {selectedLesson && (
-          <>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-            <span className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white">
-              প্রশ্নাবলী
-            </span>
-          </>
+              ))}
+              {classes.length === 0 && (
+                <div className="col-span-full text-center py-12 text-gray-500">
+                  কোনো জামাত পাওয়া যায়নি। প্রথমে জামাত তৈরি করুন।
+                </div>
+              )}
+            </div>
+          )
         )}
       </div>
 
-      {/* Academic Hierarchy Selection (Madrasah mode) */}
-      {useAcademicHierarchy && !selectedMarhala && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {academicHierarchy.marhalas.map(m => (
-            <button
-              key={m.id}
-              onClick={() => setSelectedMarhala(m.id)}
-              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-800 dark:text-white">{m.name_bn || m.name_en || m.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {toBengaliNumeral(academicHierarchy.departments.filter(d => d.marhala_id === m.id).length)}টি বিভাগ
-                  </p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </div>
-            </button>
-          ))}
-          {academicHierarchy.marhalas.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              কোনো মারহালা পাওয়া যায়নি। প্রথমে একাডেমিক স্ট্রাকচার সেটআপ করুন।
-            </div>
-          )}
-        </div>
-      )}
+      {/* Breadcrumb Navigation - Simplified */}
+      <div className="flex items-center gap-2 mb-6 text-sm flex-wrap">
+        {/* Simplified breadcrumb logic if needed, but the unified selector replaces most of it */}
+        {selectedLesson && (
+          <button
+            onClick={() => setSelectedLesson(null)}
+            className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
+          >
+            <ArrowLeft className="h-4 w-4 inline mr-1" /> পাঠ তালিকায় ফিরে যান
+          </button>
+        )}
+      </div>
 
-      {/* Department Selection (Madrasah mode) */}
-      {useAcademicHierarchy && selectedMarhala && !selectedDepartment && (
+      {/* Legacy Semester List (non-Madrasah mode) */}
+      {!useAcademicHierarchy && selectedClass && !selectedSemester && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-            বিভাগ সমূহ - {getMarhalaName(selectedMarhala)}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {getFilteredDepartments().map(d => (
-              <button
-                key={d.id}
-                onClick={() => setSelectedDepartment(d.id)}
-                className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white">{d.name_bn || d.name_en || d.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {toBengaliNumeral(academicHierarchy.semesters.filter(s => s.department_id === d.id).length)}টি সেমিস্টার
-                    </p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </div>
-              </button>
-            ))}
-            {getFilteredDepartments().length === 0 && (
-              <div className="col-span-full text-center py-12 text-gray-500 bg-white dark:bg-gray-800 rounded-xl">
-                এই মারহালায় কোনো বিভাগ নেই।
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Semester Selection (Madrasah mode - from academic hierarchy) */}
-      {useAcademicHierarchy && selectedDepartment && !selectedSemester && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-            সেমিস্টার সমূহ - {getDepartmentName(selectedDepartment)}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {getFilteredAcademicSemesters().map(s => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedSemester(s.id)}
-                className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white">{s.name_bn || s.name_en || s.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      ভিডিও পাঠ দেখতে ক্লিক করুন
-                    </p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </div>
-              </button>
-            ))}
-            {getFilteredAcademicSemesters().length === 0 && (
-              <div className="col-span-full text-center py-12 text-gray-500 bg-white dark:bg-gray-800 rounded-xl">
-                এই বিভাগে কোনো সেমিস্টার নেই।
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Legacy Class Selection (non-Madrasah mode) */}
-      {!useAcademicHierarchy && !selectedClass && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {classes.map(cls => (
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+              সেমিস্টার সমূহ - {getClassName(selectedClass)}
+            </h2>
             <button
-              key={cls.id}
-              onClick={() => setSelectedClass(cls.id)}
-              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-all text-left"
+              onClick={() => { setShowSemesterModal(true); setEditingItem(null); setSemesterForm({ title_bn: '', title_en: '', order: semesters.length + 1, is_active: true }); }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-800 dark:text-white">{cls.display_name || cls.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {cls.semester_count !== undefined ? `${toBengaliNumeral(cls.semester_count)}টি সেমিস্টার` : 'সেমিস্টার নেই'}
-                  </p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </div>
+              <Plus className="h-4 w-4" />
+              নতুন সেমিস্টার
             </button>
-          ))}
-          {classes.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              কোনো জামাত পাওয়া যায়নি। প্রথমে জামাত তৈরি করুন।
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">লোড হচ্ছে...</div>
+          ) : (
+            <div className="space-y-3">
+              {semesters.map(sem => (
+                <div
+                  key={sem.id}
+                  className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+                >
+                  <button
+                    onClick={() => setSelectedSemester(sem.id)}
+                    className="flex-1 flex items-center gap-3 text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                      <span className="text-indigo-600 dark:text-indigo-400 font-bold">{toBengaliNumeral(sem.order)}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{sem.title_bn}</h3>
+                      <p className="text-sm text-gray-500">{sem.is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}</p>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setEditingItem(sem.id); setSemesterForm(sem); setShowSemesterModal(true); }}
+                      className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSemester(sem.id)}
+                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+              ))}
+              {semesters.length === 0 && (
+                <div className="text-center py-12 text-gray-500 bg-white dark:bg-gray-800 rounded-xl">
+                  কোনো সেমিস্টার নেই। নতুন সেমিস্টার যোগ করুন।
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -751,10 +628,12 @@ const VideoLessons = () => {
               ভিডিও পাঠ সমূহ - {getSemesterName(selectedSemester)}
             </h2>
             <button
-              onClick={() => { setShowLessonModal(true); setEditingItem(null); setLessonForm({
-                title_bn: '', title_en: '', description_bn: '', video_url: '',
-                video_type: 'youtube', subject_id: '', duration_minutes: 0, order: lessons.length + 1, is_published: false
-              }); }}
+              onClick={() => {
+                setShowLessonModal(true); setEditingItem(null); setLessonForm({
+                  title_bn: '', title_en: '', description_bn: '', video_url: '',
+                  video_type: 'youtube', subject_id: '', duration_minutes: 0, order: lessons.length + 1, is_published: false
+                });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               <Plus className="h-4 w-4" />
@@ -866,11 +745,10 @@ const VideoLessons = () => {
                     <div>
                       <p className="text-gray-800 dark:text-white">{q.question_bn}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${
-                          q.question_type === 'mcq' ? 'bg-blue-100 text-blue-700' :
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${q.question_type === 'mcq' ? 'bg-blue-100 text-blue-700' :
                           q.question_type === 'fill_blank' ? 'bg-green-100 text-green-700' :
-                          'bg-purple-100 text-purple-700'
-                        }`}>
+                            'bg-purple-100 text-purple-700'
+                          }`}>
                           {q.question_type === 'mcq' ? 'বহু নির্বাচনী' : q.question_type === 'fill_blank' ? 'শূন্যস্থান' : 'মিলকরণ'}
                         </span>
                         <span className="text-xs text-gray-500">{toBengaliNumeral(q.points)} পয়েন্ট</span>
@@ -879,15 +757,15 @@ const VideoLessons = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => { 
-                        setEditingItem(q.id); 
+                      onClick={() => {
+                        setEditingItem(q.id);
                         setQuestionForm({
                           ...q,
                           options: q.options || [{ id: '1', text_bn: '', is_correct: false }],
                           correct_answers: q.correct_answers || [''],
                           matching_pairs: q.matching_pairs || [{ id: '1', left_bn: '', right_bn: '' }]
-                        }); 
-                        setShowQuestionModal(true); 
+                        });
+                        setShowQuestionModal(true);
                       }}
                       className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
                     >
@@ -1002,7 +880,7 @@ const VideoLessons = () => {
                 >
                   <option value="">বিষয় নির্বাচন করুন</option>
                   {subjects.map(sub => (
-                    <option key={sub.id} value={sub.id}>{sub.name_bn || sub.name}</option>
+                    <option key={sub.id || sub._id} value={sub.id || sub._id}>{sub.name_bn || sub.subject_name || sub.name}</option>
                   ))}
                 </select>
               </div>
@@ -1105,11 +983,10 @@ const VideoLessons = () => {
                     <button
                       key={type.value}
                       onClick={() => setQuestionForm(prev => ({ ...prev, question_type: type.value }))}
-                      className={`px-4 py-2 rounded-lg text-sm ${
-                        questionForm.question_type === type.value
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
+                      className={`px-4 py-2 rounded-lg text-sm ${questionForm.question_type === type.value
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
                     >
                       {type.label}
                     </button>
@@ -1304,7 +1181,7 @@ const VideoLessons = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4">
               {lessonResults.results.length > 0 ? (
                 <table className="w-full">
@@ -1329,9 +1206,8 @@ const VideoLessons = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            result.percentage >= 60 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${result.percentage >= 60 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
                             {toBengaliNumeral(Math.round(result.percentage))}%
                           </span>
                         </td>

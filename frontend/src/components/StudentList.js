@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -27,17 +27,17 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import { Label } from './ui/label';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { 
-  Users, 
-  Plus, 
-  Search, 
+import {
+  Users,
+  Plus,
+  Search,
   Filter,
   Download,
   Upload,
@@ -75,7 +75,7 @@ const withTimeout = (promise, timeoutMs = 10000) => {
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error('Request timeout')), timeoutMs);
   });
-  
+
   return Promise.race([promise, timeoutPromise]).finally(() => {
     if (timeoutId) clearTimeout(timeoutId);
   });
@@ -201,7 +201,7 @@ const StudentList = () => {
         axios.get(`${API}/admin/semesters`).catch(() => ({ data: { semesters: [] } })),
         axios.get(`${API}/academic-hierarchy`).catch(() => ({ data: { marhalas: [], departments: [], semesters: [] } }))
       ]);
-      
+
       setStudents(studentsRes.data);
       setClasses(classesRes.data);
       setSemesters(semestersRes.data?.semesters || []);
@@ -283,7 +283,7 @@ const StudentList = () => {
 
   const handleQuickAddSection = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.class_id) {
       toast.error('প্রথমে মারহালা নির্বাচন করুন');
       return;
@@ -305,13 +305,13 @@ const StudentList = () => {
 
       const response = await axios.post(`${API}/sections`, sectionPayload);
       toast.success('Section added successfully!');
-      
+
       // Refresh sections for the current class
       await fetchSections(formData.class_id);
-      
+
       // Auto-select the newly created section
-      setFormData({...formData, section_id: response.data.id});
-      
+      setFormData({ ...formData, section_id: response.data.id });
+
       // Reset and close modal
       setQuickSectionData({ name: '', max_students: 40 });
       setIsQuickAddSectionModalOpen(false);
@@ -412,7 +412,7 @@ const StudentList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (submittingRef.current) {
       return;
     }
@@ -422,7 +422,7 @@ const StudentList = () => {
       toast.error('ছবি আপলোড করা আবশ্যক');
       return;
     }
-    
+
     submittingRef.current = true;
     setIsSubmitting(true);
 
@@ -436,7 +436,7 @@ const StudentList = () => {
       let studentId = null;
       let newCredentials = null;
       const wasEditing = !!editingStudent;
-      
+
       if (editingStudent) {
         await withTimeout(axios.put(`${API}/students/${editingStudent.id}`, formData), 10000);
         studentId = editingStudent.id;
@@ -445,7 +445,7 @@ const StudentList = () => {
         const response = await withTimeout(axios.post(`${API}/students`, formData), 10000);
         const responseData = response.data;
         studentId = responseData.id;
-        
+
         if (responseData.credentials) {
           newCredentials = {
             studentName: responseData.name,
@@ -456,7 +456,7 @@ const StudentList = () => {
         }
         toast.success('Student admission created successfully!');
       }
-      
+
       if (photoFile && studentId) {
         const photoFormData = new FormData();
         photoFormData.append('file', photoFile);
@@ -470,11 +470,11 @@ const StudentList = () => {
           toast.warning('Student saved but photo upload failed');
         });
       }
-      
+
       if (studentId && selectedSemesterIds.length > 0) {
         try {
           await Promise.all(
-            selectedSemesterIds.map(semId => 
+            selectedSemesterIds.map(semId =>
               axios.post(`${API}/admin/semesters/${semId}/enroll`, [studentId])
             )
           );
@@ -483,18 +483,18 @@ const StudentList = () => {
           toast.error('সেমিস্টারে ভর্তি করতে সমস্যা হয়েছে');
         }
       }
-      
+
       if (wasEditing) {
         setIsAddModalOpen(false);
       } else {
         setIsAddStudentModalOpen(false);
       }
-      
+
       setEditingStudent(null);
       resetForm();
-      
+
       safeBackgroundRefresh(fetchData);
-      
+
       if (!wasEditing && newCredentials) {
         setTimeout(() => {
           setIsCredentialsModalOpen(true);
@@ -502,7 +502,7 @@ const StudentList = () => {
       }
     } catch (error) {
       console.error('Failed to save student:', error);
-      const errorMessage = error.message === 'Request timeout' 
+      const errorMessage = error.message === 'Request timeout'
         ? 'Request timed out. Please try again.'
         : (error.response?.data?.detail || 'Failed to save student');
       toast.error(errorMessage);
@@ -607,12 +607,12 @@ const StudentList = () => {
     setPhotoPreview('');
     setSelectedSemesterIds([]);
   };
-  
+
   const getFilteredDepartments = () => {
     if (!formData.marhala_id) return [];
     return academicHierarchy.departments?.filter(d => d.marhala_id === formData.marhala_id) || [];
   };
-  
+
   const getFilteredAcademicSemesters = () => {
     if (!formData.department_id) return [];
     return academicHierarchy.semesters?.filter(s => s.department_id === formData.department_id) || [];
@@ -678,7 +678,7 @@ const StudentList = () => {
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
-      
+
       validatedFiles.forEach((file) => {
         formData.append('files', file);
       });
@@ -691,11 +691,11 @@ const StudentList = () => {
       });
 
       const { uploaded_count, total_files, failed_uploads } = response.data;
-      
+
       if (failed_uploads && failed_uploads.length > 0) {
         toast.warning(`Uploaded ${uploaded_count}/${total_files} photos. ${failed_uploads.length} failed.`);
         console.log('Failed uploads:', failed_uploads);
-        
+
         // Show specific failure reasons
         failed_uploads.slice(0, 3).forEach((failure) => {
           toast.error(`${failure.filename}: ${failure.reason || 'Upload failed'}`);
@@ -740,13 +740,13 @@ const StudentList = () => {
       });
 
       const { imported_count, total_rows, failed_imports } = response.data;
-      
+
       setImportSummary({
         imported_count,
         total_rows,
         failed_count: failed_imports.length
       });
-      
+
       if (failed_imports.length > 0) {
         setImportErrors(failed_imports);
         if (imported_count > 0) {
@@ -759,7 +759,7 @@ const StudentList = () => {
         setIsImportModalOpen(false);
         setImportFile(null);
       }
-      
+
       fetchData();
     } catch (error) {
       console.error('Failed to import students:', error);
@@ -818,7 +818,7 @@ const StudentList = () => {
       const worksheet = XLSX.utils.json_to_sheet(templateData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
-      
+
       // Set column widths for better readability
       worksheet['!cols'] = [
         { wch: 15 }, // admission_no
@@ -839,7 +839,7 @@ const StudentList = () => {
         { wch: 18 }, // guardian_name
         { wch: 15 }  // guardian_phone
       ];
-      
+
       // Download Excel file
       XLSX.writeFile(workbook, 'student_import_template.xlsx');
       toast.success('Excel template downloaded!');
@@ -848,7 +848,7 @@ const StudentList = () => {
       const headers = Object.keys(templateData[0]).join(',');
       const rows = templateData.map(row => Object.values(row).join(','));
       const csvContent = [headers, ...rows].join('\n');
-      
+
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -866,7 +866,7 @@ const StudentList = () => {
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams({ format });
-      
+
       if (selectedClass !== 'all_classes') {
         params.append('class_id', selectedClass);
       }
@@ -885,10 +885,10 @@ const StudentList = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      
+
       const fileExtension = format === 'csv' ? 'csv' : format === 'excel' ? 'xlsx' : 'pdf';
       link.setAttribute('download', `students_${new Date().toISOString().split('T')[0]}.${fileExtension}`);
-      
+
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -906,19 +906,19 @@ const StudentList = () => {
 
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
-      const matchesSearch = !debouncedSearchTerm || 
+      const matchesSearch = !debouncedSearchTerm ||
         student.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         student.admission_no.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         student.roll_no.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-      
+
       const matchesClass = selectedClass === 'all_classes' || student.class_id === selectedClass;
       const matchesSection = selectedSection === 'all_sections' || student.section_id === selectedSection;
-      
+
       // Semester-based filtering (Madrasah hierarchy)
       const matchesMarhala = !selectedMarhalaId || student.marhala_id === selectedMarhalaId || student.class_id === selectedMarhalaId;
       const matchesDepartment = !selectedDepartmentId || student.department_id === selectedDepartmentId;
       const matchesSemester = !selectedSemesterId || student.semester_id === selectedSemesterId;
-      
+
       return matchesSearch && matchesClass && matchesSection && matchesMarhala && matchesDepartment && matchesSemester;
     });
   }, [students, debouncedSearchTerm, selectedClass, selectedSection, selectedMarhalaId, selectedDepartmentId, selectedSemesterId]);
@@ -942,6 +942,24 @@ const StudentList = () => {
   const getSectionName = (sectionId) => {
     const section = sections.find(s => s.id === sectionId);
     return section ? section.name : 'অজানা';
+  };
+
+  const getMarhalaName = (id) => {
+    if (!id) return '';
+    const item = academicHierarchy.marhalas?.find(m => m.id === id);
+    return item ? (item.name_bn || item.name_en || item.name) : '-';
+  };
+
+  const getDepartmentName = (id) => {
+    if (!id) return '';
+    const item = academicHierarchy.departments?.find(d => d.id === id);
+    return item ? (item.name_bn || item.name_en || item.name) : '';
+  };
+
+  const getSemesterName = (id) => {
+    if (!id) return '';
+    const item = academicHierarchy.semesters?.find(s => s.id === id);
+    return item ? (item.name_bn || item.name_en || item.name) : '';
   };
 
   if (loading && students.length === 0) {
@@ -980,7 +998,7 @@ const StudentList = () => {
                   <Input
                     id="admission_no"
                     value={formData.admission_no}
-                    onChange={(e) => setFormData({...formData, admission_no: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, admission_no: e.target.value })}
                     required
                   />
                 </div>
@@ -989,7 +1007,7 @@ const StudentList = () => {
                   <Input
                     id="roll_no"
                     value={formData.roll_no}
-                    onChange={(e) => setFormData({...formData, roll_no: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, roll_no: e.target.value })}
                     required
                   />
                 </div>
@@ -998,7 +1016,7 @@ const StudentList = () => {
                   <Input
                     id="student_identifier"
                     value={formData.student_identifier}
-                    onChange={(e) => setFormData({...formData, student_identifier: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '')})}
+                    onChange={(e) => setFormData({ ...formData, student_identifier: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') })}
                     placeholder="যেমন: farid66"
                   />
                   <p className="text-xs text-muted-foreground mt-1">লগইনের জন্য ইউজার আইডি হবে: [মাদ্রাসা]_{formData.student_identifier || 'নাম থেকে স্বয়ংক্রিয়'}</p>
@@ -1008,7 +1026,7 @@ const StudentList = () => {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                 </div>
@@ -1017,7 +1035,7 @@ const StudentList = () => {
                   <Input
                     id="father_name"
                     value={formData.father_name}
-                    onChange={(e) => setFormData({...formData, father_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
                     required
                   />
                 </div>
@@ -1026,7 +1044,7 @@ const StudentList = () => {
                   <Input
                     id="mother_name"
                     value={formData.mother_name}
-                    onChange={(e) => setFormData({...formData, mother_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
                     required
                   />
                 </div>
@@ -1036,13 +1054,13 @@ const StudentList = () => {
                     id="date_of_birth"
                     type="date"
                     value={formData.date_of_birth}
-                    onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                     required
                   />
                 </div>
                 <div>
                   <Label htmlFor="gender">লিঙ্গ *</Label>
-                  <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+                  <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
                     </SelectTrigger>
@@ -1058,10 +1076,10 @@ const StudentList = () => {
                   <>
                     <div>
                       <Label htmlFor="class_id">মারহালা *</Label>
-                      <Select 
-                        value={formData.class_id} 
+                      <Select
+                        value={formData.class_id}
                         onValueChange={(value) => {
-                          setFormData({...formData, class_id: value});
+                          setFormData({ ...formData, class_id: value });
                           fetchSections(value);
                         }}
                       >
@@ -1079,7 +1097,7 @@ const StudentList = () => {
                     </div>
                     <div>
                       <Label htmlFor="section_id">শাখা *</Label>
-                      <Select value={formData.section_id} onValueChange={(value) => setFormData({...formData, section_id: value})}>
+                      <Select value={formData.section_id} onValueChange={(value) => setFormData({ ...formData, section_id: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="শাখা নির্বাচন করুন" />
                         </SelectTrigger>
@@ -1094,7 +1112,7 @@ const StudentList = () => {
                     </div>
                   </>
                 )}
-                
+
                 {/* Madrasha Academic Hierarchy - Cascaded Pickers (Primary for Madrasah mode) */}
                 {isMadrasahSimpleUI && academicHierarchy.marhalas?.length > 0 && (
                   <>
@@ -1105,10 +1123,10 @@ const StudentList = () => {
                     </div>
                     <div>
                       <Label htmlFor="marhala_id">মারহালা</Label>
-                      <Select 
-                        value={formData.marhala_id} 
+                      <Select
+                        value={formData.marhala_id}
                         onValueChange={(value) => {
-                          setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''});
+                          setFormData({ ...formData, marhala_id: value, department_id: '', semester_id: '' });
                         }}
                       >
                         <SelectTrigger>
@@ -1125,10 +1143,10 @@ const StudentList = () => {
                     </div>
                     <div>
                       <Label htmlFor="department_id">বিভাগ/জামাত</Label>
-                      <Select 
-                        value={formData.department_id} 
+                      <Select
+                        value={formData.department_id}
                         onValueChange={(value) => {
-                          setFormData({...formData, department_id: value, semester_id: ''});
+                          setFormData({ ...formData, department_id: value, semester_id: '' });
                         }}
                         disabled={!formData.marhala_id}
                       >
@@ -1146,10 +1164,10 @@ const StudentList = () => {
                     </div>
                     <div>
                       <Label htmlFor="semester_id">সেমিস্টার</Label>
-                      <Select 
-                        value={formData.semester_id} 
+                      <Select
+                        value={formData.semester_id}
                         onValueChange={(value) => {
-                          setFormData({...formData, semester_id: value});
+                          setFormData({ ...formData, semester_id: value });
                         }}
                         disabled={!formData.department_id}
                       >
@@ -1167,7 +1185,7 @@ const StudentList = () => {
                     </div>
                   </>
                 )}
-                
+
                 {/* Legacy semester enrollment - only show when NOT using academic hierarchy */}
                 {!(isMadrasahSimpleUI && academicHierarchy.marhalas?.length > 0) && semesters.length > 0 && (
                   <div className="col-span-2">
@@ -1199,7 +1217,7 @@ const StudentList = () => {
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     required
                   />
                 </div>
@@ -1209,7 +1227,7 @@ const StudentList = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1217,7 +1235,7 @@ const StudentList = () => {
                   <Input
                     id="address"
                     value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     required
                   />
                 </div>
@@ -1226,7 +1244,7 @@ const StudentList = () => {
                   <Input
                     id="guardian_name"
                     value={formData.guardian_name}
-                    onChange={(e) => setFormData({...formData, guardian_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, guardian_name: e.target.value })}
                     required
                   />
                 </div>
@@ -1235,7 +1253,7 @@ const StudentList = () => {
                   <Input
                     id="guardian_phone"
                     value={formData.guardian_phone}
-                    onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, guardian_phone: e.target.value })}
                     required
                   />
                 </div>
@@ -1283,10 +1301,10 @@ const StudentList = () => {
               <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">আপনার ফাইল আপলোড করুন</h3>
               <p className="text-gray-600 mb-4">এখানে CSV বা Excel ফাইল টেনে আনুন, বা ব্রাউজ করতে ক্লিক করুন</p>
-              <Input 
-                type="file" 
-                accept=".csv,.xlsx,.xls" 
-                className="max-w-xs mx-auto" 
+              <Input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="max-w-xs mx-auto"
                 onChange={(e) => setImportFile(e.target.files[0])}
               />
               {importFile && (
@@ -1316,7 +1334,7 @@ const StudentList = () => {
                   CSV টেমপ্লেট ডাউনলোড
                 </Button>
               </div>
-              <Button 
+              <Button
                 className="bg-emerald-500 hover:bg-emerald-600"
                 onClick={handleImportStudents}
                 disabled={loading || !importFile}
@@ -1359,10 +1377,10 @@ const StudentList = () => {
               <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">ছাত্রদের ছবি আপলোড করুন</h3>
               <p className="text-gray-600 mb-4">আপলোড করতে একাধিক ছবি নির্বাচন করুন। ফাইলের নাম ভর্তি নম্বর হওয়া উচিত।</p>
-              <Input 
-                type="file" 
-                accept="image/*" 
-                multiple 
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
                 className="max-w-xs mx-auto"
                 onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
               />
@@ -1383,7 +1401,7 @@ const StudentList = () => {
               </ul>
             </div>
             <div className="flex justify-end">
-              <Button 
+              <Button
                 className="bg-emerald-500 hover:bg-emerald-600"
                 onClick={handleBulkPhotoUpload}
                 disabled={loading || selectedFiles.length === 0}
@@ -1442,16 +1460,16 @@ const StudentList = () => {
                 />
               </div>
             </div>
-            
+
             {/* Academic Hierarchy Selector for Madrasah */}
             {isMadrasahSimpleUI && (
-              <AcademicHierarchySelector 
+              <AcademicHierarchySelector
                 onSelectionChange={handleHierarchyChange}
                 showAllOption={true}
                 layout="horizontal"
               />
             )}
-            
+
             {/* Legacy Class/Section Filter (for non-Madrasah or fallback) */}
             {!isMadrasahSimpleUI && (
               <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:flex sm:flex-row">
@@ -1507,7 +1525,7 @@ const StudentList = () => {
                   <TableHead className="px-2 sm:px-4">ছাত্র</TableHead>
                   <TableHead className="px-2 sm:px-4 hidden sm:table-cell">ভর্তি নম্বর</TableHead>
                   <TableHead className="px-2 sm:px-4 hidden md:table-cell">রোল নম্বর</TableHead>
-                  <TableHead className="px-2 sm:px-4">মারহালা</TableHead>
+                  <TableHead className="px-2 sm:px-4">একাডেমিক তথ্য</TableHead>
                   <TableHead className="px-2 sm:px-4 hidden lg:table-cell">অভিভাবক</TableHead>
                   <TableHead className="px-2 sm:px-4 hidden md:table-cell">যোগাযোগ</TableHead>
                   <TableHead className="px-2 sm:px-4">কার্যক্রম</TableHead>
@@ -1517,7 +1535,7 @@ const StudentList = () => {
                 {filteredStudents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      {searchTerm || selectedClass || selectedSection 
+                      {searchTerm || selectedClass || selectedSection
                         ? 'আপনার অনুসন্ধান অনুযায়ী কোনো ছাত্র পাওয়া যায়নি'
                         : 'এখনো কোনো ছাত্র যোগ করা হয়নি'
                       }
@@ -1548,9 +1566,16 @@ const StudentList = () => {
                         <Badge variant="secondary" className="text-xs">{student.roll_no}</Badge>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4">
-                        <div className="text-xs sm:text-sm">
-                          <p className="font-medium">{student.marhala_name || getClassName(student.class_id)}</p>
-                          <p className="text-gray-500 text-xs">{student.department_name || student.semester_name || `Sec ${getSectionName(student.section_id)}`}</p>
+                        <div className="text-xs sm:text-sm flex flex-col gap-0.5">
+                          <span className="font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded w-fit">
+                            {getMarhalaName(student.marhala_id) || getClassName(student.class_id)}
+                          </span>
+                          {student.department_id && (
+                            <span className="text-gray-600">{getDepartmentName(student.department_id)}</span>
+                          )}
+                          {student.semester_id && (
+                            <span className="text-gray-500 text-xs text-xs">{getSemesterName(student.semester_id)}</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4 hidden lg:table-cell">
@@ -1599,9 +1624,9 @@ const StudentList = () => {
                           >
                             <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-600 hover:text-red-700 h-7 w-7 sm:h-8 sm:w-8 p-0"
                             onClick={() => handleDeleteClick(student)}
                             title="মুছুন"
@@ -1698,25 +1723,23 @@ const StudentList = () => {
               CSV বা Excel ফাইল থেকে ছাত্রের তথ্য আমদানি করুন।
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* আমদানি সারসংক্ষেপ */}
           {importSummary && (
-            <div className={`p-4 rounded-lg border ${
-              importSummary.failed_count === 0 
-                ? 'bg-green-50 border-green-200' 
-                : importSummary.imported_count > 0 
-                  ? 'bg-amber-50 border-amber-200'
-                  : 'bg-red-50 border-red-200'
-            }`}>
+            <div className={`p-4 rounded-lg border ${importSummary.failed_count === 0
+              ? 'bg-green-50 border-green-200'
+              : importSummary.imported_count > 0
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-red-50 border-red-200'
+              }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className={`font-semibold ${
-                    importSummary.failed_count === 0 
-                      ? 'text-green-800' 
-                      : importSummary.imported_count > 0 
-                        ? 'text-amber-800'
-                        : 'text-red-800'
-                  }`}>
+                  <h4 className={`font-semibold ${importSummary.failed_count === 0
+                    ? 'text-green-800'
+                    : importSummary.imported_count > 0
+                      ? 'text-amber-800'
+                      : 'text-red-800'
+                    }`}>
                     আমদানি সারসংক্ষেপ
                   </h4>
                   <p className="text-sm mt-1">
@@ -1759,15 +1782,14 @@ const StudentList = () => {
                         <td className="px-3 py-2 text-gray-800">{error.student_name || 'Unknown'}</td>
                         <td className="px-3 py-2">
                           <div className="flex items-start space-x-2">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              error.error_type === 'duplicate' 
-                                ? 'bg-orange-100 text-orange-800'
-                                : error.error_type === 'missing_fields'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                            }`}>
-                              {error.error_type === 'duplicate' ? 'Duplicate' : 
-                               error.error_type === 'missing_fields' ? 'Missing Data' : 'Error'}
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${error.error_type === 'duplicate'
+                              ? 'bg-orange-100 text-orange-800'
+                              : error.error_type === 'missing_fields'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                              }`}>
+                              {error.error_type === 'duplicate' ? 'Duplicate' :
+                                error.error_type === 'missing_fields' ? 'Missing Data' : 'Error'}
                             </span>
                           </div>
                           <p className="text-red-600 text-xs mt-1">{error.error}</p>
@@ -1805,9 +1827,9 @@ const StudentList = () => {
                             'Authorization': `Bearer ${token}`
                           }
                         });
-                        
-                        const blob = new Blob([response.data], { 
-                          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+                        const blob = new Blob([response.data], {
+                          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                         });
                         const url = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
@@ -1844,7 +1866,7 @@ const StudentList = () => {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                 <h4 className="font-medium text-amber-900 text-sm mb-2">Required Columns:</h4>
                 <p className="text-xs text-amber-800">
-                  admission_no, roll_no, name, gender, date_of_birth, class_id, section_id, 
+                  admission_no, roll_no, name, gender, date_of_birth, class_id, section_id,
                   father_name, F/phone, mother_name, address, guardian_name, guardian_phone
                 </p>
                 <p className="text-xs text-amber-700 mt-1">
@@ -1853,7 +1875,7 @@ const StudentList = () => {
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             {importErrors.length > 0 ? (
               <>
@@ -1917,8 +1939,8 @@ const StudentList = () => {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              বর্তমান ফিল্টার: {selectedClass !== 'all_classes' || selectedSection !== 'all_sections' 
-                ? 'ফিল্টার করা ডাটা রপ্তানি হবে' 
+              বর্তমান ফিল্টার: {selectedClass !== 'all_classes' || selectedSection !== 'all_sections'
+                ? 'ফিল্টার করা ডাটা রপ্তানি হবে'
                 : 'সকল ছাত্র রপ্তানি হবে'}
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -1968,7 +1990,7 @@ const StudentList = () => {
               নিচে ছাত্রের তথ্য দিন। * চিহ্নিত ঘর অবশ্যই পূরণ করতে হবে।
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Enhanced Sohoj Form */}
             {isMadrasahSimpleUI ? (
@@ -1978,7 +2000,7 @@ const StudentList = () => {
                   <Input
                     id="add_name"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="ছাত্রের পুরো নাম লিখুন"
                     className="text-lg py-3"
                     required
@@ -1989,7 +2011,7 @@ const StudentList = () => {
                   <Input
                     id="add_father_name"
                     value={formData.father_name}
-                    onChange={(e) => setFormData({...formData, father_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
                     placeholder="পিতার নাম লিখুন"
                     className="text-lg py-3"
                     required
@@ -2000,7 +2022,7 @@ const StudentList = () => {
                   <Input
                     id="add_phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="০১XXXXXXXXX"
                     className="text-lg py-3"
                     required
@@ -2011,7 +2033,7 @@ const StudentList = () => {
                   <Input
                     id="add_guardian_name_simple"
                     value={formData.guardian_name}
-                    onChange={(e) => setFormData({...formData, guardian_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, guardian_name: e.target.value })}
                     placeholder="অভিভাবকের নাম লিখুন"
                     className="text-lg py-3"
                     required
@@ -2022,7 +2044,7 @@ const StudentList = () => {
                   <Input
                     id="add_guardian_phone_simple"
                     value={formData.guardian_phone}
-                    onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, guardian_phone: e.target.value })}
                     placeholder="০১XXXXXXXXX"
                     className="text-lg py-3"
                     required
@@ -2031,10 +2053,10 @@ const StudentList = () => {
                 {/* Academic Hierarchy - Marhala → Department → Semester */}
                 <div>
                   <Label htmlFor="add_marhala_id" className="text-base font-semibold">মারহালা *</Label>
-                  <Select 
-                    value={formData.marhala_id} 
+                  <Select
+                    value={formData.marhala_id}
                     onValueChange={(value) => {
-                      setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''});
+                      setFormData({ ...formData, marhala_id: value, department_id: '', semester_id: '' });
                     }}
                   >
                     <SelectTrigger className="text-lg py-3">
@@ -2058,10 +2080,10 @@ const StudentList = () => {
                 {formData.marhala_id && (
                   <div>
                     <Label htmlFor="add_department_id" className="text-base font-semibold">বিভাগ/জামাত</Label>
-                    <Select 
-                      value={formData.department_id} 
+                    <Select
+                      value={formData.department_id}
                       onValueChange={(value) => {
-                        setFormData({...formData, department_id: value, semester_id: ''});
+                        setFormData({ ...formData, department_id: value, semester_id: '' });
                       }}
                     >
                       <SelectTrigger className="text-lg py-3">
@@ -2080,10 +2102,10 @@ const StudentList = () => {
                 {formData.department_id && (
                   <div>
                     <Label htmlFor="add_semester_id" className="text-base font-semibold">সেমিস্টার *</Label>
-                    <Select 
-                      value={formData.semester_id} 
+                    <Select
+                      value={formData.semester_id}
                       onValueChange={(value) => {
-                        setFormData({...formData, semester_id: value});
+                        setFormData({ ...formData, semester_id: value });
                         if (autoRoll) {
                           fetchNextRollNumber(null, null, value);
                         }
@@ -2141,7 +2163,7 @@ const StudentList = () => {
                     value={formData.roll_no}
                     onChange={(e) => {
                       const newRoll = e.target.value;
-                      setFormData({...formData, roll_no: newRoll});
+                      setFormData({ ...formData, roll_no: newRoll });
                       if (!autoRoll && formData.class_id && newRoll) {
                         checkRollDuplicate(formData.class_id, newRoll, formData.section_id);
                       }
@@ -2161,13 +2183,13 @@ const StudentList = () => {
                     <p className="text-xs text-gray-500 mt-1">যাচাই করা হচ্ছে...</p>
                   )}
                 </div>
-                
-                {/* Gender field - visible in main form */}
+
                 <div>
-                  <Label htmlFor="add_gender" className="text-base font-semibold">লিঙ্গ</Label>
-                  <Select 
-                    value={formData.gender} 
-                    onValueChange={(value) => setFormData({...formData, gender: value})}
+                  <Label htmlFor="add_gender" className="text-base font-semibold">লিঙ্গ *</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                    required
                   >
                     <SelectTrigger className="text-lg py-3">
                       <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
@@ -2179,26 +2201,61 @@ const StudentList = () => {
                   </Select>
                 </div>
 
-                {/* Date of Birth field - visible in main form */}
                 <div>
-                  <Label htmlFor="add_dob" className="text-base font-semibold">জন্ম তারিখ</Label>
+                  <Label htmlFor="add_dob" className="text-base font-semibold">জন্ম তারিখ *</Label>
                   <Input
                     id="add_dob"
                     type="date"
                     value={formData.date_of_birth}
-                    onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="add_address_main" className="text-base font-semibold">ঠিকানা *</Label>
+                  <Input
+                    id="add_address_main"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="গ্রাম, থানা, জেলা"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="add_mother_name" className="text-base font-semibold">মাতার নাম *</Label>
+                  <Input
+                    id="add_mother_name"
+                    value={formData.mother_name}
+                    onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
+                    placeholder="মাতার নাম লিখুন"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="add_email" className="text-base font-semibold">ইমেইল</Label>
+                  <Input
+                    id="add_email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="example@email.com"
                     className="text-lg py-3"
                   />
                 </div>
 
-                {/* Address field - visible in main form */}
                 <div>
-                  <Label htmlFor="add_address_main" className="text-base font-semibold">ঠিকানা</Label>
+                  <Label htmlFor="add_father_whatsapp" className="text-base font-semibold">পিতার হোয়াটসঅ্যাপ</Label>
                   <Input
-                    id="add_address_main"
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    placeholder="গ্রাম, থানা, জেলা"
+                    id="add_father_whatsapp"
+                    value={formData.father_whatsapp}
+                    onChange={(e) => setFormData({ ...formData, father_whatsapp: e.target.value })}
+                    placeholder="হোয়াটসঅ্যাপ নম্বর"
                     className="text-lg py-3"
                   />
                 </div>
@@ -2227,32 +2284,6 @@ const StudentList = () => {
                     <p className="text-xs text-red-500">ছবি আপলোড করা আবশ্যক</p>
                   )}
                 </div>
-                
-                {/* Optional fields collapsed */}
-                <details className="border rounded-lg p-3">
-                  <summary className="cursor-pointer text-sm text-muted-foreground">ঐচ্ছিক তথ্য (ক্লিক করুন)</summary>
-                  <div className="mt-3 space-y-3">
-                    <div>
-                      <Label htmlFor="add_email">ইমেইল</Label>
-                      <Input
-                        id="add_email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        placeholder="example@email.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="add_father_whatsapp">পিতার হোয়াটসঅ্যাপ</Label>
-                      <Input
-                        id="add_father_whatsapp"
-                        value={formData.father_whatsapp}
-                        onChange={(e) => setFormData({...formData, father_whatsapp: e.target.value})}
-                        placeholder="হোয়াটসঅ্যাপ নম্বর"
-                      />
-                    </div>
-                  </div>
-                </details>
               </div>
             ) : (
               <div className="text-center text-muted-foreground py-4">
@@ -2293,7 +2324,7 @@ const StudentList = () => {
               <Input
                 id="quick_section_name"
                 value={quickSectionData.name}
-                onChange={(e) => setQuickSectionData({...quickSectionData, name: e.target.value})}
+                onChange={(e) => setQuickSectionData({ ...quickSectionData, name: e.target.value })}
                 placeholder="যেমন: ক, খ, গ"
                 required
                 autoFocus
@@ -2306,7 +2337,7 @@ const StudentList = () => {
                 type="number"
                 min="1"
                 value={quickSectionData.max_students}
-                onChange={(e) => setQuickSectionData({...quickSectionData, max_students: e.target.value})}
+                onChange={(e) => setQuickSectionData({ ...quickSectionData, max_students: e.target.value })}
                 required
               />
             </div>
@@ -2321,9 +2352,9 @@ const StudentList = () => {
               >
                 বাতিল
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-emerald-500 hover:bg-emerald-600" 
+              <Button
+                type="submit"
+                className="bg-emerald-500 hover:bg-emerald-600"
                 disabled={isSavingSection}
               >
                 {isSavingSection ? 'যোগ হচ্ছে...' : 'শাখা যোগ করুন'}
@@ -2366,7 +2397,7 @@ const StudentList = () => {
             >
               বাতিল
             </Button>
-            <Button 
+            <Button
               type="button"
               variant="destructive"
               onClick={confirmDelete}
@@ -2403,7 +2434,7 @@ const StudentList = () => {
                   <span className="font-semibold text-gray-900 dark:text-white">{studentCredentials.admissionNo}</span>
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 space-y-3 border-2 border-blue-200 dark:border-blue-800">
                 <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-center">লগইন তথ্য</h4>
                 <div className="flex justify-between items-center py-2 border-b border-blue-100 dark:border-blue-800">
@@ -2415,14 +2446,14 @@ const StudentList = () => {
                   <code className="bg-white dark:bg-gray-800 px-3 py-1 rounded font-mono text-sm font-bold text-blue-600 dark:text-blue-400">{studentCredentials.temporary_password}</code>
                 </div>
               </div>
-              
+
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
                 <p className="text-sm text-yellow-800 dark:text-yellow-300 flex items-start">
                   <span className="mr-2">⚠️</span>
                   <span>{studentCredentials.message}</span>
                 </p>
               </div>
-              
+
               <div className="flex gap-2 mt-4">
                 <Button
                   variant="outline"
@@ -2688,7 +2719,7 @@ const StudentList = () => {
               ছাত্রের তথ্য আপডেট করুন। * চিহ্নিত ঘর অবশ্যই পূরণ করতে হবে।
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Madrasah Simple Edit Form */}
             {isMadrasahSimpleUI ? (
@@ -2696,9 +2727,9 @@ const StudentList = () => {
                 {/* Photo Section */}
                 <div className="flex flex-col items-center space-y-2 pb-4 border-b">
                   {photoPreview || editingStudent?.photo_url ? (
-                    <img 
-                      src={photoPreview || (editingStudent?.photo_url ? `${BASE_URL}${editingStudent.photo_url}` : '')} 
-                      alt="Student" 
+                    <img
+                      src={photoPreview || (editingStudent?.photo_url ? `${BASE_URL}${editingStudent.photo_url}` : '')}
+                      alt="Student"
                       className="w-20 h-20 rounded-full object-cover border-4 border-emerald-100"
                     />
                   ) : (
@@ -2717,13 +2748,13 @@ const StudentList = () => {
                     />
                   </Label>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="edit_name" className="text-base font-semibold">ছাত্রের নাম *</Label>
                   <Input
                     id="edit_name"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="ছাত্রের পুরো নাম লিখুন"
                     className="text-lg py-3"
                     required
@@ -2734,7 +2765,7 @@ const StudentList = () => {
                   <Input
                     id="edit_father_name"
                     value={formData.father_name}
-                    onChange={(e) => setFormData({...formData, father_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
                     placeholder="পিতার নাম লিখুন"
                     className="text-lg py-3"
                     required
@@ -2745,7 +2776,7 @@ const StudentList = () => {
                   <Input
                     id="edit_phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="০১XXXXXXXXX"
                     className="text-lg py-3"
                     required
@@ -2754,10 +2785,10 @@ const StudentList = () => {
                 {/* Academic Hierarchy - Marhala → Department → Semester */}
                 <div>
                   <Label htmlFor="edit_marhala_id" className="text-base font-semibold">মারহালা *</Label>
-                  <Select 
-                    value={formData.marhala_id} 
+                  <Select
+                    value={formData.marhala_id}
                     onValueChange={(value) => {
-                      setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''});
+                      setFormData({ ...formData, marhala_id: value, department_id: '', semester_id: '' });
                     }}
                   >
                     <SelectTrigger className="text-lg py-3">
@@ -2781,10 +2812,10 @@ const StudentList = () => {
                 {formData.marhala_id && (
                   <div>
                     <Label htmlFor="edit_department_id" className="text-base font-semibold">বিভাগ/জামাত</Label>
-                    <Select 
-                      value={formData.department_id} 
+                    <Select
+                      value={formData.department_id}
                       onValueChange={(value) => {
-                        setFormData({...formData, department_id: value, semester_id: ''});
+                        setFormData({ ...formData, department_id: value, semester_id: '' });
                       }}
                     >
                       <SelectTrigger className="text-lg py-3">
@@ -2803,10 +2834,10 @@ const StudentList = () => {
                 {formData.department_id && (
                   <div>
                     <Label htmlFor="edit_semester_id" className="text-base font-semibold">সেমিস্টার *</Label>
-                    <Select 
-                      value={formData.semester_id} 
+                    <Select
+                      value={formData.semester_id}
                       onValueChange={(value) => {
-                        setFormData({...formData, semester_id: value});
+                        setFormData({ ...formData, semester_id: value });
                       }}
                     >
                       <SelectTrigger className="text-lg py-3">
@@ -2823,91 +2854,93 @@ const StudentList = () => {
                   </div>
                 )}
                 <div>
-                  <Label htmlFor="edit_roll_no" className="text-base font-semibold">রোল নম্বর *</Label>
+                  <Label htmlFor="edit_admission_no">ভর্তি নম্বর *</Label>
                   <Input
-                    id="edit_roll_no"
-                    value={formData.roll_no}
-                    onChange={(e) => setFormData({...formData, roll_no: e.target.value})}
-                    placeholder="যেমন: ১, ২, ৩..."
+                    id="edit_admission_no"
+                    value={formData.admission_no}
+                    onChange={(e) => setFormData({ ...formData, admission_no: e.target.value })}
+                    placeholder="ভর্তি নম্বর"
                     className="text-lg py-3"
                     required
                   />
                 </div>
-                
-                {/* Optional fields collapsed */}
-                <details className="border rounded-lg p-3">
-                  <summary className="cursor-pointer text-sm text-muted-foreground">অতিরিক্ত তথ্য (ক্লিক করুন)</summary>
-                  <div className="mt-3 space-y-3">
-                    <div>
-                      <Label htmlFor="edit_admission_no">ভর্তি নম্বর</Label>
-                      <Input
-                        id="edit_admission_no"
-                        value={formData.admission_no}
-                        onChange={(e) => setFormData({...formData, admission_no: e.target.value})}
-                        placeholder="ভর্তি নম্বর"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit_email">ইমেইল</Label>
-                      <Input
-                        id="edit_email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        placeholder="example@email.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit_father_whatsapp">পিতার হোয়াটসঅ্যাপ</Label>
-                      <Input
-                        id="edit_father_whatsapp"
-                        value={formData.father_whatsapp}
-                        onChange={(e) => setFormData({...formData, father_whatsapp: e.target.value})}
-                        placeholder="হোয়াটসঅ্যাপ নম্বর"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit_mother_name">মাতার নাম</Label>
-                      <Input
-                        id="edit_mother_name"
-                        value={formData.mother_name}
-                        onChange={(e) => setFormData({...formData, mother_name: e.target.value})}
-                        placeholder="মাতার নাম"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit_address">ঠিকানা</Label>
-                      <Input
-                        id="edit_address"
-                        value={formData.address}
-                        onChange={(e) => setFormData({...formData, address: e.target.value})}
-                        placeholder="গ্রাম, থানা, জেলা"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit_date_of_birth">জন্ম তারিখ</Label>
-                      <Input
-                        id="edit_date_of_birth"
-                        type="date"
-                        value={formData.date_of_birth}
-                        onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit_gender">লিঙ্গ</Label>
-                      <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Male">পুরুষ</SelectItem>
-                          <SelectItem value="Female">মহিলা</SelectItem>
-                          <SelectItem value="Other">অন্যান্য</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </details>
+                <div>
+                  <Label htmlFor="edit_roll_no" className="text-base font-semibold">রোল নম্বর *</Label>
+                  <Input
+                    id="edit_roll_no"
+                    value={formData.roll_no}
+                    onChange={(e) => setFormData({ ...formData, roll_no: e.target.value })}
+                    placeholder="রোল নম্বর"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_mother_name" className="text-base font-semibold">মাতার নাম *</Label>
+                  <Input
+                    id="edit_mother_name"
+                    value={formData.mother_name}
+                    onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
+                    placeholder="মাতার নাম"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_address" className="text-base font-semibold">ঠিকানা *</Label>
+                  <Input
+                    id="edit_address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="গ্রাম, থানা, জেলা"
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_date_of_birth" className="text-base font-semibold">জন্ম তারিখ *</Label>
+                  <Input
+                    id="edit_date_of_birth"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                    className="text-lg py-3"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_gender" className="text-base font-semibold">লিঙ্গ *</Label>
+                  <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })} required>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">পুরুষ</SelectItem>
+                      <SelectItem value="Female">মহিলা</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit_email" className="text-base font-semibold">ইমেইল</Label>
+                  <Input
+                    id="edit_email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="example@email.com"
+                    className="text-lg py-3"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_father_whatsapp" className="text-base font-semibold">পিতার হোয়াটসঅ্যাপ</Label>
+                  <Input
+                    id="edit_father_whatsapp"
+                    value={formData.father_whatsapp}
+                    onChange={(e) => setFormData({ ...formData, father_whatsapp: e.target.value })}
+                    placeholder="হোয়াটসঅ্যাপ নম্বর"
+                    className="text-lg py-3"
+                  />
+                </div>
               </div>
             ) : (
               /* Full Edit Form for non-Madrasah */
@@ -2915,9 +2948,9 @@ const StudentList = () => {
                 <div className="flex flex-col items-center space-y-3 pb-4 border-b">
                   <div className="relative">
                     {photoPreview || editingStudent?.photo_url ? (
-                      <img 
-                        src={photoPreview || (editingStudent?.photo_url ? `${BASE_URL}${editingStudent.photo_url}` : '')} 
-                        alt="Student" 
+                      <img
+                        src={photoPreview || (editingStudent?.photo_url ? `${BASE_URL}${editingStudent.photo_url}` : '')}
+                        alt="Student"
                         className="w-24 h-24 rounded-full object-cover border-4 border-emerald-100"
                       />
                     ) : (
@@ -2946,7 +2979,7 @@ const StudentList = () => {
                     <Input
                       id="admission_no"
                       value={formData.admission_no}
-                      onChange={(e) => setFormData({...formData, admission_no: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, admission_no: e.target.value })}
                       required
                     />
                   </div>
@@ -2955,7 +2988,7 @@ const StudentList = () => {
                     <Input
                       id="roll_no"
                       value={formData.roll_no}
-                      onChange={(e) => setFormData({...formData, roll_no: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, roll_no: e.target.value })}
                       required
                     />
                   </div>
@@ -2964,7 +2997,7 @@ const StudentList = () => {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                     />
                   </div>
@@ -2973,7 +3006,7 @@ const StudentList = () => {
                     <Input
                       id="father_name"
                       value={formData.father_name}
-                      onChange={(e) => setFormData({...formData, father_name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
                       required
                     />
                   </div>
@@ -2982,7 +3015,7 @@ const StudentList = () => {
                     <Input
                       id="edit_father_phone"
                       value={formData.father_phone}
-                      onChange={(e) => setFormData({...formData, father_phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, father_phone: e.target.value })}
                       placeholder="পিতার ফোন নম্বর"
                     />
                   </div>
@@ -2991,7 +3024,7 @@ const StudentList = () => {
                     <Input
                       id="mother_name"
                       value={formData.mother_name}
-                      onChange={(e) => setFormData({...formData, mother_name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
                       required
                     />
                   </div>
@@ -3001,13 +3034,13 @@ const StudentList = () => {
                       id="date_of_birth"
                       type="date"
                       value={formData.date_of_birth}
-                      onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                       required
                     />
                   </div>
                   <div>
                     <Label htmlFor="gender">লিঙ্গ *</Label>
-                    <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+                    <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
                       </SelectTrigger>
@@ -3020,10 +3053,10 @@ const StudentList = () => {
                   </div>
                   <div>
                     <Label htmlFor="class_id">মারহালা *</Label>
-                    <Select 
-                      value={formData.class_id} 
+                    <Select
+                      value={formData.class_id}
                       onValueChange={(value) => {
-                        setFormData({...formData, class_id: value, section_id: ''});
+                        setFormData({ ...formData, class_id: value, section_id: '' });
                         fetchSections(value);
                       }}
                     >
@@ -3041,9 +3074,9 @@ const StudentList = () => {
                   </div>
                   <div>
                     <Label htmlFor="section_id">শাখা</Label>
-                    <Select 
-                      value={formData.section_id} 
-                      onValueChange={(value) => setFormData({...formData, section_id: value})}
+                    <Select
+                      value={formData.section_id}
+                      onValueChange={(value) => setFormData({ ...formData, section_id: value })}
                       disabled={!formData.class_id}
                     >
                       <SelectTrigger>
@@ -3063,7 +3096,7 @@ const StudentList = () => {
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       required
                     />
                   </div>
@@ -3073,7 +3106,7 @@ const StudentList = () => {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -3081,7 +3114,7 @@ const StudentList = () => {
                     <Input
                       id="address"
                       value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       required
                     />
                   </div>
@@ -3090,7 +3123,7 @@ const StudentList = () => {
                     <Input
                       id="guardian_name"
                       value={formData.guardian_name}
-                      onChange={(e) => setFormData({...formData, guardian_name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, guardian_name: e.target.value })}
                     />
                   </div>
                   <div>
@@ -3098,7 +3131,7 @@ const StudentList = () => {
                     <Input
                       id="guardian_phone"
                       value={formData.guardian_phone}
-                      onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, guardian_phone: e.target.value })}
                     />
                   </div>
                 </div>
@@ -3117,8 +3150,8 @@ const StudentList = () => {
                 বাতিল
               </Button>
               <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600" disabled={isSubmitting}>
-                {isSubmitting 
-                  ? 'সংরক্ষণ হচ্ছে...' 
+                {isSubmitting
+                  ? 'সংরক্ষণ হচ্ছে...'
                   : 'আপডেট করুন'}
               </Button>
             </DialogFooter>

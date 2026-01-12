@@ -187,6 +187,8 @@ const MadrasahSimpleResult = () => {
           department_id: selectedDepartmentId,
           grade,
           session: selectedSession,
+          class_id: selectedSemesterId,
+          class_name: selectedSemesterName || "Unknown",
         });
       }
 
@@ -235,7 +237,9 @@ const MadrasahSimpleResult = () => {
           <h1>${schoolBranding.name || "মাদ্রাসা"}</h1>
           <p class="info">${schoolBranding.address || ""}</p>
           <h2>বার্ষিক ফলাফল - ${selectedSession}</h2>
-          <p>${selectedSemesterName || selectedDepartmentName || selectedMarhalaName || 'সেমিস্টার ফলাফল'}</p>
+          <p class="info" style="font-size: 16px; margin-top: 5px; color: #1a5f2a;">
+            ${[selectedMarhalaName, selectedDepartmentName, selectedSemesterName].filter(Boolean).join(" | ")}
+          </p>
         </div>
         <table>
           <thead>
@@ -248,12 +252,12 @@ const MadrasahSimpleResult = () => {
           </thead>
           <tbody>
             ${filteredStudents
-              .map((student, index) => {
-                const result = getStudentResult(student.id);
-                const gradeInfo = MADRASAH_GRADES.find(
-                  (g) => g.value === result?.grade,
-                );
-                return `
+        .map((student, index) => {
+          const result = getStudentResult(student.id);
+          const gradeInfo = MADRASAH_GRADES.find(
+            (g) => g.value === result?.grade,
+          );
+          return `
                 <tr>
                   <td>${index + 1}</td>
                   <td style="text-align: left;">${student.name}</td>
@@ -261,8 +265,8 @@ const MadrasahSimpleResult = () => {
                   <td class="grade-${result?.grade || ""}">${gradeInfo?.label || "মূল্যায়ন হয়নি"}</td>
                 </tr>
               `;
-              })
-              .join("")}
+        })
+        .join("")}
           </tbody>
         </table>
         <div class="signature">
@@ -346,23 +350,7 @@ const MadrasahSimpleResult = () => {
               inline={true}
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  শিক্ষাবর্ষ
-                </label>
-                <Select value={selectedSession} onValueChange={setSelectedSession}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="বছর বাছাই করুন" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sessionOptions.map((year) => (
-                      <SelectItem key={year} value={year} className="text-base py-3">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   ছাত্র খুঁজুন

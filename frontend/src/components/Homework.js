@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   CardDescription
 } from './ui/card';
@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { 
+import {
   Plus,
   FileText,
   Calendar,
@@ -116,21 +116,21 @@ const Homework = () => {
         console.error('No auth token found');
         return;
       }
-      
+
       let userRole = 'admin';
       try {
         userRole = JSON.parse(atob(token.split('.')[1])).role;
       } catch (e) {
         console.error('Failed to decode token for role:', e);
       }
-      
+
       let response;
       if (userRole === 'teacher') {
         response = await axios.get(`${API}/teacher/assigned-classes`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setClasses(response.data.classes || []);
-        
+
         const allSubjects = new Set();
         (response.data.classes || []).forEach(cls => {
           (cls.subjects || []).forEach(s => {
@@ -144,7 +144,7 @@ const Homework = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setClasses(response.data || []);
-        
+
         try {
           const subjectsRes = await axios.get(`${API}/subjects`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -205,7 +205,7 @@ const Homework = () => {
     try {
       setSubmitting(true);
       const token = localStorage.getItem('token');
-      
+
       const formPayload = new FormData();
       formPayload.append('title', formData.title);
       formPayload.append('description', formData.description || '');
@@ -215,16 +215,27 @@ const Homework = () => {
       formPayload.append('subject', formData.subject);
       formPayload.append('due_date', formData.due_date);
       formPayload.append('instructions', formData.instructions || '');
-      
+      // In Madrasha system: Semester = Class/Jamaat, so semester_id maps to class_id
+      // Send semester_id as class_id for backward compatibility
+      const classIdToSend = formData.semester_id || '';
+      formPayload.append('class_id', classIdToSend);
+      formPayload.append('section_id', '');
+
       if (file) {
         formPayload.append('file', file);
       }
 
+      // Debug: Verify FormData contents
+      console.log('📤 Sending FormData with fields:');
+      for (let [key, value] of formPayload.entries()) {
+        console.log(`  ${key}: ${value instanceof File ? `[File: ${value.name}]` : value}`);
+      }
+
+      // Use axios with explicit config to ensure FormData is sent correctly
       await axios.post(`${API}/homework`, formPayload, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
       });
 
       toast.success('হোমওয়ার্ক তৈরি হয়েছে');
@@ -243,7 +254,33 @@ const Homework = () => {
       fetchHomework();
     } catch (error) {
       console.error('Failed to create homework:', error);
-      toast.error('হোমওয়ার্ক তৈরি করতে ব্যর্থ');
+      let errorMessage = 'হোমওয়ার্ক তৈরি করতে ব্যর্থ';
+
+      if (error.response?.data) {
+        const errorData = error.response.data;
+
+        // Handle FastAPI validation errors (array format)
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => {
+            if (typeof err === 'object' && err.msg) {
+              return `${err.loc?.join('.') || ''}: ${err.msg}`;
+            }
+            return String(err);
+          }).join(', ') || errorMessage;
+        }
+        // Handle string error messages
+        else if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
+        }
+        // Handle other error formats
+        else if (errorData.message) {
+          errorMessage = typeof errorData.message === 'string' ? errorData.message : String(errorData.message);
+        }
+      } else if (error.message) {
+        errorMessage = typeof error.message === 'string' ? error.message : String(error.message);
+      }
+
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -300,7 +337,7 @@ const Homework = () => {
           <div><div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div><div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
         </div>
         <div className="space-y-4">
-          {[1,2,3,4].map(i => (<div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse"><div className="flex justify-between mb-4"><div className="h-5 w-1/3 bg-gray-200 dark:bg-gray-700 rounded"></div><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></div><div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-2"></div><div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded"></div></div>))}
+          {[1, 2, 3, 4].map(i => (<div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse"><div className="flex justify-between mb-4"><div className="h-5 w-1/3 bg-gray-200 dark:bg-gray-700 rounded"></div><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></div><div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-2"></div><div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded"></div></div>))}
         </div>
       </div>
     );
@@ -512,7 +549,8 @@ const Homework = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[150px]">শিরোনাম</TableHead>
-                    <TableHead className="hidden sm:table-cell">ক্লাস</TableHead>
+                    <TableHead className="hidden lg:table-cell">মারহালা | বিভাগ | সেমিস্টার</TableHead>
+
                     <TableHead className="hidden md:table-cell">বিষয়</TableHead>
                     <TableHead>জমার তারিখ</TableHead>
                     <TableHead>অবস্থা</TableHead>
@@ -523,65 +561,76 @@ const Homework = () => {
                   {homework
                     .filter(hw => !selectedClass || selectedClass === 'all' || hw.class_id === selectedClass)
                     .map((hw) => (
-                    <TableRow key={hw.id}>
-                      <TableCell className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm sm:text-base truncate">{String(hw.title || '')}</p>
-                            {hw.description && (
-                              <p className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[200px]">{String(hw.description)}</p>
-                            )}
-                            <div className="sm:hidden mt-1 text-[10px] text-gray-500">
-                              {String(hw.class_name || '')} | {String(hw.subject || '')}
+                      <TableRow key={hw.id}>
+                        <TableCell className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm sm:text-base truncate">{String(hw.title || '')}</p>
+                              {hw.description && (
+                                <p className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[200px]">{String(hw.description)}</p>
+                              )}
+                              <div className="sm:hidden mt-1 text-[10px] text-gray-500">
+                                {hw.marhala_name || hw.department_name || hw.semester_name ? (
+                                  <span className="block mb-1">
+                                    {[hw.marhala_name, hw.department_name, hw.semester_name].filter(Boolean).join(' | ')}
+                                  </span>
+                                ) : null}
+                                {String(hw.class_name || '')} | {String(hw.subject || '')}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell text-sm">
-                        {String(hw.class_name || '')} {hw.section_name ? `- ${String(hw.section_name)}` : ''}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm">{String(hw.subject || '')}</TableCell>
-                      <TableCell className="text-xs sm:text-sm">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {toBanglaDate(hw.due_date)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(hw.status)} className="text-[10px] sm:text-xs">
-                          {getStatusLabel(hw.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1 sm:gap-2">
-                          {hw.file_url && (
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">
+                          {hw.marhala_name || hw.department_name || hw.semester_name ? (
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {[hw.marhala_name, hw.department_name, hw.semester_name].filter(Boolean).join(' | ')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-sm">{String(hw.subject || '')}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {toBanglaDate(hw.due_date)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(hw.status)} className="text-[10px] sm:text-xs">
+                            {getStatusLabel(hw.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1 sm:gap-2">
+                            {hw.file_url && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = hw.file_url;
+                                  link.download = hw.file_name || 'attachment';
+                                  link.click();
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = hw.file_url;
-                                link.download = hw.file_name || 'attachment';
-                                link.click();
-                              }}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              onClick={() => handleDelete(hw.id)}
                             >
-                              <Download className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                            onClick={() => handleDelete(hw.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </div>

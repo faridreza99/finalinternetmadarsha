@@ -29,7 +29,17 @@ from reportlab.lib.units import inch, mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from weasyprint import HTML
+
+# Try to import WeasyPrint - optional for Windows compatibility
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except (OSError, ImportError) as e:
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
+    # Logger not yet defined, use print for now
+    print(f"Warning: WeasyPrint not available - some PDF features may be disabled. Error: {e}")
+
 import os
 import base64
 import calendar
@@ -751,6 +761,11 @@ async def generate_payslip_pdf(
     """
     
     output = io.BytesIO()
+    if not WEASYPRINT_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="PDF generation is not available. WeasyPrint requires GTK libraries which are not installed on this system."
+        )
     HTML(string=html_content).write_pdf(output)
     output.seek(0)
     return output.getvalue()

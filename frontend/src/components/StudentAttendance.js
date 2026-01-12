@@ -18,6 +18,8 @@ const MarkStudentAttendance = () => {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedSession, setSelectedSession] = useState('Morning');
+  const [autoFillAllSessions, setAutoFillAllSessions] = useState(false);
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,7 +32,7 @@ const MarkStudentAttendance = () => {
       setStudents([]);
       setAttendance({});
     }
-  }, [selectedSemesterId, selectedDate]);
+  }, [selectedSemesterId, selectedDate, selectedSession]);
 
   const handleHierarchyChange = (selection) => {
     setSelectedMarhalaId(selection.marhala_id);
@@ -68,11 +70,13 @@ const MarkStudentAttendance = () => {
       const response = await axios.get(`${API}/attendance`, {
         params: {
           date: selectedDate,
+          date: selectedDate,
           type: 'student',
-          semester_id: selectedSemesterId
+          semester_id: selectedSemesterId,
+          attendance_session: selectedSession
         }
       });
-      
+
       const attendanceMap = {};
       response.data.forEach(record => {
         attendanceMap[record.person_id] = record.status;
@@ -107,29 +111,37 @@ const MarkStudentAttendance = () => {
 
     try {
       setSaving(true);
-      
-      const records = Object.entries(attendance).map(([studentId, status]) => {
-        const student = students.find(s => s.id === studentId);
-        return {
-          person_id: studentId,
-          person_name: student?.name || '',
-          status: status,
+
+      const sessionsToSave = autoFillAllSessions
+        ? ['Morning', 'Noon', 'Evening', 'Night']
+        : [selectedSession];
+
+      for (const session of sessionsToSave) {
+        const records = Object.entries(attendance).map(([studentId, status]) => {
+          const student = students.find(s => s.id === studentId);
+          return {
+            person_id: studentId,
+            person_name: student?.name || '',
+            status: status,
+            date: selectedDate,
+            type: 'student',
+            semester_id: selectedSemesterId,
+            marhala_id: selectedMarhalaId,
+            department_id: selectedDepartmentId,
+            attendance_session: session
+          };
+        });
+
+        await axios.post(`${API}/attendance/bulk`, {
           date: selectedDate,
           type: 'student',
           semester_id: selectedSemesterId,
-          marhala_id: selectedMarhalaId,
-          department_id: selectedDepartmentId
-        };
-      });
+          attendance_session: session,
+          records: records
+        });
+      }
 
-      await axios.post(`${API}/attendance/bulk`, {
-        date: selectedDate,
-        type: 'student',
-        semester_id: selectedSemesterId,
-        records: records
-      });
-
-      toast.success('ছাত্র হাজিরা সংরক্ষিত হয়েছে');
+      toast.success(autoFillAllSessions ? 'সকল সেশনের হাজিরা সংরক্ষিত হয়েছে' : 'ছাত্র হাজিরা সংরক্ষিত হয়েছে');
     } catch (error) {
       toast.error('হাজিরা সংরক্ষণ করতে ব্যর্থ');
       console.error(error);
@@ -162,7 +174,20 @@ const MarkStudentAttendance = () => {
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>
-            <div className="md:col-span-3">
+            <div>
+              <label className="block text-sm font-medium mb-2">সেশন</label>
+              <select
+                value={selectedSession}
+                onChange={(e) => setSelectedSession(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="Morning">সকাল (Morning)</option>
+                <option value="Noon">দুপুর (Noon)</option>
+                <option value="Evening">সন্ধ্যা (Evening)</option>
+                <option value="Night">রাত (Night)</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
               <AcademicHierarchySelector
                 onSelectionChange={handleHierarchyChange}
                 selectedMarhalaId={selectedMarhalaId}
@@ -252,7 +277,7 @@ const MarkStudentAttendance = () => {
               ) : (
                 <div className="space-y-2">
                   {students.map(student => (
-                    <div 
+                    <div
                       key={student.id}
                       className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
                     >
@@ -308,7 +333,22 @@ const MarkStudentAttendance = () => {
           </Card>
 
           {/* Save Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="autoFill"
+                checked={autoFillAllSessions}
+                onChange={(e) => setAutoFillAllSessions(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <label
+                htmlFor="autoFill"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                আজকের সকল সেশনে প্রয়োগ করুন
+              </label>
+            </div>
             <Button
               onClick={saveAttendance}
               disabled={saving || Object.keys(attendance).length === 0}
@@ -346,7 +386,7 @@ const StudentAttendanceReport = () => {
         date: selectedDate,
         type: 'student'
       };
-      
+
       if (selectedSemesterId && selectedSemesterId !== 'all') {
         params.semester_id = selectedSemesterId;
       } else if (selectedDepartmentId && selectedDepartmentId !== 'all') {
@@ -375,7 +415,7 @@ const StudentAttendanceReport = () => {
         date: selectedDate,
         type: 'student'
       };
-      
+
       if (selectedSemesterId && selectedSemesterId !== 'all') {
         params.semester_id = selectedSemesterId;
       } else if (selectedDepartmentId && selectedDepartmentId !== 'all') {
@@ -396,7 +436,7 @@ const StudentAttendanceReport = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       toast.success(`রিপোর্ট ${format.toUpperCase()} হিসেবে ডাউনলোড হয়েছে`);
     } catch (error) {
       toast.error('রিপোর্ট ডাউনলোড করতে ব্যর্থ');
@@ -404,8 +444,8 @@ const StudentAttendanceReport = () => {
     }
   };
 
-  const attendanceRate = summary?.total > 0 
-    ? ((summary.present / summary.total) * 100).toFixed(1) 
+  const attendanceRate = summary?.total > 0
+    ? ((summary.present / summary.total) * 100).toFixed(1)
     : 0;
 
   return (

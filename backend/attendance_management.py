@@ -55,6 +55,7 @@ class ManualAttendanceRecord(BaseModel):
     semester_id: Optional[str] = None
     marhala_id: Optional[str] = None
     department_id: Optional[str] = None
+    attendance_session: str = "Morning"
 
 class AttendanceEditRequest(BaseModel):
     new_status: str
@@ -67,6 +68,9 @@ class BulkManualAttendance(BaseModel):
     semester_id: Optional[str] = None
     marhala_id: Optional[str] = None
     department_id: Optional[str] = None
+    marhala_id: Optional[str] = None
+    department_id: Optional[str] = None
+    attendance_session: str = "Morning"
     records: List[ManualAttendanceRecord]
 
 # ================================
@@ -390,6 +394,7 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
         student_id: Optional[str] = None,
         month: Optional[int] = None,
         year: Optional[int] = None,
+        attendance_session: Optional[str] = None,
         current_user: User = Depends(get_current_user)
     ):
         """Get student attendance records with rule-based status"""
@@ -410,8 +415,12 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
                 filter_criteria["class_id"] = class_id
             if section_id:
                 filter_criteria["section_id"] = section_id
+            if section_id:
+                filter_criteria["section_id"] = section_id
             if student_id:
                 filter_criteria["person_id"] = student_id
+            if attendance_session:
+                filter_criteria["attendance_session"] = attendance_session
             
             records = await db.student_attendance.find(filter_criteria).sort("date", -1).to_list(1000)
             
@@ -468,6 +477,7 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
                     "recorded_by_name": current_user.full_name or current_user.email,
                     "remarks": record.remarks,
                     "reason": record.reason,
+                    "attendance_session": record.attendance_session,
                     "created_at": datetime.utcnow().isoformat()
                 }
                 
@@ -475,6 +485,7 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
                     {
                         "person_id": record.person_id,
                         "date": record.date,
+                        "attendance_session": record.attendance_session,
                         "tenant_id": current_user.tenant_id
                     },
                     {"$set": attendance_doc},
@@ -539,13 +550,14 @@ def setup_attendance_routes(api_router, db, get_current_user, User):
                     "class_id": record.class_id,
                     "section_id": record.section_id,
                     "source": "manual_bulk",
+                    "attendance_session": data.attendance_session,
                     "recorded_by": current_user.id,
                     "recorded_by_name": current_user.full_name or current_user.email,
                     "created_at": datetime.utcnow().isoformat()
                 }
                 
                 await db.student_attendance.update_one(
-                    {"person_id": record.person_id, "date": record.date, "tenant_id": current_user.tenant_id},
+                    {"person_id": record.person_id, "date": record.date, "attendance_session": data.attendance_session, "tenant_id": current_user.tenant_id},
                     {"$set": attendance_doc},
                     upsert=True
                 )

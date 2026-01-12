@@ -139,6 +139,30 @@ class AcademicSemester(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class SubjectCreate(BaseModel):
+    """Create a new Subject"""
+    name_bn: str
+    name_en: Optional[str] = None
+    code: Optional[str] = None
+    department_id: Optional[str] = None
+    semester_id: Optional[str] = None
+    is_active: bool = True
+
+
+class Subject(BaseModel):
+    """Full Subject model"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tenant_id: str
+    name_bn: str
+    name_en: Optional[str] = None
+    code: Optional[str] = None
+    department_id: Optional[str] = None
+    semester_id: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 # ============== Dependencies (set from server.py) ==============
 
 db = None
@@ -717,3 +741,56 @@ async def enroll_students_in_semester(
         "message": f"{result.modified_count}জন ছাত্র সেমিস্টারে ভর্তি করা হয়েছে",
         "enrolled_count": result.modified_count
     }
+
+
+# ============== Subject Endpoints ==============
+
+@router.get("/subjects")
+async def get_subjects(department_id: Optional[str] = None, semester_id: Optional[str] = None, user=Depends(require_staff)):
+    """Get all Subjects, optionally filtered"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    query = {
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }
+    
+    if department_id:
+        query["department_id"] = department_id
+    if semester_id:
+        query["semester_id"] = semester_id
+    
+    subjects = await db.subjects.find(query).sort("name_bn", 1).to_list(200)
+    
+    for s in subjects:
+        s.pop("_id", None)
+    
+    return {"subjects": subjects}
+
+@router.post("/subjects")
+async def create_subject(data: SubjectCreate, user=Depends(require_admin)):
+    """Create a new Subject"""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    
+    existing = await db.subjects.find_one({
+        "tenant_id": user.tenant_id,
+        "name_bn": data.name_bn,
+        "is_active": True
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="এই বিষয়টি ইতিমধ্যে আছে")
+    
+    subject = Subject(
+        tenant_id=user.tenant_id,
+        **data.dict()
+    )
+    
+    await db.subjects.insert_one(subject.dict())
+    
+    result = subject.dict()
+    result.pop("_id", None)
+    
+    return {"message": "বিষয় সফলভাবে তৈরি হয়েছে", "subject": result}

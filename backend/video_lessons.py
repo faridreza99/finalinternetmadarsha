@@ -10,6 +10,7 @@ from typing import List, Optional, Any, Callable
 from datetime import datetime
 import uuid
 import logging
+from student_utils import resolve_student_identity
 
 router = APIRouter(prefix="/api", tags=["Video Lessons"])
 security = HTTPBearer()
@@ -390,6 +391,10 @@ async def create_lesson(lesson: VideoLessonCreate, user = Depends(require_admin)
     
     semester = await db.semesters.find_one({"id": lesson.semester_id, "tenant_id": user.tenant_id})
     if not semester:
+        # Try checking academic semesters (Madrasha structure)
+        semester = await db.academic_semesters.find_one({"id": lesson.semester_id, "tenant_id": user.tenant_id})
+        
+    if not semester:
         raise HTTPException(status_code=404, detail="সেমিস্টার খুঁজে পাওয়া যায়নি")
     
     lesson_id = str(uuid.uuid4())
@@ -603,21 +608,20 @@ async def get_student_semesters(user = Depends(get_current_user)):
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
-    # Find student record
-    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
+    # Resolve student identity robustly
+    student = await resolve_student_identity(db, user)
     
-    # Also try finding by username match
     if not student:
-        student = await db.students.find_one({"username": user.username, "tenant_id": user.tenant_id})
+        logging.warning(f"Student not found for user: {user.username}")
+        return {"semesters": []}
     
-    # Also try finding by linked_user_id
-    if not student:
-        student = await db.students.find_one({"linked_user_id": user.id, "tenant_id": user.tenant_id})
+    student_id = student.get("id") or student.get("_id")
+    if isinstance(student_id, (uuid.UUID, bytes)):
+        student_id = str(student_id)
     
-    student_id = student["id"] if student else user.id
-    student_class_id = student.get("class_id") if student else None
+    student_class_id = student.get("class_id")
     
-    logging.info(f"STUDENT SEMESTERS: student_id={student_id}, class_id={student_class_id}")
+    logging.info(f"STUDENT SEMESTERS: resolved student_id={student_id}, class_id={student_class_id}")
     
     # First try explicit enrollments
     enrollments = await db.student_semester_enrollments.find({
@@ -631,28 +635,58 @@ async def get_student_semesters(user = Depends(get_current_user)):
     # If no explicit enrollments but student has a class, auto-enroll in class semesters
     if not semester_ids and student_class_id:
         logging.info(f"STUDENT SEMESTERS: No explicit enrollments, checking class semesters for class_id={student_class_id}")
-        # Get all semesters for student's class
+        # Get all semesters for student's class from both collections
         class_semesters = await db.semesters.find({
             "class_id": student_class_id,
             "tenant_id": user.tenant_id,
             "is_active": True
         }).sort("order", 1).to_list(50)
         
-        for sem in class_semesters:
+        # Also check academic_semesters for Madrasha structure
+        academic_semesters = await db.academic_semesters.find({
+            "class_id": student_class_id,
+            "tenant_id": user.tenant_id,
+            "is_active": True
+        }).sort("order", 1).to_list(50)
+        
+        # Merge them (prioritizing semesters if overlap occurs by ID)
+        all_sem_docs = {s["id"]: s for s in class_semesters}
+        for s in academic_semesters:
+            if s["id"] not in all_sem_docs:
+                all_sem_docs[s["id"]] = s
+        
+        final_semesters = list(all_sem_docs.values())
+        final_semesters.sort(key=lambda x: x.get("order", 1))
+        
+        for sem in final_semesters:
             sem.pop("_id", None)
             class_doc = await db.classes.find_one({"id": sem["class_id"], "tenant_id": user.tenant_id})
             if class_doc:
                 sem["class_name"] = class_doc.get("display_name") or class_doc.get("name")
         
-        logging.info(f"STUDENT SEMESTERS: Found {len(class_semesters)} semesters for class {student_class_id}")
-        return {"semesters": class_semesters}
+        logging.info(f"STUDENT SEMESTERS: Found {len(final_semesters)} semesters for class {student_class_id}")
+        return {"semesters": final_semesters}
     
-    # Get semesters from explicit enrollments
+    # Get semesters from explicit enrollments (check both collections)
     semesters = await db.semesters.find({
         "id": {"$in": semester_ids},
         "tenant_id": user.tenant_id,
         "is_active": True
-    }).sort("order", 1).to_list(50)
+    }).to_list(50)
+    
+    academic_sems = await db.academic_semesters.find({
+        "id": {"$in": semester_ids},
+        "tenant_id": user.tenant_id,
+        "is_active": True
+    }).to_list(50)
+    
+    all_sem_docs = {s["id"]: s for s in semesters}
+    for s in academic_sems:
+        if s["id"] not in all_sem_docs:
+            all_sem_docs[s["id"]] = s
+            
+    final_semesters = list(all_sem_docs.values())
+    final_semesters.sort(key=lambda x: x.get("order", 1))
     
     for sem in semesters:
         sem.pop("_id", None)
@@ -669,15 +703,16 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
-    # Find student record using multiple methods
-    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
+    # Resolve student identity robustly
+    student = await resolve_student_identity(db, user)
     if not student:
-        student = await db.students.find_one({"username": user.username, "tenant_id": user.tenant_id})
-    if not student:
-        student = await db.students.find_one({"linked_user_id": user.id, "tenant_id": user.tenant_id})
-    
-    student_id = student["id"] if student else user.id
-    student_class_id = student.get("class_id") if student else None
+        raise HTTPException(status_code=404, detail="ছাত্র রেকর্ড পাওয়া যায়নি")
+        
+    student_id = student.get("id") or student.get("_id")
+    if isinstance(student_id, (uuid.UUID, bytes)):
+        student_id = str(student_id)
+        
+    student_class_id = student.get("class_id")
     
     # Check explicit enrollment first
     enrollment = await db.student_semester_enrollments.find_one({
@@ -689,11 +724,19 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
     
     # If no explicit enrollment, check if student's class matches semester's class (auto-enrollment)
     if not enrollment and student_class_id:
+        # Check both semesters and academic_semesters
         semester = await db.semesters.find_one({
             "id": semester_id,
             "tenant_id": user.tenant_id,
             "is_active": True
         })
+        if not semester:
+            semester = await db.academic_semesters.find_one({
+                "id": semester_id,
+                "tenant_id": user.tenant_id,
+                "is_active": True
+            })
+            
         if semester and semester.get("class_id") == student_class_id:
             # Student is auto-enrolled through class match
             enrollment = {"auto_enrolled": True}
@@ -739,15 +782,16 @@ async def get_student_lesson(lesson_id: str, user = Depends(get_current_user)):
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
-    # Find student record using multiple methods
-    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
+    # Resolve student identity robustly
+    student = await resolve_student_identity(db, user)
     if not student:
-        student = await db.students.find_one({"username": user.username, "tenant_id": user.tenant_id})
-    if not student:
-        student = await db.students.find_one({"linked_user_id": user.id, "tenant_id": user.tenant_id})
-    
-    student_id = student["id"] if student else user.id
-    student_class_id = student.get("class_id") if student else None
+        raise HTTPException(status_code=404, detail="ছাত্র রেকর্ড পাওয়া যায়নি")
+        
+    student_id = student.get("id") or student.get("_id")
+    if isinstance(student_id, (uuid.UUID, bytes)):
+        student_id = str(student_id)
+        
+    student_class_id = student.get("class_id")
     
     lesson = await db.video_lessons.find_one({
         "id": lesson_id,
@@ -768,11 +812,19 @@ async def get_student_lesson(lesson_id: str, user = Depends(get_current_user)):
     
     # If no explicit enrollment, check if student's class matches semester's class (auto-enrollment)
     if not enrollment and student_class_id:
+        # Check both collections
         semester = await db.semesters.find_one({
             "id": lesson["semester_id"],
             "tenant_id": user.tenant_id,
             "is_active": True
         })
+        if not semester:
+            semester = await db.academic_semesters.find_one({
+                "id": lesson["semester_id"],
+                "tenant_id": user.tenant_id,
+                "is_active": True
+            })
+            
         if semester and semester.get("class_id") == student_class_id:
             # Student is auto-enrolled through class match
             enrollment = {"auto_enrolled": True}
@@ -824,8 +876,14 @@ async def submit_lesson_answers(lesson_id: str, submission: LessonSubmission, us
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
-    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
-    student_id = student["id"] if student else user.id
+    # Resolve student identity robustly
+    student = await resolve_student_identity(db, user)
+    if not student:
+        raise HTTPException(status_code=404, detail="ছাত্র রেকর্ড পাওয়া যায়নি")
+        
+    student_id = student.get("id") or student.get("_id")
+    if isinstance(student_id, (uuid.UUID, bytes)):
+        student_id = str(student_id)
     
     # Check if already submitted - prevent re-submission
     existing_response = await db.student_lesson_responses.find_one({
@@ -933,8 +991,14 @@ async def get_lesson_result(lesson_id: str, user = Depends(get_current_user)):
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
-    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
-    student_id = student["id"] if student else user.id
+    # Resolve student identity robustly
+    student = await resolve_student_identity(db, user)
+    if not student:
+        raise HTTPException(status_code=404, detail="ছাত্র রেকর্ড পাওয়া যায়নি")
+        
+    student_id = student.get("id") or student.get("_id")
+    if isinstance(student_id, (uuid.UUID, bytes)):
+        student_id = str(student_id)
     
     response = await db.student_lesson_responses.find_one({
         "student_id": student_id,
@@ -955,8 +1019,14 @@ async def get_my_progress(user = Depends(get_current_user)):
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
-    student = await db.students.find_one({"user_id": user.id, "tenant_id": user.tenant_id})
-    student_id = student["id"] if student else user.id
+    # Resolve student identity robustly
+    student = await resolve_student_identity(db, user)
+    if not student:
+        return {"semesters": [], "summary": {}}
+        
+    student_id = student.get("id") or student.get("_id")
+    if isinstance(student_id, (uuid.UUID, bytes)):
+        student_id = str(student_id)
     
     # Get all enrollments
     enrollments = await db.student_semester_enrollments.find({
@@ -976,6 +1046,12 @@ async def get_my_progress(user = Depends(get_current_user)):
             "id": enrollment["semester_id"],
             "tenant_id": user.tenant_id
         })
+        if not semester:
+            semester = await db.academic_semesters.find_one({
+                "id": enrollment["semester_id"],
+                "tenant_id": user.tenant_id
+            })
+            
         if not semester:
             continue
         
@@ -1132,7 +1208,7 @@ async def get_lesson_results(lesson_id: str, user = Depends(require_staff)):
         
         if student:
             resp["student_name"] = student.get("full_name_bn") or student.get("full_name") or student.get("name")
-            resp["roll_number"] = student.get("roll_no") or student.get("roll_number") or student.get("roll")
+            resp["roll_number"] = student.get("roll_no") or student.get("roll_number") or student.get("roll") or student.get("admission_no")
         else:
             # Fallback: try to get user info
             user_doc = await db.users.find_one({"id": student_id, "tenant_id": user.tenant_id})
@@ -1162,7 +1238,13 @@ async def get_student_video_progress(student_id: str, user = Depends(require_sta
     if db is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
     
+    # Find student record
     student = await db.students.find_one({"id": student_id, "tenant_id": user.tenant_id})
+    if not student:
+        student = await db.students.find_one({"_id": student_id, "tenant_id": user.tenant_id})
+    if not student:
+        student = await db.students.find_one({"user_id": student_id, "tenant_id": user.tenant_id})
+        
     if not student:
         raise HTTPException(status_code=404, detail="ছাত্র খুঁজে পাওয়া যায়নি")
     
@@ -1183,6 +1265,12 @@ async def get_student_video_progress(student_id: str, user = Depends(require_sta
             "id": enrollment["semester_id"],
             "tenant_id": user.tenant_id
         })
+        if not semester:
+            semester = await db.academic_semesters.find_one({
+                "id": enrollment["semester_id"],
+                "tenant_id": user.tenant_id
+            })
+            
         if not semester:
             continue
         

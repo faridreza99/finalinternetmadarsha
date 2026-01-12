@@ -6,7 +6,16 @@ import io
 import base64
 import os
 from datetime import datetime
-from weasyprint import HTML, CSS
+
+# Try to import WeasyPrint - optional for Windows compatibility
+try:
+    from weasyprint import HTML, CSS
+    WEASYPRINT_AVAILABLE = True
+except (OSError, ImportError) as e:
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
+    CSS = None
+    print(f"Warning: WeasyPrint not available - PDF generation will be disabled. Error: {e}")
 
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts')
 
@@ -269,6 +278,12 @@ def generate_pdf_report(
         filter_html = f"<div class='filter-info'><strong>Filters:</strong> {filter_text}</div>"
     
     footer = footer_text or f"Powered by School ERP System | {school_name}"
+    
+    if not WEASYPRINT_AVAILABLE:
+        raise RuntimeError(
+            "WeasyPrint is not available. PDF generation requires WeasyPrint with GTK libraries. "
+            "On Windows, please install GTK runtime or use a different PDF generation method."
+        )
     
     html_content = f"""
     <!DOCTYPE html>

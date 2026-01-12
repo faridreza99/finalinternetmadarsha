@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
 } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -32,16 +32,17 @@ import {
   TableRow,
 } from './ui/table';
 import { Badge } from './ui/badge';
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
   Video,
   Users,
   Calendar,
   Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import AcademicHierarchySelector from './AcademicHierarchySelector';
 
 const API = process.env.REACT_APP_API_URL || '/api';
 
@@ -58,10 +59,15 @@ const toBengaliNumeral = (num) => {
 const LiveClassManagement = () => {
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [academicHierarchy, setAcademicHierarchy] = useState({ marhalas: [], departments: [], semesters: [] });
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
+
+  // Selection state for Hierarchy Selector
+  const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
+
   const [formData, setFormData] = useState({
     class_name: '',
     marhala_id: '',
@@ -104,72 +110,74 @@ const LiveClassManagement = () => {
   const fetchTeachers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No auth token found for teachers fetch');
-        return;
-      }
+      if (!token) return;
+
       const response = await axios.get(`${API}/staff`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const staffList = response.data || [];
-      const teachersList = staffList.filter(s => 
-        s.role === 'teacher' || 
-        (s.designation && typeof s.designation === 'string' && s.designation.toLowerCase().includes('teacher'))
+
+      const data = response.data;
+      // Handle array directly or nested data if structure changes
+      const allStaff = Array.isArray(data) ? data : (data.data || data.teachers || []);
+
+      // Filter only teachers
+      const teacherList = allStaff.filter(s =>
+        (s.role && s.role.toLowerCase() === 'teacher') ||
+        (s.designation && s.designation.toLowerCase().includes('teacher')) ||
+        (s.designation && s.designation.toLowerCase().includes('শিক্ষক'))
       );
-      setTeachers(teachersList);
+
+      console.log('Fetched teachers:', teacherList);
+      setTeachers(teacherList);
     } catch (error) {
       console.error('Failed to fetch teachers:', error);
       setTeachers([]);
     }
   }, []);
 
-  const fetchAcademicHierarchy = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      const response = await axios.get(`${API}/academic-hierarchy`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const hierarchy = response.data?.flat || response.data || { marhalas: [], departments: [], semesters: [] };
-      setAcademicHierarchy(hierarchy);
-    } catch (error) {
-      console.error('Failed to fetch academic hierarchy:', error);
-      setAcademicHierarchy({ marhalas: [], departments: [], semesters: [] });
-    }
-  }, []);
-
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
-    fetchAcademicHierarchy();
-  }, [fetchClasses, fetchTeachers, fetchAcademicHierarchy]);
-  
-  const getFilteredDepartments = () => {
-    return academicHierarchy.departments?.filter(d => d.marhala_id === formData.marhala_id) || [];
-  };
+  }, [fetchClasses, fetchTeachers]);
 
-  const getFilteredSemesters = () => {
-    return academicHierarchy.semesters?.filter(s => s.department_id === formData.department_id) || [];
+  const handleHierarchyChange = (selection) => {
+    setSelectedMarhalaId(selection.marhala_id);
+    setSelectedDepartmentId(selection.department_id);
+    setSelectedSemesterId(selection.semester_id);
+
+    setFormData(prev => ({
+      ...prev,
+      marhala_id: selection.marhala_id,
+      department_id: selection.department_id,
+      semester_id: selection.semester_id,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
+      const payload = {
+        ...formData,
+        marhala_id: selectedMarhalaId,
+        department_id: selectedDepartmentId,
+        semester_id: selectedSemesterId
+      };
+
       if (editingClass) {
-        await axios.put(`${API}/live-classes/${editingClass.id}`, formData, {
+        await axios.put(`${API}/live-classes/${editingClass.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('লাইভ ক্লাস আপডেট হয়েছে');
       } else {
-        await axios.post(`${API}/live-classes`, formData, {
+        await axios.post(`${API}/live-classes`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('লাইভ ক্লাস তৈরি হয়েছে');
       }
-      
+
       setIsDialogOpen(false);
       setEditingClass(null);
       resetForm();
@@ -182,6 +190,11 @@ const LiveClassManagement = () => {
 
   const handleEdit = (liveClass) => {
     setEditingClass(liveClass);
+
+    setSelectedMarhalaId(liveClass.marhala_id || '');
+    setSelectedDepartmentId(liveClass.department_id || '');
+    setSelectedSemesterId(liveClass.semester_id || '');
+
     setFormData({
       class_name: liveClass.class_name || '',
       marhala_id: liveClass.marhala_id || '',
@@ -204,7 +217,7 @@ const LiveClassManagement = () => {
     if (!window.confirm('আপনি কি এই ক্লাসটি মুছে ফেলতে চান?')) {
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`${API}/live-classes/${classId}`, {
@@ -219,6 +232,10 @@ const LiveClassManagement = () => {
   };
 
   const resetForm = () => {
+    setSelectedMarhalaId('');
+    setSelectedDepartmentId('');
+    setSelectedSemesterId('');
+
     setFormData({
       class_name: '',
       marhala_id: '',
@@ -237,7 +254,7 @@ const LiveClassManagement = () => {
   };
 
   const handleTeacherChange = (teacherId) => {
-    const teacher = teachers.find(t => (t.staff_id || t.id || '') === teacherId);
+    const teacher = teachers.find(t => (t.id || t.staff_id || '') === teacherId);
     const teacherName = teacher ? (teacher.name || teacher.full_name || '') : '';
     setFormData({
       ...formData,
@@ -247,7 +264,7 @@ const LiveClassManagement = () => {
   };
 
   const getTeacherId = (teacher) => {
-    return String(teacher.staff_id || teacher.id || teacher._id || '');
+    return String(teacher.id || teacher.staff_id || teacher._id || '');
   };
 
   const getTeacherName = (teacher) => {
@@ -262,7 +279,7 @@ const LiveClassManagement = () => {
           <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1,2,3].map(i => (<div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse"><div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div><div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div><div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded"></div></div>))}
+          {[1, 2, 3].map(i => (<div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse"><div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div><div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div><div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded"></div></div>))}
         </div>
       </div>
     );
@@ -292,7 +309,7 @@ const LiveClassManagement = () => {
               নতুন লাইভ ক্লাস
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingClass ? 'লাইভ ক্লাস সম্পাদনা' : 'নতুন লাইভ ক্লাস তৈরি'}
@@ -304,77 +321,29 @@ const LiveClassManagement = () => {
                 <Input
                   id="class_name"
                   value={formData.class_name}
-                  onChange={(e) => setFormData({...formData, class_name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, class_name: e.target.value })}
                   placeholder="ক্লাসের নাম লিখুন"
                   required
                 />
               </div>
 
-              {/* Academic Hierarchy - Marhala → Department → Semester */}
-              <div>
-                <Label htmlFor="marhala_id">মারহালা</Label>
-                <Select
-                  value={formData.marhala_id}
-                  onValueChange={(value) => setFormData({...formData, marhala_id: value, department_id: '', semester_id: ''})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="মারহালা নির্বাচন করুন" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {academicHierarchy.marhalas?.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name_bn || m.name_en || m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="border p-4 rounded-md bg-gray-50 dark:bg-gray-800/50 mb-4">
+                <Label className="mb-2 block">একাডেমিক তথ্য (মারহালা/বিভাগ/সেমিস্টার)</Label>
+                <AcademicHierarchySelector
+                  onSelectionChange={handleHierarchyChange}
+                  selectedMarhalaId={selectedMarhalaId}
+                  selectedDepartmentId={selectedDepartmentId}
+                  selectedSemesterId={selectedSemesterId}
+                  showLabels={true}
+                  inline={false}
+                />
               </div>
-              {formData.marhala_id && (
-                <div>
-                  <Label htmlFor="department_id">বিভাগ/জামাত</Label>
-                  <Select
-                    value={formData.department_id}
-                    onValueChange={(value) => setFormData({...formData, department_id: value, semester_id: ''})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getFilteredDepartments().map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.name_bn || d.name_en || d.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {formData.department_id && (
-                <div>
-                  <Label htmlFor="semester_id">সেমিস্টার</Label>
-                  <Select
-                    value={formData.semester_id}
-                    onValueChange={(value) => setFormData({...formData, semester_id: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getFilteredSemesters().map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name_bn || s.name_en || s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               <div>
                 <Label htmlFor="gender">লিঙ্গ</Label>
                 <Select
                   value={formData.gender}
-                  onValueChange={(value) => setFormData({...formData, gender: value})}
+                  onValueChange={(value) => setFormData({ ...formData, gender: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="লিঙ্গ নির্বাচন করুন" />
@@ -393,7 +362,7 @@ const LiveClassManagement = () => {
                     id="start_time"
                     type="time"
                     value={formData.start_time}
-                    onChange={(e) => setFormData({...formData, start_time: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                     required
                   />
                 </div>
@@ -403,7 +372,7 @@ const LiveClassManagement = () => {
                     id="end_time"
                     type="time"
                     value={formData.end_time}
-                    onChange={(e) => setFormData({...formData, end_time: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                     required
                   />
                 </div>
@@ -437,7 +406,7 @@ const LiveClassManagement = () => {
                   <Label htmlFor="month">মাস</Label>
                   <Select
                     value={formData.month}
-                    onValueChange={(value) => setFormData({...formData, month: value})}
+                    onValueChange={(value) => setFormData({ ...formData, month: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="মাস নির্বাচন" />
@@ -455,7 +424,7 @@ const LiveClassManagement = () => {
                     id="year"
                     type="number"
                     value={formData.year}
-                    onChange={(e) => setFormData({...formData, year: parseInt(e.target.value)})}
+                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
                     min={2024}
                     max={2030}
                     required
@@ -468,7 +437,7 @@ const LiveClassManagement = () => {
                 <Input
                   id="telegram_link"
                   value={formData.telegram_link}
-                  onChange={(e) => setFormData({...formData, telegram_link: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, telegram_link: e.target.value })}
                   placeholder="https://t.me/..."
                   required
                 />
@@ -479,7 +448,7 @@ const LiveClassManagement = () => {
                   type="checkbox"
                   id="is_active"
                   checked={formData.is_active}
-                  onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                   className="rounded"
                 />
                 <Label htmlFor="is_active">সক্রিয়</Label>
@@ -565,6 +534,7 @@ const LiveClassManagement = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>ক্লাসের নাম</TableHead>
+                <TableHead>একাডেমিক তথ্য</TableHead>
                 <TableHead>লিঙ্গ</TableHead>
                 <TableHead>সময়</TableHead>
                 <TableHead>শিক্ষক</TableHead>
@@ -576,7 +546,7 @@ const LiveClassManagement = () => {
             <TableBody>
               {classes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                     কোন লাইভ ক্লাস নেই। প্রথম ক্লাস তৈরি করুন!
                   </TableCell>
                 </TableRow>
@@ -584,6 +554,11 @@ const LiveClassManagement = () => {
                 classes.map((liveClass) => (
                   <TableRow key={liveClass.id}>
                     <TableCell className="font-medium">{String(liveClass.class_name || '')}</TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {[liveClass.marhala_name, liveClass.department_name, liveClass.semester_name]
+                        .filter(Boolean)
+                        .join(" | ")}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={liveClass.gender === 'male' ? 'default' : 'secondary'}>
                         {liveClass.gender === 'male' ? 'পুরুষ' : 'মহিলা'}
