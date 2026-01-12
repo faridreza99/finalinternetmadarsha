@@ -744,17 +744,7 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
     if not enrollment:
         raise HTTPException(status_code=403, detail="এই সেমিস্টারে আপনি ভর্তি নন")
     
-    # Debug: Check total lessons vs published lessons
-    total_lessons = await db.video_lessons.count_documents({
-        "semester_id": semester_id,
-        "tenant_id": user.tenant_id
-    })
-    published_lessons = await db.video_lessons.count_documents({
-        "semester_id": semester_id,
-        "tenant_id": user.tenant_id,
-        "is_published": True
-    })
-    logging.info(f"STUDENT LESSONS DEBUG: semester={semester_id}, total={total_lessons}, published={published_lessons}")
+    logging.info(f"STUDENT LESSONS: fetching lessons for semester={semester_id}")
     
     lessons = await db.video_lessons.find({
         "semester_id": semester_id,
@@ -762,16 +752,21 @@ async def get_student_semester_lessons(semester_id: str, user = Depends(get_curr
         "is_published": True
     }).sort("order", 1).to_list(500)
     
+    lesson_ids = [l["id"] for l in lessons]
+    responses = await db.student_lesson_responses.find({
+        "student_id": student_id,
+        "lesson_id": {"$in": lesson_ids},
+        "tenant_id": user.tenant_id
+    }).to_list(500)
+    
+    response_map = {r["lesson_id"]: r for r in responses}
+    
     for lesson in lessons:
         lesson.pop("_id", None)
-        response = await db.student_lesson_responses.find_one({
-            "student_id": student_id,
-            "lesson_id": lesson["id"],
-            "tenant_id": user.tenant_id
-        })
-        lesson["is_completed"] = response is not None
-        lesson["score"] = response.get("score") if response else None
-        lesson["total_points"] = response.get("total_points") if response else None
+        resp = response_map.get(lesson["id"])
+        lesson["is_completed"] = resp is not None
+        lesson["score"] = resp.get("score") if resp else None
+        lesson["total_points"] = resp.get("total_points") if resp else None
     
     return {"lessons": lessons}
 
@@ -1147,16 +1142,35 @@ async def get_semester_progress(semester_id: str, user = Depends(require_staff))
     lesson_ids = [l["id"] for l in lessons]
     
     progress_data = []
+    # Batch fetch all students
+    all_students = await db.students.find({
+        "id": {"$in": student_ids},
+        "tenant_id": user.tenant_id
+    }).to_list(len(student_ids))
+    student_map = {s["id"]: s for s in all_students}
+    
+    # Batch fetch all responses for all students in this semester/lessons
+    all_responses = await db.student_lesson_responses.find({
+        "student_id": {"$in": student_ids},
+        "lesson_id": {"$in": lesson_ids},
+        "tenant_id": user.tenant_id
+    }).to_list(len(student_ids) * len(lesson_ids))
+    
+    # Group responses by student_id
+    responses_by_student = {}
+    for r in all_responses:
+        sid = r["student_id"]
+        if sid not in responses_by_student:
+            responses_by_student[sid] = []
+        responses_by_student[sid].append(r)
+    
+    progress_data = []
     for student_id in student_ids:
-        student = await db.students.find_one({"id": student_id, "tenant_id": user.tenant_id})
+        student = student_map.get(student_id)
         if not student:
             continue
         
-        responses = await db.student_lesson_responses.find({
-            "student_id": student_id,
-            "lesson_id": {"$in": lesson_ids},
-            "tenant_id": user.tenant_id
-        }).to_list(500)
+        responses = responses_by_student.get(student_id, [])
         
         completed = len(responses)
         total_score = sum(r.get("score", 0) for r in responses)
@@ -1165,7 +1179,7 @@ async def get_semester_progress(semester_id: str, user = Depends(require_staff))
         progress_data.append({
             "student_id": student_id,
             "student_name": student.get("full_name_bn") or student.get("full_name"),
-            "roll_number": student.get("roll_number"),
+            "roll_number": student.get("roll_no") or student.get("roll_number") or student.get("admission_no"),
             "lessons_completed": completed,
             "total_lessons": total_lessons,
             "progress_percent": round((completed / total_lessons) * 100, 1) if total_lessons > 0 else 0,
@@ -1192,26 +1206,44 @@ async def get_lesson_results(lesson_id: str, user = Depends(require_staff)):
         "tenant_id": user.tenant_id
     }).to_list(1000)
     
+    # Batch fetch all students for the responses
+    student_ids = list(set(r["student_id"] for r in responses))
+    all_students = await db.students.find({
+        "id": {"$in": student_ids},
+        "tenant_id": user.tenant_id
+    }).to_list(len(student_ids))
+    student_map = {s["id"]: s for s in all_students}
+    
+    # Also check by user_id for many-to-one mapping if needed
+    if len(all_students) < len(student_ids):
+        found_ids = set(s["id"] for s in all_students)
+        missing_ids = [sid for sid in student_ids if sid not in found_ids]
+        more_students = await db.students.find({
+            "user_id": {"$in": missing_ids},
+            "tenant_id": user.tenant_id
+        }).to_list(len(missing_ids))
+        for s in more_students:
+            student_map[s["user_id"]] = s
+    
+    # Batch fetch users for fallbacks
+    all_users = await db.users.find({
+        "id": {"$in": student_ids},
+        "tenant_id": user.tenant_id
+    }).to_list(len(student_ids))
+    user_map = {u["id"]: u for u in all_users}
+
     results = []
     for resp in responses:
         resp.pop("_id", None)
         student_id = resp.get("student_id")
         
-        # Try multiple lookup strategies
-        student = await db.students.find_one({"id": student_id, "tenant_id": user.tenant_id})
-        if not student:
-            # Try by _id (ObjectId string)
-            student = await db.students.find_one({"_id": student_id, "tenant_id": user.tenant_id})
-        if not student:
-            # Try by user_id
-            student = await db.students.find_one({"user_id": student_id, "tenant_id": user.tenant_id})
-        
+        student = student_map.get(student_id)
         if student:
             resp["student_name"] = student.get("full_name_bn") or student.get("full_name") or student.get("name")
             resp["roll_number"] = student.get("roll_no") or student.get("roll_number") or student.get("roll") or student.get("admission_no")
         else:
             # Fallback: try to get user info
-            user_doc = await db.users.find_one({"id": student_id, "tenant_id": user.tenant_id})
+            user_doc = user_map.get(student_id)
             if user_doc:
                 resp["student_name"] = user_doc.get("full_name") or user_doc.get("username")
                 resp["roll_number"] = "-"

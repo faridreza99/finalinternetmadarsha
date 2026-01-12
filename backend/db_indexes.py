@@ -55,6 +55,30 @@ async def create_performance_indexes(db):
             background=True
         )
         indexes_created.append("students: tenant_name")
+        
+        # User ID lookup (critical for identity resolution)
+        await students.create_index(
+            [("tenant_id", 1), ("user_id", 1)],
+            name="idx_students_tenant_user_id",
+            background=True
+        )
+        indexes_created.append("students: tenant_user_id")
+        
+        # String ID lookup
+        await students.create_index(
+            [("tenant_id", 1), ("id", 1)],
+            name="idx_students_tenant_id",
+            background=True
+        )
+        indexes_created.append("students: tenant_id")
+
+        # Email lookup
+        await students.create_index(
+            [("tenant_id", 1), ("email", 1)],
+            name="idx_students_tenant_email",
+            background=True
+        )
+        indexes_created.append("students: tenant_email")
 
         # ==================== ATTENDANCE COLLECTION ====================
         attendance = db.attendance
@@ -169,6 +193,48 @@ async def create_performance_indexes(db):
             background=True
         )
         indexes_created.append("fees: tenant_duedate_status")
+
+        # ==================== MADRASHA ACADEMIC ====================
+        
+        # Marhalas
+        await db.marhalas.create_index([("tenant_id", 1), ("id", 1)], name="idx_marhalas_tenant_id", background=True)
+        indexes_created.append("marhalas: tenant_id")
+        
+        # Departments
+        await db.departments.create_index([("tenant_id", 1), ("id", 1)], name="idx_depts_tenant_id", background=True)
+        await db.departments.create_index([("tenant_id", 1), ("marhala_id", 1)], name="idx_depts_tenant_marhala", background=True)
+        indexes_created.append("departments: tenant_id, marhala")
+        
+        # Academic Semesters
+        await db.academic_semesters.create_index([("tenant_id", 1), ("id", 1)], name="idx_asem_tenant_id", background=True)
+        await db.academic_semesters.create_index([("tenant_id", 1), ("department_id", 1)], name="idx_asem_tenant_dept", background=True)
+        await db.academic_semesters.create_index([("tenant_id", 1), ("class_id", 1)], name="idx_asem_tenant_class", background=True)
+        indexes_created.append("academic_semesters: tenant_id, dept, class")
+        
+        # Legacy/Class Semesters
+        await db.semesters.create_index([("tenant_id", 1), ("class_id", 1)], name="idx_sem_tenant_class", background=True)
+        indexes_created.append("semesters: tenant_class")
+        
+        # Student Semester Enrollments
+        await db.student_semester_enrollments.create_index([("tenant_id", 1), ("student_id", 1)], name="idx_senrol_tenant_student", background=True)
+        await db.student_semester_enrollments.create_index([("tenant_id", 1), ("semester_id", 1)], name="idx_senrol_tenant_sem", background=True)
+        indexes_created.append("semester_enrollments: tenant_student, sem")
+
+        # ==================== VIDEO LESSONS ====================
+        
+        # Lessons
+        await db.video_lessons.create_index([("tenant_id", 1), ("id", 1)], name="idx_lessons_tenant_id", background=True)
+        await db.video_lessons.create_index([("tenant_id", 1), ("semester_id", 1)], name="idx_lessons_tenant_sem", background=True)
+        await db.video_lessons.create_index([("tenant_id", 1), ("semester_id", 1), ("is_published", 1)], name="idx_lessons_tenant_sem_pub", background=True)
+        indexes_created.append("video_lessons: tenant_id, sem, published")
+        
+        # Questions
+        await db.assessment_questions.create_index([("tenant_id", 1), ("lesson_id", 1)], name="idx_questions_tenant_lesson", background=True)
+        indexes_created.append("assessment_questions: tenant_lesson")
+        
+        # Responses
+        await db.student_lesson_responses.create_index([("tenant_id", 1), ("student_id", 1), ("lesson_id", 1)], name="idx_resp_tenant_student_lesson", background=True)
+        indexes_created.append("student_lesson_responses: tenant_student_lesson")
 
         logger.info(f"✅ Created {len(indexes_created)} performance indexes: {', '.join(indexes_created)}")
         return indexes_created

@@ -8,6 +8,7 @@ It handles the mapping between user_id, student_id, admission_no, and username p
 import logging
 from typing import Optional, Dict, Any
 from bson import ObjectId
+from cache import cache, CacheTTL
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,14 @@ async def resolve_student_identity(db, current_user) -> Optional[Dict[str, Any]]
     email = getattr(current_user, 'email', '') or ''
     role = getattr(current_user, 'role', '') or ''
     
-    logger.info(f"Resolving student for: user_id={user_id}, username={username}, role={role}")
+    logger.debug(f"Resolving student for: user_id={user_id}, username={username}, role={role}")
     
+    # Check cache first
+    cache_key = f"student_identity:{tenant_id}:{user_id}"
+    cached_student = await cache.get(cache_key)
+    if cached_student:
+        return cached_student
+        
     student = None
     
     # Strategy 1: Find student by user_id field (primary linking method)
@@ -47,11 +54,10 @@ async def resolve_student_identity(db, current_user) -> Optional[Dict[str, Any]]
     })
     
     if student:
-        logger.info(f"Student found via user_id link: {student.get('name')}")
-        return _normalize_student(student)
+        logger.debug(f"Student found via user_id link: {student.get('name')}")
     
     # Strategy 2: Username pattern matching (e.g., mham5678_mham5678260002)
-    if username and "_" in username:
+    if not student and username and "_" in username:
         parts = username.split("_")
         if len(parts) >= 2:
             possible_student_id = parts[-1]
@@ -70,11 +76,10 @@ async def resolve_student_identity(db, current_user) -> Optional[Dict[str, Any]]
             })
             
             if student:
-                logger.info(f"Student found via username pattern: {student.get('name')}")
-                return _normalize_student(student)
+                logger.debug(f"Student found via username pattern: {student.get('name')}")
     
     # Strategy 3: Try email matching
-    if email and email != f"{username}@student.local":
+    if not student and email and email != f"{username}@student.local":
         student = await db.students.find_one({
             "tenant_id": tenant_id,
             "email": email,
@@ -82,22 +87,27 @@ async def resolve_student_identity(db, current_user) -> Optional[Dict[str, Any]]
         })
         
         if student:
-            logger.info(f"Student found via email: {student.get('name')}")
-            return _normalize_student(student)
+            logger.debug(f"Student found via email: {student.get('name')}")
     
     # Strategy 4: Look up user record and try their email
-    user_doc = await db.users.find_one({"id": user_id, "tenant_id": tenant_id})
-    if user_doc and user_doc.get("email"):
-        student = await db.students.find_one({
-            "tenant_id": tenant_id,
-            "email": user_doc.get("email"),
-            "is_active": {"$ne": False}
-        })
-        
-        if student:
-            logger.info(f"Student found via user email lookup: {student.get('name')}")
-            return _normalize_student(student)
+    if not student:
+        user_doc = await db.users.find_one({"id": user_id, "tenant_id": tenant_id})
+        if user_doc and user_doc.get("email"):
+            student = await db.students.find_one({
+                "tenant_id": tenant_id,
+                "email": user_doc.get("email"),
+                "is_active": {"$ne": False}
+            })
+            
+            if student:
+                logger.debug(f"Student found via user email lookup: {student.get('name')}")
     
+    if student:
+        normalized = _normalize_student(student)
+        # Cache for subsequent requests
+        await cache.set(cache_key, normalized, CacheTTL.USER_CONTEXT)
+        return normalized
+        
     logger.warning(f"No student found for user_id={user_id}, username={username}")
     return None
 
