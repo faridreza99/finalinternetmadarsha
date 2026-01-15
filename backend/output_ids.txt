@@ -1,0 +1,26 @@
+Checking student IDs...
+Name: John Smith
+  _id: 6968808e91b08f8e95f9b683
+  id: hss_student_001
+  student_id: None
+--------------------
+Name: Sarah Johnson
+  _id: 6968808e91b08f8e95f9b684
+  id: hss_student_002
+  student_id: None
+--------------------
+Name: Mike Davis
+  _id: 6968808e91b08f8e95f9b685
+  id: hss_student_003
+  student_id: None
+--------------------
+Name: Mike Davis
+  _id: 6968808ec9da33c91ea54564
+  id: hss_student_003
+  student_id: None
+--------------------
+Name: Emily Wilson
+  _id: 6968808e91b08f8e95f9b686
+  id: hss_student_004
+  student_id: None
+--------------------

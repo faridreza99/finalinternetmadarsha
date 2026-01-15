@@ -11,7 +11,7 @@ from datetime import datetime
 try:
     from weasyprint import HTML, CSS
     WEASYPRINT_AVAILABLE = True
-except (OSError, ImportError) as e:
+except Exception as e:
     WEASYPRINT_AVAILABLE = False
     HTML = None
     CSS = None

@@ -28,6 +28,34 @@ logger = logging.getLogger(__name__)
 def setup_student_portal_routes(app, db, get_current_user):
     """Setup all student portal routes"""
     
+    @app.get("/student/payment/summary")
+    async def get_student_payment_summary_api(current_user = Depends(get_current_user)):
+        """
+        Get simplified payment summary for online payment selection.
+        """
+        try:
+            tenant_id = current_user.tenant_id
+            student = await resolve_student_identity(db, current_user)
+            
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+            
+            fee_structure = await get_student_fee_structure(db, tenant_id, student)
+            monthly_fee = fee_structure.get('monthly_total', 0)
+            
+            current_year = datetime.now().year
+            summary = await get_student_payment_summary(db, tenant_id, student, current_year)
+            
+            return {
+                "monthly_fee": monthly_fee,
+                "total_due": summary.get('total_due', 0),
+                "unpaid_months": summary.get('unpaid_months', []),
+                "paid_months": summary.get('paid_months', [])
+            }
+        except Exception as e:
+            logger.error(f"Error fetching payment summary: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     @app.get("/student/fees")
     async def get_student_fees(current_user = Depends(get_current_user)):
         """
@@ -622,11 +650,11 @@ def setup_student_portal_routes(app, db, get_current_user):
                 end_date = date(year, month + 1, 1)
             
             # Get attendance records
-            records = await db.attendance.find({
+            records = await db.student_attendance.find({
                 "tenant_id": tenant_id,
-                "student_id": student_id,
+                "person_id": student_id,
                 "date": {"$gte": start_date.isoformat(), "$lt": end_date.isoformat()}
-            }).sort("date", 1).to_list(31)
+            }).sort("date", 1).to_list(100)
             
             # Calculate summary
             present_count = sum(1 for r in records if r.get('status') == 'present')
@@ -649,7 +677,9 @@ def setup_student_portal_routes(app, db, get_current_user):
                     "date": rec_date,
                     "day": day_name,
                     "status": rec.get('status', 'absent'),
-                    "remarks": rec.get('remarks', '')
+                    "remarks": rec.get('remarks', ''),
+                    "attendance_session": rec.get('attendance_session', 'Morning'),
+                    "entry_time": rec.get('entry_time') or rec.get('updated_at')
                 })
             
             percentage = round((present_count + late_count) / total * 100) if total > 0 else 0

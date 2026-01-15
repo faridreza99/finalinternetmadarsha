@@ -11,7 +11,7 @@ import { Switch } from './ui/switch';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { 
+import {
   Settings as SettingsIcon,
   Calendar,
   BookOpen,
@@ -37,13 +37,14 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import AdminUserManagement from './AdminUserManagement';
 
+
 const Settings = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isMadrasah } = useInstitution();
   const [activeSettings, setActiveSettings] = useState(12);
   const [loading, setLoading] = useState(false);
-  
+
   const getTabFromPath = (pathname) => {
     const tabMap = {
       '/settings/academic': 'academic',
@@ -54,7 +55,9 @@ const Settings = () => {
       '/settings/institution': 'institution',
       '/settings/staff': 'staff-settings',
       '/settings/permissions': 'permissions',
-      '/settings/users': 'user-management'
+      '/settings/users': 'user-management',
+      '/settings/payment': 'payment-gateway',
+
     };
     return tabMap[pathname] || 'academic';
   };
@@ -76,21 +79,23 @@ const Settings = () => {
       'institution': '/settings/institution',
       'staff-settings': '/settings/staff',
       'permissions': '/settings/permissions',
-      'user-management': '/settings/users'
+      'user-management': '/settings/users',
+      'payment-gateway': '/settings/payment',
+
     };
     setActiveTab(value);
     navigate(pathMap[value] || '/settings');
   };
-  
+
   // API Base URL
   const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
-  
+
   // Modal states
   const [isAcademicYearModalOpen, setIsAcademicYearModalOpen] = useState(false);
   const [isSemesterSystemModalOpen, setIsSemesterSystemModalOpen] = useState(false);
   const [isHolidayCalendarModalOpen, setIsHolidayCalendarModalOpen] = useState(false);
   const [isTermDatesModalOpen, setIsTermDatesModalOpen] = useState(false);
-  
+
   // Configuration states
   const [academicYearConfig, setAcademicYearConfig] = useState({
     currentYear: "2024-25",
@@ -99,7 +104,7 @@ const Settings = () => {
     isActive: true,
     description: "Academic year 2024-25"
   });
-  
+
   const [semesterSystemConfig, setSemesterSystemConfig] = useState({
     systemType: "semester", // semester, trimester, quarter
     numberOfPeriods: 2,
@@ -108,12 +113,12 @@ const Settings = () => {
       { name: "Second Semester", startDate: "2024-10-01", endDate: "2025-03-31" }
     ]
   });
-  
+
   // Function to generate periods based on system type
   const getPeriodsForSystemType = (systemType) => {
     const academicStart = academicYearConfig.startDate || "2024-04-01";
     const academicEnd = academicYearConfig.endDate || "2025-03-31";
-    
+
     switch (systemType) {
       case "semester":
         return [
@@ -137,7 +142,7 @@ const Settings = () => {
         return semesterSystemConfig.periods;
     }
   };
-  
+
   // Handler for system type change
   const handleSystemTypeChange = (newSystemType) => {
     const newPeriods = getPeriodsForSystemType(newSystemType);
@@ -149,7 +154,7 @@ const Settings = () => {
       periods: newPeriods
     });
   };
-  
+
   const [holidayCalendarConfig, setHolidayCalendarConfig] = useState({
     holidays: [
       { id: 1, name: "Independence Day", date: "2024-08-15", type: "national" },
@@ -157,7 +162,7 @@ const Settings = () => {
       { id: 3, name: "Winter Break", startDate: "2024-12-25", endDate: "2025-01-05", type: "school_break" }
     ]
   });
-  
+
   const [termDatesConfig, setTermDatesConfig] = useState({
     terms: [
       { id: 1, name: "First Term", startDate: "2024-04-01", endDate: "2024-07-31" },
@@ -195,7 +200,7 @@ const Settings = () => {
     total_periods_per_day: 8,
     break_periods: [4, 7]
   });
-  
+
   // Timetable Details View State
   const [isViewTimetableDetailsModalOpen, setIsViewTimetableDetailsModalOpen] = useState(false);
   const [isEditPeriodModalOpen, setIsEditPeriodModalOpen] = useState(false);
@@ -210,7 +215,7 @@ const Settings = () => {
     end_time: ''
   });
   const [teachers, setTeachers] = useState([]);
-  
+
   // Day Structure Mode State (Class-wise Timetable)
   const [dayStructureClass, setDayStructureClass] = useState('');
   const [dayStructureSection, setDayStructureSection] = useState('A');
@@ -362,7 +367,7 @@ const Settings = () => {
       const response = await axios.get(`${API_BASE_URL}/settings/academic-year`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setAcademicYearConfig(response.data);
       }
@@ -382,7 +387,7 @@ const Settings = () => {
       const response = await axios.get(`${API_BASE_URL}/settings/semester-system`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setSemesterSystemConfig(response.data);
       }
@@ -402,7 +407,7 @@ const Settings = () => {
       const response = await axios.get(`${API_BASE_URL}/settings/holidays`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data && response.data.holidays) {
         setHolidayCalendarConfig(response.data);
       }
@@ -422,7 +427,7 @@ const Settings = () => {
       const response = await axios.get(`${API_BASE_URL}/settings/term-dates`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data && response.data.terms) {
         setTermDatesConfig(response.data);
       }
@@ -563,7 +568,7 @@ const Settings = () => {
       const response = await axios.get(`${API_BASE_URL}/classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setClasses(response.data);
       }
@@ -604,7 +609,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Send only the data needed by backend (let backend generate ID)
       const classData = {
         name: classFormData.name.trim(),
@@ -614,14 +619,14 @@ const Settings = () => {
         max_students: 60, // Default value
         class_teacher_id: null // No teacher assigned initially
       };
-      
+
       await axios.post(`${API_BASE_URL}/classes`, classData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Class added successfully!');
       setIsAddClassModalOpen(false);
-      
+
       // Reset form
       setClassFormData({
         name: '',
@@ -629,7 +634,7 @@ const Settings = () => {
         sections: ['A'],
         description: ''
       });
-      
+
       // Refresh classes list if view modal is open
       if (isViewClassesModalOpen) {
         handleViewClasses();
@@ -673,7 +678,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const updateData = {
         name: classFormData.name.trim(),
         standard: classFormData.standard,
@@ -681,15 +686,15 @@ const Settings = () => {
         description: classFormData.description || '',
         max_students: 60 // Keep existing or default
       };
-      
+
       await axios.put(`${API_BASE_URL}/classes/${editingClass.id}`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Class updated successfully!');
       setIsEditClassModalOpen(false);
       setEditingClass(null);
-      
+
       // Reset form
       setClassFormData({
         name: '',
@@ -697,7 +702,7 @@ const Settings = () => {
         sections: ['A'],
         description: ''
       });
-      
+
       // Refresh classes list
       handleViewClasses();
     } catch (error) {
@@ -721,7 +726,7 @@ const Settings = () => {
       await axios.delete(`${API_BASE_URL}/classes/${classId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Class deleted successfully!');
       // Refresh classes list
       handleViewClasses();
@@ -753,11 +758,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API_BASE_URL}/timetables`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setTimetables(response.data);
       setIsViewTimetableModalOpen(true);
     } catch (error) {
@@ -772,14 +777,14 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Fetch classes to populate dropdown
       const classesResponse = await axios.get(`${API_BASE_URL}/classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setClasses(classesResponse.data);
-      
+
       // Reset to create mode
       setIsEditScheduleMode(false);
       setEditingTimetable(null);
@@ -792,7 +797,7 @@ const Settings = () => {
         total_periods_per_day: 8,
         break_periods: [4, 7]
       });
-      
+
       setIsCreateScheduleModalOpen(true);
     } catch (error) {
       console.error('Error fetching classes:', error);
@@ -806,14 +811,14 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Fetch classes to populate dropdown
       const classesResponse = await axios.get(`${API_BASE_URL}/classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setClasses(classesResponse.data);
-      
+
       // Set to edit mode
       setIsEditScheduleMode(true);
       setEditingTimetable(timetable);
@@ -826,7 +831,7 @@ const Settings = () => {
         total_periods_per_day: timetable.total_periods_per_day,
         break_periods: timetable.break_periods
       });
-      
+
       setIsCreateScheduleModalOpen(true);
     } catch (error) {
       console.error('Error fetching classes:', error);
@@ -842,7 +847,7 @@ const Settings = () => {
       const response = await axios.get(`${API_BASE_URL}/timetables`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       return response.data.find(timetable => timetable.class_id === classId);
     } catch (error) {
       console.error('Error checking existing timetables:', error);
@@ -868,7 +873,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const scheduleData = {
         class_id: scheduleFormData.class_id,
         class_name: scheduleFormData.class_name,
@@ -884,17 +889,17 @@ const Settings = () => {
         await axios.put(`${API_BASE_URL}/timetables/${editingTimetable.id}`, scheduleData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         toast.success('Schedule updated successfully!');
       } else {
         // Check if timetable already exists for this class
         const existingTimetable = await checkExistingTimetableForClass(scheduleFormData.class_id);
-        
+
         if (existingTimetable) {
           const shouldEdit = window.confirm(
             `A timetable already exists for class "${scheduleFormData.class_name}". Would you like to edit it instead of creating a new one?`
           );
-          
+
           if (shouldEdit) {
             // Switch to edit mode
             await handleEditSchedule(existingTimetable);
@@ -904,19 +909,19 @@ const Settings = () => {
             return;
           }
         }
-        
+
         // Create new timetable
         await axios.post(`${API_BASE_URL}/timetables`, scheduleData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         toast.success('Schedule created successfully!');
       }
-      
+
       setIsCreateScheduleModalOpen(false);
       setIsEditScheduleMode(false);
       setEditingTimetable(null);
-      
+
       // Reset form
       setScheduleFormData({
         class_id: '',
@@ -927,7 +932,7 @@ const Settings = () => {
         total_periods_per_day: 8,
         break_periods: [4, 7]
       });
-      
+
       // Refresh timetables if view modal is open
       if (isViewTimetableModalOpen) {
         handleViewTimetable();
@@ -961,13 +966,13 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/timetables/${timetableId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Timetable deleted successfully!');
-      
+
       // Refresh timetables list
       handleViewTimetable();
     } catch (error) {
@@ -982,7 +987,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Fetch teachers for dropdown (optional - don't fail if unavailable)
       try {
         const teachersResponse = await axios.get(`${API_BASE_URL}/admin/users`, {
@@ -994,7 +999,7 @@ const Settings = () => {
         console.log('Could not fetch teachers list');
         setTeachers([]);
       }
-      
+
       // Fetch subjects for this class (optional)
       try {
         const subjectsResponse = await axios.get(`${API_BASE_URL}/subjects`, {
@@ -1005,7 +1010,7 @@ const Settings = () => {
         console.log('No subjects found');
         setSubjects([]);
       }
-      
+
       setSelectedTimetable(timetable);
       setIsViewTimetableDetailsModalOpen(true);
     } catch (error) {
@@ -1015,7 +1020,7 @@ const Settings = () => {
       setLoading(false);
     }
   };
-  
+
   const handleEditPeriod = (period, dayIndex, periodIndex) => {
     setEditingPeriod(period);
     setEditingDayIndex(dayIndex);
@@ -1029,19 +1034,19 @@ const Settings = () => {
     });
     setIsEditPeriodModalOpen(true);
   };
-  
+
   const handleSavePeriod = async () => {
     if (!selectedTimetable) return;
-    
+
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Create updated weekly schedule
       const updatedWeeklySchedule = [...selectedTimetable.weekly_schedule];
       const daySchedule = { ...updatedWeeklySchedule[editingDayIndex] };
       const updatedPeriods = [...daySchedule.periods];
-      
+
       updatedPeriods[editingPeriodIndex] = {
         ...updatedPeriods[editingPeriodIndex],
         subject: periodFormData.subject,
@@ -1050,26 +1055,26 @@ const Settings = () => {
         start_time: periodFormData.start_time,
         end_time: periodFormData.end_time
       };
-      
+
       daySchedule.periods = updatedPeriods;
       updatedWeeklySchedule[editingDayIndex] = daySchedule;
-      
+
       // Update timetable in backend
       await axios.put(`${API_BASE_URL}/timetables/${selectedTimetable.id}`, {
         weekly_schedule: updatedWeeklySchedule
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       // Update local state
       setSelectedTimetable({
         ...selectedTimetable,
         weekly_schedule: updatedWeeklySchedule
       });
-      
+
       setIsEditPeriodModalOpen(false);
       toast.success('Period updated successfully!');
-      
+
       // Refresh timetables list
       handleViewTimetable();
     } catch (error) {
@@ -1079,7 +1084,7 @@ const Settings = () => {
       setLoading(false);
     }
   };
-  
+
   const getSubjectColor = (subject) => {
     if (!subject || subject === 'Unassigned') return 'bg-gray-100 text-gray-500';
     const colors = {
@@ -1103,13 +1108,13 @@ const Settings = () => {
     };
     return colors[subject] || 'bg-sky-100 text-sky-800';
   };
-  
+
   const formatDayName = (day) => {
     return day.charAt(0).toUpperCase() + day.slice(1);
   };
 
   // ==================== DAY STRUCTURE MODE HANDLERS ====================
-  
+
   const initializeDayStructureSchedule = (periodsCount) => {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const newSchedule = {};
@@ -1125,11 +1130,11 @@ const Settings = () => {
   const handleDayStructurePeriodsChange = (change) => {
     const newPeriodsCount = Math.max(1, Math.min(12, dayStructurePeriodsPerDay + change));
     setDayStructurePeriodsPerDay(newPeriodsCount);
-    
+
     // Adjust all days to have the new number of periods
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const updatedSchedule = { ...dayStructureSchedule };
-    
+
     days.forEach(day => {
       const currentPeriods = updatedSchedule[day] || [];
       if (newPeriodsCount > currentPeriods.length) {
@@ -1143,14 +1148,14 @@ const Settings = () => {
       }
       updatedSchedule[day] = currentPeriods;
     });
-    
+
     setDayStructureSchedule(updatedSchedule);
   };
 
   const handleDayStructureSubjectChange = (day, periodIndex, subject) => {
     setDayStructureSchedule(prev => ({
       ...prev,
-      [day]: prev[day].map((period, idx) => 
+      [day]: prev[day].map((period, idx) =>
         idx === periodIndex ? { ...period, subject } : period
       )
     }));
@@ -1161,29 +1166,29 @@ const Settings = () => {
       toast.error('Please select a class first');
       return;
     }
-    
+
     try {
       setDayStructureLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Try to fetch existing timetable for this class/section
       const response = await axios.get(`${API_BASE_URL}/timetables`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       // Find matching timetable by class name (and optionally section)
       const classId = dayStructureClass.toLowerCase().replace(/\s+/g, '-') + '-' + dayStructureSection.toLowerCase();
-      const existingTimetable = response.data.find(t => 
-        (t.class_name === dayStructureClass || t.class_id === classId) && 
+      const existingTimetable = response.data.find(t =>
+        (t.class_name === dayStructureClass || t.class_id === classId) &&
         (t.section === dayStructureSection || !t.section)
       );
-      
+
       if (existingTimetable && existingTimetable.weekly_schedule && existingTimetable.weekly_schedule.length > 0) {
         // Convert weekly_schedule to dayStructureSchedule format
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const newSchedule = {};
         let maxPeriods = existingTimetable.total_periods_per_day || 6;
-        
+
         existingTimetable.weekly_schedule.forEach(dayData => {
           if (!dayData || !dayData.day) return;
           const dayName = dayData.day.toLowerCase();
@@ -1199,7 +1204,7 @@ const Settings = () => {
             maxPeriods = Math.max(maxPeriods, dayData.periods.length);
           }
         });
-        
+
         // Fill missing days with empty periods matching maxPeriods
         days.forEach(day => {
           if (!newSchedule[day] || newSchedule[day].length === 0) {
@@ -1214,7 +1219,7 @@ const Settings = () => {
             }
           }
         });
-        
+
         setDayStructurePeriodsPerDay(maxPeriods);
         setDayStructureSchedule(newSchedule);
         setSelectedTimetable(existingTimetable);
@@ -1254,11 +1259,11 @@ const Settings = () => {
       toast.error('Please select a class');
       return;
     }
-    
+
     try {
       setDayStructureLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Convert dayStructureSchedule to weekly_schedule format (matching backend DaySchedule model)
       const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const weekly_schedule = days.map(day => ({
@@ -1274,7 +1279,7 @@ const Settings = () => {
           end_time: p.end_time || ''
         }))
       }));
-      
+
       if (selectedTimetable && selectedTimetable.id) {
         // Update existing timetable
         const response = await axios.put(`${API_BASE_URL}/timetables/${selectedTimetable.id}`, {
@@ -1283,14 +1288,14 @@ const Settings = () => {
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         if (response.status === 200) {
           toast.success('Timetable updated successfully!');
         }
       } else {
         // Generate a class_id based on class name
         const classId = dayStructureClass.toLowerCase().replace(/\s+/g, '-') + '-' + dayStructureSection.toLowerCase();
-        
+
         // Create new timetable
         const response = await axios.post(`${API_BASE_URL}/timetables`, {
           class_id: classId,
@@ -1304,13 +1309,13 @@ const Settings = () => {
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         if (response.status === 200 || response.status === 201) {
           toast.success('Timetable created successfully!');
           setSelectedTimetable(response.data);
         }
       }
-      
+
       setDayStructureEditMode(false);
       // Reload to get updated data
       await handleLoadDayStructureTimetable();
@@ -1325,7 +1330,7 @@ const Settings = () => {
 
   // Available subjects for dropdown
   const dayStructureSubjects = [
-    'Free', 'Math', 'Science', 'English', 'History', 'Computer', 'Art', 
+    'Free', 'Math', 'Science', 'English', 'History', 'Computer', 'Art',
     'Club Activity', 'Sports', 'Physics', 'Chemistry', 'Biology', 'Geography',
     'Hindi', 'Bengali', 'Social Studies', 'Music', 'Physical Education', 'Break'
   ];
@@ -1336,11 +1341,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API_BASE_URL}/grading-scales`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setGradingScales(response.data);
       setIsViewGradesModalOpen(true);
     } catch (error) {
@@ -1354,7 +1359,7 @@ const Settings = () => {
   const handleConfigureGrading = async () => {
     try {
       setLoading(true);
-      
+
       // Reset to create mode
       setIsEditGradingMode(false);
       setEditingGradingScale(null);
@@ -1376,7 +1381,7 @@ const Settings = () => {
           { grade: 'F', min_marks: 0, max_marks: 32, grade_point: 0.0, description: 'Fail' }
         ]
       });
-      
+
       setIsConfigureGradingModalOpen(true);
     } catch (error) {
       console.error('Error opening grading configuration:', error);
@@ -1416,7 +1421,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (isEditGradingMode && editingGradingScale) {
         // Update existing grading scale
         await axios.put(
@@ -1434,9 +1439,9 @@ const Settings = () => {
         );
         toast.success('Grading scale created successfully!');
       }
-      
+
       setIsConfigureGradingModalOpen(false);
-      
+
       // Refresh grading scales if view modal was open
       if (isViewGradesModalOpen) {
         handleViewGrades();
@@ -1466,13 +1471,13 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/grading-scales/${scaleId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Grading scale deleted successfully!');
-      
+
       // Refresh grading scales list
       handleViewGrades();
     } catch (error) {
@@ -1489,11 +1494,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API_BASE_URL}/subjects`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setSubjects(response.data);
       setIsCurriculumDashboardOpen(true);
     } catch (error) {
@@ -1547,7 +1552,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (isEditSubjectMode && editingSubject) {
         // Update existing subject
         await axios.put(
@@ -1565,9 +1570,9 @@ const Settings = () => {
         );
         toast.success('Subject created successfully!');
       }
-      
+
       setIsAddSubjectModalOpen(false);
-      
+
       // Refresh subjects list
       handleManageCurriculum();
     } catch (error) {
@@ -1595,13 +1600,13 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/subjects/${subjectId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Subject deleted successfully!');
-      
+
       // Refresh subjects list
       handleManageCurriculum();
     } catch (error) {
@@ -1627,16 +1632,16 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.put(
         `${API_BASE_URL}/subjects/${editingSubject.id}/syllabus`,
         subjectFormData.syllabus,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success('Syllabus updated successfully!');
       setIsSyllabusBuilderOpen(false);
-      
+
       // Refresh subjects list
       handleManageCurriculum();
     } catch (error) {
@@ -1756,7 +1761,7 @@ const Settings = () => {
 
   const deleteLearningObjective = (unitIndex, topicIndex, objIndex) => {
     const updatedSyllabus = [...subjectFormData.syllabus];
-    updatedSyllabus[unitIndex].topics[topicIndex].learning_objectives = 
+    updatedSyllabus[unitIndex].topics[topicIndex].learning_objectives =
       updatedSyllabus[unitIndex].topics[topicIndex].learning_objectives.filter(
         (_, index) => index !== objIndex
       );
@@ -1768,17 +1773,17 @@ const Settings = () => {
 
   const calculateSubjectProgress = (subject) => {
     if (!subject.syllabus || subject.syllabus.length === 0) return 0;
-    
+
     let totalTopics = 0;
     let completedTopics = 0;
-    
+
     subject.syllabus.forEach(unit => {
       unit.topics?.forEach(topic => {
         totalTopics++;
         if (topic.is_completed) completedTopics++;
       });
     });
-    
+
     return totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
   };
 
@@ -1788,12 +1793,12 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Fetch existing institution data
       const response = await axios.get(`${API_BASE_URL}/institution`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setInstitutionData({
           school_name: response.data.school_name || '',
@@ -1836,13 +1841,13 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.put(
         `${API_BASE_URL}/institution`,
         institutionData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       toast.success('Institution details updated successfully!');
       setIsInstitutionModalOpen(false);
     } catch (error) {
@@ -1859,11 +1864,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API_BASE_URL}/staff/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setStaffRoles(response.data.roles || []);
         setDepartments(response.data.departments || []);
@@ -1903,7 +1908,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (editingRole) {
         await axios.put(
           `${API_BASE_URL}/staff/roles/${editingRole.id}`,
@@ -1919,7 +1924,7 @@ const Settings = () => {
         );
         toast.success('Role added successfully!');
       }
-      
+
       setIsAddRoleModalOpen(false);
       handleOpenStaffSettings();
     } catch (error) {
@@ -1936,11 +1941,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/staff/roles/${roleId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Role deleted successfully!');
       handleOpenStaffSettings();
     } catch (error) {
@@ -1977,7 +1982,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (editingDepartment) {
         await axios.put(
           `${API_BASE_URL}/staff/departments/${editingDepartment.id}`,
@@ -1993,7 +1998,7 @@ const Settings = () => {
         );
         toast.success('Department added successfully!');
       }
-      
+
       setIsAddDepartmentModalOpen(false);
       handleOpenStaffSettings();
     } catch (error) {
@@ -2010,11 +2015,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/staff/departments/${deptId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Department deleted successfully!');
       handleOpenStaffSettings();
     } catch (error) {
@@ -2050,7 +2055,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (editingEmploymentType) {
         await axios.put(
           `${API_BASE_URL}/staff/employment-types/${editingEmploymentType.id}`,
@@ -2066,7 +2071,7 @@ const Settings = () => {
         );
         toast.success('Employment type added successfully!');
       }
-      
+
       setIsAddEmploymentModalOpen(false);
       handleOpenStaffSettings();
     } catch (error) {
@@ -2083,11 +2088,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/staff/employment-types/${empId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Employment type deleted successfully!');
       handleOpenStaffSettings();
     } catch (error) {
@@ -2104,11 +2109,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API_BASE_URL}/roles`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setRoles(response.data.roles || []);
       }
@@ -2125,15 +2130,15 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API_BASE_URL}/roles`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         setRoles(response.data.roles || []);
       }
-      
+
       setEditingPermissionRole(null);
       const defaultPermissions = {};
       permissionModules.forEach(module => {
@@ -2189,7 +2194,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (editingPermissionRole) {
         await axios.put(
           `${API_BASE_URL}/roles/${editingPermissionRole.id}`,
@@ -2205,7 +2210,7 @@ const Settings = () => {
         );
         toast.success('Role created successfully!');
       }
-      
+
       setIsManagePermissionsModalOpen(false);
       await handleViewRoles();
     } catch (error) {
@@ -2222,11 +2227,11 @@ const Settings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       await axios.delete(`${API_BASE_URL}/roles/${roleId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success('Role deleted successfully!');
       await handleViewRoles();
     } catch (error) {
@@ -2376,6 +2381,7 @@ const Settings = () => {
             <TabsTrigger value="academic" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Academic Period</TabsTrigger>
             <TabsTrigger value="classes" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Manage Classes</TabsTrigger>
             <TabsTrigger value="timetable" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">{isMadrasah ? 'রুটিন' : 'Time Table'}</TabsTrigger>
+
             <TabsTrigger value="institution" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Institution</TabsTrigger>
             <TabsTrigger value="staff-settings" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Staff Setting</TabsTrigger>
             <TabsTrigger value="permissions" className="text-[10px] sm:text-xs lg:text-sm py-2 px-3 whitespace-nowrap">Permission</TabsTrigger>
@@ -2402,21 +2408,21 @@ const Settings = () => {
                       <Button size="sm" variant="outline" className="h-8 text-xs sm:text-sm" onClick={handleEditAcademicYear}>Edit</Button>
                     </div>
                   </div>
-                  
+
                   <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
                     <h4 className="font-medium mb-2 text-sm sm:text-base">Semester System</h4>
                     <p className="text-xs sm:text-sm text-gray-600 mb-3">Configure semester or trimester system</p>
                     <Button size="sm" variant="outline" className="h-8 text-xs sm:text-sm" onClick={handleConfigureSemesterSystem}>Configure</Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
                     <h4 className="font-medium mb-2 text-sm sm:text-base">Holiday Calendar</h4>
                     <p className="text-xs sm:text-sm text-gray-600 mb-3">Set public holidays and school breaks</p>
                     <Button size="sm" variant="outline" className="h-8 text-xs sm:text-sm" onClick={handleManageHolidays}>Manage Holidays</Button>
                   </div>
-                  
+
                   <div className="p-3 sm:p-4 border border-gray-200 rounded-lg">
                     <h4 className="font-medium mb-2 text-sm sm:text-base">Term Dates</h4>
                     <p className="text-xs sm:text-sm text-gray-600 mb-3">Configure term start and end dates</p>
@@ -2459,8 +2465,8 @@ const Settings = () => {
               </CardTitle>
               <div className="flex items-center space-x-2">
                 {!dayStructureEditMode ? (
-                  <Button 
-                    onClick={handleEnterDayStructureEditMode} 
+                  <Button
+                    onClick={handleEnterDayStructureEditMode}
                     className="bg-emerald-500 hover:bg-emerald-600"
                     disabled={!dayStructureClass}
                   >
@@ -2471,8 +2477,8 @@ const Settings = () => {
                     <Button variant="outline" onClick={handleCancelDayStructureEdit}>
                       Cancel
                     </Button>
-                    <Button 
-                      onClick={handleSaveDayStructureSchedule} 
+                    <Button
+                      onClick={handleSaveDayStructureSchedule}
                       className="bg-emerald-500 hover:bg-emerald-600"
                       disabled={dayStructureLoading}
                     >
@@ -2487,8 +2493,8 @@ const Settings = () => {
               <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-4 mb-6 pb-4 border-b">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Label htmlFor="dayStructureClass" className="text-sm font-medium whitespace-nowrap">{isMadrasah ? 'মারহালা' : 'Class'}</Label>
-                  <Select 
-                    value={dayStructureClass} 
+                  <Select
+                    value={dayStructureClass}
                     onValueChange={(value) => {
                       setDayStructureClass(value);
                       // Reset schedule when class changes
@@ -2509,11 +2515,11 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Label htmlFor="dayStructureSection" className="text-sm font-medium whitespace-nowrap">{isMadrasah ? 'শাখা' : 'Section'}</Label>
-                  <Select 
-                    value={dayStructureSection} 
+                  <Select
+                    value={dayStructureSection}
                     onValueChange={setDayStructureSection}
                   >
                     <SelectTrigger className="w-full sm:w-24">
@@ -2527,13 +2533,13 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
                   <Label className="text-sm font-medium whitespace-nowrap">{isMadrasah ? 'দৈনিক পিরিয়ড' : 'Periods per day'}</Label>
                   <div className="flex items-center border rounded-md w-full sm:w-auto justify-between sm:justify-start">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleDayStructurePeriodsChange(-1)}
                       disabled={!dayStructureEditMode || dayStructurePeriodsPerDay <= 1}
@@ -2541,9 +2547,9 @@ const Settings = () => {
                       -
                     </Button>
                     <span className="w-8 text-center font-medium">{dayStructurePeriodsPerDay}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleDayStructurePeriodsChange(1)}
                       disabled={!dayStructureEditMode || dayStructurePeriodsPerDay >= 12}
@@ -2552,9 +2558,9 @@ const Settings = () => {
                     </Button>
                   </div>
                 </div>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   onClick={handleLoadDayStructureTimetable}
                   disabled={!dayStructureClass || dayStructureLoading}
                   className="w-full sm:w-auto"
@@ -2562,9 +2568,9 @@ const Settings = () => {
                   {dayStructureLoading ? 'Loading...' : 'Load'}
                 </Button>
               </div>
-              
+
               <p className="text-sm text-gray-500 mb-4">Changes apply to all days for this class-section.</p>
-              
+
               {/* Day Structure Grid - 3 columns per row */}
               {dayStructureClass ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2575,8 +2581,8 @@ const Settings = () => {
                         {(dayStructureSchedule[day] || []).map((period, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <span className="text-sm text-gray-500 w-8">P{idx + 1}</span>
-                            <Select 
-                              value={period.subject || 'Free'} 
+                            <Select
+                              value={period.subject || 'Free'}
                               onValueChange={(value) => handleDayStructureSubjectChange(day, idx, value)}
                               disabled={!dayStructureEditMode}
                             >
@@ -2604,7 +2610,7 @@ const Settings = () => {
                   <p className="text-gray-600 mb-4">Choose a class and section to view or edit the timetable</p>
                 </div>
               )}
-              
+
               {/* Legacy Actions */}
               <div className="mt-6 pt-4 border-t flex justify-end space-x-3">
                 <Button variant="outline" onClick={handleViewTimetable} disabled={loading}>
@@ -2617,6 +2623,8 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+
 
         <TabsContent value="grades" className="space-y-4">
           <Card>
@@ -2736,6 +2744,8 @@ const Settings = () => {
         <TabsContent value="user-management" className="space-y-4">
           <AdminUserManagement />
         </TabsContent>
+
+
       </Tabs>
 
       {/* Academic Year Configuration Modal */}
@@ -2753,7 +2763,7 @@ const Settings = () => {
               <Input
                 id="academicYear"
                 value={academicYearConfig.currentYear}
-                onChange={(e) => setAcademicYearConfig({...academicYearConfig, currentYear: e.target.value})}
+                onChange={(e) => setAcademicYearConfig({ ...academicYearConfig, currentYear: e.target.value })}
                 placeholder="2024-25"
               />
             </div>
@@ -2763,7 +2773,7 @@ const Settings = () => {
                 id="startDate"
                 type="date"
                 value={academicYearConfig.startDate}
-                onChange={(e) => setAcademicYearConfig({...academicYearConfig, startDate: e.target.value})}
+                onChange={(e) => setAcademicYearConfig({ ...academicYearConfig, startDate: e.target.value })}
               />
             </div>
             <div>
@@ -2772,7 +2782,7 @@ const Settings = () => {
                 id="endDate"
                 type="date"
                 value={academicYearConfig.endDate}
-                onChange={(e) => setAcademicYearConfig({...academicYearConfig, endDate: e.target.value})}
+                onChange={(e) => setAcademicYearConfig({ ...academicYearConfig, endDate: e.target.value })}
               />
             </div>
             <div>
@@ -2780,7 +2790,7 @@ const Settings = () => {
               <Input
                 id="description"
                 value={academicYearConfig.description}
-                onChange={(e) => setAcademicYearConfig({...academicYearConfig, description: e.target.value})}
+                onChange={(e) => setAcademicYearConfig({ ...academicYearConfig, description: e.target.value })}
                 placeholder="Academic year description"
               />
             </div>
@@ -2788,7 +2798,7 @@ const Settings = () => {
               <Switch
                 id="isActive"
                 checked={academicYearConfig.isActive}
-                onCheckedChange={(checked) => setAcademicYearConfig({...academicYearConfig, isActive: checked})}
+                onCheckedChange={(checked) => setAcademicYearConfig({ ...academicYearConfig, isActive: checked })}
               />
               <Label htmlFor="isActive">Set as Active Academic Year</Label>
             </div>
@@ -2836,7 +2846,7 @@ const Settings = () => {
                       onChange={(e) => {
                         const newPeriods = [...semesterSystemConfig.periods];
                         newPeriods[index].name = e.target.value;
-                        setSemesterSystemConfig({...semesterSystemConfig, periods: newPeriods});
+                        setSemesterSystemConfig({ ...semesterSystemConfig, periods: newPeriods });
                       }}
                     />
                     <Input
@@ -2845,7 +2855,7 @@ const Settings = () => {
                       onChange={(e) => {
                         const newPeriods = [...semesterSystemConfig.periods];
                         newPeriods[index].startDate = e.target.value;
-                        setSemesterSystemConfig({...semesterSystemConfig, periods: newPeriods});
+                        setSemesterSystemConfig({ ...semesterSystemConfig, periods: newPeriods });
                       }}
                     />
                     <Input
@@ -2854,7 +2864,7 @@ const Settings = () => {
                       onChange={(e) => {
                         const newPeriods = [...semesterSystemConfig.periods];
                         newPeriods[index].endDate = e.target.value;
-                        setSemesterSystemConfig({...semesterSystemConfig, periods: newPeriods});
+                        setSemesterSystemConfig({ ...semesterSystemConfig, periods: newPeriods });
                       }}
                     />
                   </div>
@@ -3081,11 +3091,11 @@ const Settings = () => {
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="standard">Standard *</Label>
-              <Select 
-                value={classFormData.standard} 
+              <Select
+                value={classFormData.standard}
                 onValueChange={(value) => setClassFormData({ ...classFormData, standard: value })}
               >
                 <SelectTrigger>
@@ -3151,8 +3161,8 @@ const Settings = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddClassModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleSaveClass} 
+            <Button
+              onClick={handleSaveClass}
               disabled={loading || !classFormData.name.trim() || !classFormData.standard}
               className={(!classFormData.name.trim() || !classFormData.standard) ? 'opacity-50 cursor-not-allowed' : ''}
             >
@@ -3179,11 +3189,11 @@ const Settings = () => {
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="editStandard">Standard *</Label>
-              <Select 
-                value={classFormData.standard} 
+              <Select
+                value={classFormData.standard}
                 onValueChange={(value) => setClassFormData({ ...classFormData, standard: value })}
               >
                 <SelectTrigger>
@@ -3249,8 +3259,8 @@ const Settings = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditClassModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleUpdateClass} 
+            <Button
+              onClick={handleUpdateClass}
               disabled={loading || !classFormData.name.trim() || !classFormData.standard}
               className={(!classFormData.name.trim() || !classFormData.standard) ? 'opacity-50 cursor-not-allowed' : ''}
             >
@@ -3354,7 +3364,7 @@ const Settings = () => {
               </div>
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedTimetable && selectedTimetable.weekly_schedule && selectedTimetable.weekly_schedule.length > 0 ? (
             <div className="mt-4">
               {/* Legend */}
@@ -3374,7 +3384,7 @@ const Settings = () => {
                 </div>
                 <span className="text-xs text-gray-500 ml-auto">Click on any period to edit</span>
               </div>
-              
+
               {/* Weekly Schedule Table */}
               <div className="border rounded-lg overflow-x-auto">
                 <table className="w-full min-w-[800px]">
@@ -3397,7 +3407,7 @@ const Settings = () => {
                     {selectedTimetable.weekly_schedule[0]?.periods.map((_, periodIndex) => {
                       const firstDayPeriod = selectedTimetable.weekly_schedule[0].periods[periodIndex];
                       const isBreak = firstDayPeriod?.is_break;
-                      
+
                       return (
                         <tr key={periodIndex} className={isBreak ? 'bg-amber-50' : ''}>
                           <td className="px-3 py-2 text-center font-semibold text-gray-700 border-r">
@@ -3419,7 +3429,7 @@ const Settings = () => {
                           </td>
                           {selectedTimetable.weekly_schedule.map((daySchedule, dayIndex) => {
                             const period = daySchedule.periods[periodIndex];
-                            
+
                             if (period?.is_break) {
                               return (
                                 <td key={dayIndex} className="px-2 py-2 text-center border-r last:border-r-0 bg-amber-100">
@@ -3432,10 +3442,10 @@ const Settings = () => {
                                 </td>
                               );
                             }
-                            
+
                             return (
-                              <td 
-                                key={dayIndex} 
+                              <td
+                                key={dayIndex}
                                 className="px-2 py-2 border-r last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors"
                                 onClick={() => handleEditPeriod(period, dayIndex, periodIndex)}
                               >
@@ -3464,7 +3474,7 @@ const Settings = () => {
                   </tbody>
                 </table>
               </div>
-              
+
               {/* Summary */}
               <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 p-3 rounded-lg">
@@ -3494,14 +3504,14 @@ const Settings = () => {
               <p className="text-gray-400 text-sm mt-2">Create a new schedule to start building the timetable</p>
             </div>
           )}
-          
+
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setIsViewTimetableDetailsModalOpen(false)}>Close</Button>
-            <Button 
+            <Button
               onClick={() => {
                 setIsViewTimetableDetailsModalOpen(false);
                 handleEditSchedule(selectedTimetable);
-              }} 
+              }}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Edit className="h-4 w-4 mr-2" />
@@ -3523,8 +3533,8 @@ const Settings = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="periodSubject">Subject *</Label>
-              <Select 
-                value={periodFormData.subject} 
+              <Select
+                value={periodFormData.subject}
                 onValueChange={(value) => setPeriodFormData({ ...periodFormData, subject: value })}
               >
                 <SelectTrigger>
@@ -3555,11 +3565,11 @@ const Settings = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="periodTeacher">Teacher</Label>
-              <Select 
-                value={periodFormData.teacher_name || "none"} 
+              <Select
+                value={periodFormData.teacher_name || "none"}
                 onValueChange={(value) => setPeriodFormData({ ...periodFormData, teacher_name: value === "none" ? "" : value })}
               >
                 <SelectTrigger>
@@ -3575,7 +3585,7 @@ const Settings = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="periodRoom">Room Number</Label>
               <Input
@@ -3585,7 +3595,7 @@ const Settings = () => {
                 placeholder="e.g., Room 101, Lab 2"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="periodStartTime">Start Time</Label>
@@ -3625,12 +3635,12 @@ const Settings = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="scheduleClass">Select Class *</Label>
-              <Select 
-                value={scheduleFormData.class_id} 
+              <Select
+                value={scheduleFormData.class_id}
                 onValueChange={(value) => {
                   const selectedClass = classes.find(cls => cls.id === value);
-                  setScheduleFormData({ 
-                    ...scheduleFormData, 
+                  setScheduleFormData({
+                    ...scheduleFormData,
                     class_id: value,
                     class_name: selectedClass?.name || '',
                     standard: selectedClass?.standard || ''
@@ -3673,8 +3683,8 @@ const Settings = () => {
 
             <div>
               <Label htmlFor="totalPeriods">Total Periods Per Day</Label>
-              <Select 
-                value={scheduleFormData.total_periods_per_day.toString()} 
+              <Select
+                value={scheduleFormData.total_periods_per_day.toString()}
                 onValueChange={(value) => setScheduleFormData({ ...scheduleFormData, total_periods_per_day: parseInt(value) })}
               >
                 <SelectTrigger>
@@ -3702,8 +3712,8 @@ const Settings = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateScheduleModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleSaveSchedule} 
+            <Button
+              onClick={handleSaveSchedule}
               disabled={loading || !scheduleFormData.class_id || !scheduleFormData.effective_from}
               className={(!scheduleFormData.class_id || !scheduleFormData.effective_from) ? 'opacity-50 cursor-not-allowed' : ''}
             >
@@ -3799,7 +3809,7 @@ const Settings = () => {
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   placeholder="e.g., 10-Point Scale, CBSE Pattern"
                   value={gradingFormData.scale_name}
-                  onChange={(e) => setGradingFormData({...gradingFormData, scale_name: e.target.value})}
+                  onChange={(e) => setGradingFormData({ ...gradingFormData, scale_name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -3807,7 +3817,7 @@ const Settings = () => {
                 <select
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   value={gradingFormData.scale_type}
-                  onChange={(e) => setGradingFormData({...gradingFormData, scale_type: e.target.value})}
+                  onChange={(e) => setGradingFormData({ ...gradingFormData, scale_type: e.target.value })}
                 >
                   <option value="percentage">Percentage</option>
                   <option value="points">Points</option>
@@ -3824,7 +3834,7 @@ const Settings = () => {
                   step="0.1"
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   value={gradingFormData.max_gpa}
-                  onChange={(e) => setGradingFormData({...gradingFormData, max_gpa: parseFloat(e.target.value)})}
+                  onChange={(e) => setGradingFormData({ ...gradingFormData, max_gpa: parseFloat(e.target.value) })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -3834,7 +3844,7 @@ const Settings = () => {
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   placeholder="e.g., D"
                   value={gradingFormData.passing_grade}
-                  onChange={(e) => setGradingFormData({...gradingFormData, passing_grade: e.target.value})}
+                  onChange={(e) => setGradingFormData({ ...gradingFormData, passing_grade: e.target.value })}
                 />
               </div>
               <div className="flex items-center pt-2 sm:pt-8">
@@ -3843,7 +3853,7 @@ const Settings = () => {
                   id="is_default"
                   className="h-4 w-4 mr-2"
                   checked={gradingFormData.is_default}
-                  onChange={(e) => setGradingFormData({...gradingFormData, is_default: e.target.checked})}
+                  onChange={(e) => setGradingFormData({ ...gradingFormData, is_default: e.target.checked })}
                 />
                 <Label htmlFor="is_default" className="mb-0">Set as Default Scale</Label>
               </div>
@@ -3873,7 +3883,7 @@ const Settings = () => {
                             onChange={(e) => {
                               const newBoundaries = [...gradingFormData.grade_boundaries];
                               newBoundaries[index].grade = e.target.value;
-                              setGradingFormData({...gradingFormData, grade_boundaries: newBoundaries});
+                              setGradingFormData({ ...gradingFormData, grade_boundaries: newBoundaries });
                             }}
                           />
                         </td>
@@ -3885,7 +3895,7 @@ const Settings = () => {
                             onChange={(e) => {
                               const newBoundaries = [...gradingFormData.grade_boundaries];
                               newBoundaries[index].min_marks = parseFloat(e.target.value);
-                              setGradingFormData({...gradingFormData, grade_boundaries: newBoundaries});
+                              setGradingFormData({ ...gradingFormData, grade_boundaries: newBoundaries });
                             }}
                           />
                         </td>
@@ -3897,7 +3907,7 @@ const Settings = () => {
                             onChange={(e) => {
                               const newBoundaries = [...gradingFormData.grade_boundaries];
                               newBoundaries[index].max_marks = parseFloat(e.target.value);
-                              setGradingFormData({...gradingFormData, grade_boundaries: newBoundaries});
+                              setGradingFormData({ ...gradingFormData, grade_boundaries: newBoundaries });
                             }}
                           />
                         </td>
@@ -3910,7 +3920,7 @@ const Settings = () => {
                             onChange={(e) => {
                               const newBoundaries = [...gradingFormData.grade_boundaries];
                               newBoundaries[index].grade_point = parseFloat(e.target.value);
-                              setGradingFormData({...gradingFormData, grade_boundaries: newBoundaries});
+                              setGradingFormData({ ...gradingFormData, grade_boundaries: newBoundaries });
                             }}
                           />
                         </td>
@@ -3923,7 +3933,7 @@ const Settings = () => {
                             onChange={(e) => {
                               const newBoundaries = [...gradingFormData.grade_boundaries];
                               newBoundaries[index].description = e.target.value;
-                              setGradingFormData({...gradingFormData, grade_boundaries: newBoundaries});
+                              setGradingFormData({ ...gradingFormData, grade_boundaries: newBoundaries });
                             }}
                           />
                         </td>
@@ -3939,8 +3949,8 @@ const Settings = () => {
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-6">
             <Button variant="outline" onClick={() => setIsConfigureGradingModalOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button 
-              onClick={handleSaveGradingScale} 
+            <Button
+              onClick={handleSaveGradingScale}
               disabled={loading || !gradingFormData.scale_name.trim()}
               className={`w-full sm:w-auto ${!gradingFormData.scale_name.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -4014,8 +4024,8 @@ const Settings = () => {
                           <td className="px-4 py-3">
                             <div className="flex items-center space-x-2">
                               <div className="w-16 sm:w-20 bg-gray-200 rounded-full h-1.5 sm:h-2">
-                                <div 
-                                  className="bg-emerald-500 h-full rounded-full" 
+                                <div
+                                  className="bg-emerald-500 h-full rounded-full"
                                   style={{ width: `${progress}%` }}
                                 ></div>
                               </div>
@@ -4024,24 +4034,24 @@ const Settings = () => {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1.5 sm:gap-2">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 className="h-8 px-2 sm:px-3 text-xs"
                                 onClick={() => handleOpenSyllabusBuilder(subject)}
                               >
                                 Syllabus
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 className="h-8 w-8 p-0"
                                 onClick={() => handleEditSubject(subject)}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 className="h-8 w-8 p-0 text-red-600"
                                 onClick={() => handleDeleteSubject(subject.id)}
@@ -4086,7 +4096,7 @@ const Settings = () => {
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   placeholder="e.g., Mathematics, English, Science"
                   value={subjectFormData.subject_name}
-                  onChange={(e) => setSubjectFormData({...subjectFormData, subject_name: e.target.value})}
+                  onChange={(e) => setSubjectFormData({ ...subjectFormData, subject_name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -4096,7 +4106,7 @@ const Settings = () => {
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   placeholder="e.g., MATH6, ENG7"
                   value={subjectFormData.subject_code}
-                  onChange={(e) => setSubjectFormData({...subjectFormData, subject_code: e.target.value})}
+                  onChange={(e) => setSubjectFormData({ ...subjectFormData, subject_code: e.target.value })}
                 />
               </div>
             </div>
@@ -4107,7 +4117,7 @@ const Settings = () => {
                 <select
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   value={subjectFormData.class_standard}
-                  onChange={(e) => setSubjectFormData({...subjectFormData, class_standard: e.target.value})}
+                  onChange={(e) => setSubjectFormData({ ...subjectFormData, class_standard: e.target.value })}
                 >
                   <option value="6th">6th Standard</option>
                   <option value="7th">7th Standard</option>
@@ -4125,7 +4135,7 @@ const Settings = () => {
                   step="0.5"
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   value={subjectFormData.credits}
-                  onChange={(e) => setSubjectFormData({...subjectFormData, credits: parseFloat(e.target.value)})}
+                  onChange={(e) => setSubjectFormData({ ...subjectFormData, credits: parseFloat(e.target.value) })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -4135,7 +4145,7 @@ const Settings = () => {
                   className="w-full px-3 py-2 border rounded-md text-sm sm:text-base"
                   placeholder="Optional"
                   value={subjectFormData.total_hours || ''}
-                  onChange={(e) => setSubjectFormData({...subjectFormData, total_hours: e.target.value ? parseFloat(e.target.value) : null})}
+                  onChange={(e) => setSubjectFormData({ ...subjectFormData, total_hours: e.target.value ? parseFloat(e.target.value) : null })}
                 />
               </div>
             </div>
@@ -4147,7 +4157,7 @@ const Settings = () => {
                 rows="3"
                 placeholder="Brief description of the subject..."
                 value={subjectFormData.description}
-                onChange={(e) => setSubjectFormData({...subjectFormData, description: e.target.value})}
+                onChange={(e) => setSubjectFormData({ ...subjectFormData, description: e.target.value })}
               />
             </div>
 
@@ -4157,15 +4167,15 @@ const Settings = () => {
                 id="is_elective"
                 className="h-4 w-4"
                 checked={subjectFormData.is_elective}
-                onChange={(e) => setSubjectFormData({...subjectFormData, is_elective: e.target.checked})}
+                onChange={(e) => setSubjectFormData({ ...subjectFormData, is_elective: e.target.checked })}
               />
               <Label htmlFor="is_elective" className="mb-0">This is an elective subject</Label>
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-6">
             <Button variant="outline" onClick={() => setIsAddSubjectModalOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button 
-              onClick={handleSaveSubject} 
+            <Button
+              onClick={handleSaveSubject}
               disabled={loading || !subjectFormData.subject_name.trim() || !subjectFormData.subject_code.trim()}
               className={`w-full sm:w-auto ${(!subjectFormData.subject_name.trim() || !subjectFormData.subject_code.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -4219,9 +4229,9 @@ const Settings = () => {
                           />
                         </div>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="destructive" 
+                      <Button
+                        size="sm"
+                        variant="destructive"
                         onClick={() => deleteSyllabusUnit(unitIndex)}
                         className="ml-2"
                       >
@@ -4243,9 +4253,9 @@ const Settings = () => {
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
                         <Label className="text-xs font-semibold">Topics</Label>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => addTopicToUnit(unitIndex)}
                         >
                           + Add Topic
@@ -4264,9 +4274,9 @@ const Settings = () => {
                                   value={topic.topic_name}
                                   onChange={(e) => updateTopic(unitIndex, topicIndex, 'topic_name', e.target.value)}
                                 />
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive" 
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
                                   onClick={() => deleteTopic(unitIndex, topicIndex)}
                                   className="ml-2"
                                 >
@@ -4275,9 +4285,9 @@ const Settings = () => {
                               </div>
 
                               <div className="mb-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
+                                <Button
+                                  size="sm"
+                                  variant="outline"
                                   onClick={() => addLearningObjective(unitIndex, topicIndex)}
                                   className="text-xs"
                                 >
@@ -4301,9 +4311,9 @@ const Settings = () => {
                                         value={obj.objective}
                                         onChange={(e) => updateLearningObjective(unitIndex, topicIndex, objIndex, 'objective', e.target.value)}
                                       />
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
                                         onClick={() => deleteLearningObjective(unitIndex, topicIndex, objIndex)}
                                         className="text-xs"
                                       >
@@ -4331,8 +4341,8 @@ const Settings = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSyllabusBuilderOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleSaveSyllabus} 
+            <Button
+              onClick={handleSaveSyllabus}
               disabled={loading}
             >
               {loading ? 'Saving...' : 'Save Syllabus'}
@@ -4362,7 +4372,7 @@ const Settings = () => {
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="Enter school name"
                     value={institutionData.school_name}
-                    onChange={(e) => setInstitutionData({...institutionData, school_name: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, school_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -4380,7 +4390,7 @@ const Settings = () => {
                   <select
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     value={institutionData.school_type}
-                    onChange={(e) => setInstitutionData({...institutionData, school_type: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, school_type: e.target.value })}
                   >
                     <option value="">Select type</option>
                     <option value="Primary">Primary School</option>
@@ -4397,7 +4407,7 @@ const Settings = () => {
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="e.g., 1990"
                     value={institutionData.established_year || ''}
-                    onChange={(e) => setInstitutionData({...institutionData, established_year: e.target.value ? parseInt(e.target.value) : null})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, established_year: e.target.value ? parseInt(e.target.value) : null })}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -4405,7 +4415,7 @@ const Settings = () => {
                   <select
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     value={institutionData.currency}
-                    onChange={(e) => setInstitutionData({...institutionData, currency: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, currency: e.target.value })}
                   >
                     <option value="BDT">৳ Bangladeshi Taka (BDT)</option>
                     <option value="USD">$ US Dollar (USD)</option>
@@ -4431,7 +4441,7 @@ const Settings = () => {
                     rows="2"
                     placeholder="Enter full address"
                     value={institutionData.address}
-                    onChange={(e) => setInstitutionData({...institutionData, address: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, address: e.target.value })}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4442,7 +4452,7 @@ const Settings = () => {
                       className="w-full px-3 py-2 border rounded-md text-sm"
                       placeholder="+91-XXX-XXX-XXXX"
                       value={institutionData.phone}
-                      onChange={(e) => setInstitutionData({...institutionData, phone: e.target.value})}
+                      onChange={(e) => setInstitutionData({ ...institutionData, phone: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -4452,7 +4462,7 @@ const Settings = () => {
                       className="w-full px-3 py-2 border rounded-md text-sm"
                       placeholder="school@example.com"
                       value={institutionData.email}
-                      onChange={(e) => setInstitutionData({...institutionData, email: e.target.value})}
+                      onChange={(e) => setInstitutionData({ ...institutionData, email: e.target.value })}
                     />
                   </div>
                 </div>
@@ -4463,7 +4473,7 @@ const Settings = () => {
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="https://www.school.com"
                     value={institutionData.website}
-                    onChange={(e) => setInstitutionData({...institutionData, website: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, website: e.target.value })}
                   />
                 </div>
               </div>
@@ -4481,9 +4491,9 @@ const Settings = () => {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     {institutionData.logo_url && (
                       <div className="relative w-16 h-16 border rounded-md overflow-hidden bg-gray-50">
-                        <img 
-                          src={institutionData.logo_url.startsWith('http') ? institutionData.logo_url : `${API_BASE_URL.replace('/api', '')}${institutionData.logo_url}`} 
-                          alt="Logo" 
+                        <img
+                          src={institutionData.logo_url.startsWith('http') ? institutionData.logo_url : `${API_BASE_URL.replace('/api', '')}${institutionData.logo_url}`}
+                          alt="Logo"
                           className="w-full h-full object-contain"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -4500,15 +4510,15 @@ const Settings = () => {
                         onChange={async (e) => {
                           const file = e.target.files[0];
                           if (!file) return;
-                          
+
                           if (file.size > 2 * 1024 * 1024) {
                             toast.error('File size must be less than 2MB');
                             return;
                           }
-                          
+
                           const formData = new FormData();
                           formData.append('file', file);
-                          
+
                           try {
                             setLoading(true);
                             const response = await axios.post(`${API_BASE_URL}/institution/logo`, formData, {
@@ -4517,7 +4527,7 @@ const Settings = () => {
                                 Authorization: `Bearer ${localStorage.getItem('token')}`
                               }
                             });
-                            setInstitutionData({...institutionData, logo_url: response.data.logo_url});
+                            setInstitutionData({ ...institutionData, logo_url: response.data.logo_url });
                             toast.success('Logo uploaded successfully');
                           } catch (error) {
                             console.error('Error uploading logo:', error);
@@ -4545,14 +4555,14 @@ const Settings = () => {
                       type="color"
                       className="h-9 w-12 border rounded cursor-pointer"
                       value={institutionData.theme_color}
-                      onChange={(e) => setInstitutionData({...institutionData, theme_color: e.target.value})}
+                      onChange={(e) => setInstitutionData({ ...institutionData, theme_color: e.target.value })}
                     />
                     <input
                       type="text"
                       className="flex-1 px-3 py-2 border rounded-md text-sm"
                       placeholder="#10b981"
                       value={institutionData.theme_color}
-                      onChange={(e) => setInstitutionData({...institutionData, theme_color: e.target.value})}
+                      onChange={(e) => setInstitutionData({ ...institutionData, theme_color: e.target.value })}
                     />
                   </div>
                 </div>
@@ -4573,7 +4583,7 @@ const Settings = () => {
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="Enter principal name"
                     value={institutionData.principal_name}
-                    onChange={(e) => setInstitutionData({...institutionData, principal_name: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, principal_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
@@ -4583,7 +4593,7 @@ const Settings = () => {
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="e.g., Excellence in Education"
                     value={institutionData.motto}
-                    onChange={(e) => setInstitutionData({...institutionData, motto: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, motto: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
@@ -4593,7 +4603,7 @@ const Settings = () => {
                     rows="3"
                     placeholder="Enter school vision and mission"
                     value={institutionData.vision}
-                    onChange={(e) => setInstitutionData({...institutionData, vision: e.target.value})}
+                    onChange={(e) => setInstitutionData({ ...institutionData, vision: e.target.value })}
                   />
                 </div>
               </div>
@@ -4614,8 +4624,8 @@ const Settings = () => {
                     placeholder="https://facebook.com/school"
                     value={institutionData.social_links?.facebook || ''}
                     onChange={(e) => setInstitutionData({
-                      ...institutionData, 
-                      social_links: {...institutionData.social_links, facebook: e.target.value}
+                      ...institutionData,
+                      social_links: { ...institutionData.social_links, facebook: e.target.value }
                     })}
                   />
                 </div>
@@ -4627,8 +4637,8 @@ const Settings = () => {
                     placeholder="https://twitter.com/school"
                     value={institutionData.social_links?.twitter || ''}
                     onChange={(e) => setInstitutionData({
-                      ...institutionData, 
-                      social_links: {...institutionData.social_links, twitter: e.target.value}
+                      ...institutionData,
+                      social_links: { ...institutionData.social_links, twitter: e.target.value }
                     })}
                   />
                 </div>
@@ -4640,8 +4650,8 @@ const Settings = () => {
                     placeholder="https://instagram.com/school"
                     value={institutionData.social_links?.instagram || ''}
                     onChange={(e) => setInstitutionData({
-                      ...institutionData, 
-                      social_links: {...institutionData.social_links, instagram: e.target.value}
+                      ...institutionData,
+                      social_links: { ...institutionData.social_links, instagram: e.target.value }
                     })}
                   />
                 </div>
@@ -4653,8 +4663,8 @@ const Settings = () => {
                     placeholder="https://linkedin.com/school"
                     value={institutionData.social_links?.linkedin || ''}
                     onChange={(e) => setInstitutionData({
-                      ...institutionData, 
-                      social_links: {...institutionData.social_links, linkedin: e.target.value}
+                      ...institutionData,
+                      social_links: { ...institutionData.social_links, linkedin: e.target.value }
                     })}
                   />
                 </div>
@@ -4663,8 +4673,8 @@ const Settings = () => {
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-6">
             <Button variant="outline" onClick={() => setIsInstitutionModalOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button 
-              onClick={handleSaveInstitution} 
+            <Button
+              onClick={handleSaveInstitution}
               disabled={loading || !institutionData.school_name.trim()}
               className={`w-full sm:w-auto ${!institutionData.school_name.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -4873,7 +4883,7 @@ const Settings = () => {
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 placeholder="e.g., Teacher, Accountant, Admin Staff"
                 value={roleFormData.role_name}
-                onChange={(e) => setRoleFormData({...roleFormData, role_name: e.target.value})}
+                onChange={(e) => setRoleFormData({ ...roleFormData, role_name: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
@@ -4883,7 +4893,7 @@ const Settings = () => {
                 rows="3"
                 placeholder="Enter role description"
                 value={roleFormData.description}
-                onChange={(e) => setRoleFormData({...roleFormData, description: e.target.value})}
+                onChange={(e) => setRoleFormData({ ...roleFormData, description: e.target.value })}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -4892,7 +4902,7 @@ const Settings = () => {
                 id="role_active"
                 className="h-4 w-4"
                 checked={roleFormData.is_active}
-                onChange={(e) => setRoleFormData({...roleFormData, is_active: e.target.checked})}
+                onChange={(e) => setRoleFormData({ ...roleFormData, is_active: e.target.checked })}
               />
               <Label htmlFor="role_active" className="mb-0">Active</Label>
             </div>
@@ -4920,7 +4930,7 @@ const Settings = () => {
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 placeholder="e.g., Science, Mathematics, Administration"
                 value={departmentFormData.department_name}
-                onChange={(e) => setDepartmentFormData({...departmentFormData, department_name: e.target.value})}
+                onChange={(e) => setDepartmentFormData({ ...departmentFormData, department_name: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
@@ -4930,7 +4940,7 @@ const Settings = () => {
                 rows="3"
                 placeholder="Enter department description"
                 value={departmentFormData.description}
-                onChange={(e) => setDepartmentFormData({...departmentFormData, description: e.target.value})}
+                onChange={(e) => setDepartmentFormData({ ...departmentFormData, description: e.target.value })}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -4939,7 +4949,7 @@ const Settings = () => {
                 id="dept_active"
                 className="h-4 w-4"
                 checked={departmentFormData.is_active}
-                onChange={(e) => setDepartmentFormData({...departmentFormData, is_active: e.target.checked})}
+                onChange={(e) => setDepartmentFormData({ ...departmentFormData, is_active: e.target.checked })}
               />
               <Label htmlFor="dept_active" className="mb-0">Active</Label>
             </div>
@@ -4967,7 +4977,7 @@ const Settings = () => {
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 placeholder="e.g., Full-time, Part-time, Contract"
                 value={employmentFormData.type_name}
-                onChange={(e) => setEmploymentFormData({...employmentFormData, type_name: e.target.value})}
+                onChange={(e) => setEmploymentFormData({ ...employmentFormData, type_name: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
@@ -4977,7 +4987,7 @@ const Settings = () => {
                 rows="3"
                 placeholder="Enter employment type description"
                 value={employmentFormData.description}
-                onChange={(e) => setEmploymentFormData({...employmentFormData, description: e.target.value})}
+                onChange={(e) => setEmploymentFormData({ ...employmentFormData, description: e.target.value })}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -4986,7 +4996,7 @@ const Settings = () => {
                 id="emp_active"
                 className="h-4 w-4"
                 checked={employmentFormData.is_active}
-                onChange={(e) => setEmploymentFormData({...employmentFormData, is_active: e.target.checked})}
+                onChange={(e) => setEmploymentFormData({ ...employmentFormData, is_active: e.target.checked })}
               />
               <Label htmlFor="emp_active" className="mb-0">Active</Label>
             </div>
@@ -5019,7 +5029,7 @@ const Settings = () => {
                 Create New Role
               </Button>
             </div>
-            
+
             {roles.length === 0 ? (
               <div className="text-center py-12 text-gray-500 border rounded-lg bg-gray-50/50">
                 <Shield className="h-16 w-16 mx-auto text-gray-300 mb-4" />
@@ -5042,7 +5052,7 @@ const Settings = () => {
                       const permissionCount = Object.values(role.permissions || {}).reduce((count, perms) => {
                         return count + Object.values(perms).filter(p => p === true).length;
                       }, 0);
-                      
+
                       return (
                         <tr key={role.id} className="hover:bg-gray-50/50">
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -5066,18 +5076,18 @@ const Settings = () => {
                           </td>
                           <td className="px-6 py-4 text-right whitespace-nowrap">
                             <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 className="h-8 w-8 p-0 text-blue-600"
                                 onClick={() => handleEditRolePermissions(role)}
                                 title="Edit Role"
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 className="h-8 w-8 p-0 text-red-600"
                                 onClick={() => handleDeleteRolePermission(role.id)}
                                 title="Delete Role"
@@ -5116,7 +5126,7 @@ const Settings = () => {
                 <Input
                   placeholder="e.g., Admin, Teacher, Accountant"
                   value={permissionFormData.role_name}
-                  onChange={(e) => setPermissionFormData({...permissionFormData, role_name: e.target.value})}
+                  onChange={(e) => setPermissionFormData({ ...permissionFormData, role_name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -5124,7 +5134,7 @@ const Settings = () => {
                 <Input
                   placeholder="Brief description of this role"
                   value={permissionFormData.description}
-                  onChange={(e) => setPermissionFormData({...permissionFormData, description: e.target.value})}
+                  onChange={(e) => setPermissionFormData({ ...permissionFormData, description: e.target.value })}
                 />
               </div>
             </div>
@@ -5134,7 +5144,7 @@ const Settings = () => {
                 <h3 className="text-sm font-semibold text-gray-900">Module Permissions</h3>
                 <p className="text-xs text-muted-foreground">Configure CRUD permissions for each module</p>
               </div>
-              
+
               <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full text-sm sm:text-base">
                   <thead className="bg-muted/50 border-b">
@@ -5195,15 +5205,15 @@ const Settings = () => {
                 id="role_active"
                 className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded cursor-pointer"
                 checked={permissionFormData.is_active}
-                onChange={(e) => setPermissionFormData({...permissionFormData, is_active: e.target.checked})}
+                onChange={(e) => setPermissionFormData({ ...permissionFormData, is_active: e.target.checked })}
               />
               <Label htmlFor="role_active" className="mb-0 cursor-pointer text-sm">Active</Label>
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-6">
             <Button variant="outline" onClick={() => setIsManagePermissionsModalOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button 
-              onClick={handleSavePermissions} 
+            <Button
+              onClick={handleSavePermissions}
               disabled={loading || !permissionFormData.role_name.trim()}
               className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600"
             >
@@ -5215,5 +5225,9 @@ const Settings = () => {
     </div>
   );
 };
+
+
+
+
 
 export default Settings;

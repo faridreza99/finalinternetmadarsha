@@ -594,6 +594,22 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                 
                 logger.info(f"Join class: Marking attendance for {student_name} ({student_id}) on {today}")
                 
+                # Fetch active attendance sessions to determine which session this belongs to
+                matched_session_name = "General"  # Default
+                matched_session_id = None
+                
+                try:
+                    active_sessions = await db.attendance_sessions.find({"tenant_id": tenant_id, "is_active": True}).to_list(None)
+                    for session in active_sessions:
+                        s_start = session.get("start_time")
+                        s_end = session.get("end_time")
+                        if s_start and s_end and s_start <= current_time <= s_end:
+                            matched_session_name = session.get("name")
+                            matched_session_id = session.get("id")
+                            break
+                except Exception as e:
+                    logger.error(f"Error matching attendance session: {e}")
+
                 # Check if already in live_class_attendance (for duplicate prevention)
                 existing_lc_attendance = await db.live_class_attendance.find_one({
                     "tenant_id": tenant_id,
@@ -614,20 +630,20 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                         "join_time": now.isoformat(),
                         "status": "present",
                         "auto_marked": True,
+                        "attendance_session": matched_session_name,
                         "created_at": now
                     }
                     await db.live_class_attendance.insert_one(attendance_record)
-                    logger.info(f"Live class attendance recorded: student={student_name}, class={live_class.get('class_name')}, date={today}")
+                    logger.info(f"Live class attendance recorded: student={student_name}, class={live_class.get('class_name')}, date={today}, session={matched_session_name}")
                 
                 # ALWAYS upsert to main attendance collection for admin/student dashboard visibility
-                # This runs regardless of existing_lc_attendance to ensure dashboards see the record
-                # CRITICAL: Use person_id (not student_id) - this is what admin/student dashboards query
-                upsert_result = await db.attendance.update_one(
+                # Use attendance_session in query to allow multiple sessions per day
+                upsert_result = await db.student_attendance.update_one(
                     {
                         "tenant_id": tenant_id,
-                        "person_id": student_id,  # Use person_id for dashboard compatibility
+                        "person_id": student_id,
                         "date": today,
-                        "type": "student"
+                        "attendance_session": matched_session_name
                     },
                     {
                         "$set": {
@@ -635,23 +651,29 @@ def setup_live_class_routes(app, db, get_current_user, get_current_tenant):
                             "marked_via": "live_class",
                             "live_class_id": class_id,
                             "live_class_name": live_class.get("class_name"),
+                            "class_id": student_class_id,
+                            "section_id": student.get("section_id"),
                             "updated_at": datetime.utcnow()
                         },
                         "$setOnInsert": {
+                            "id": str(uuid.uuid4()),
                             "tenant_id": tenant_id,
                             "person_id": student_id,
                             "person_name": student_name,
+                            "person_type": "student",
                             "name": student_name,
                             "type": "student",
                             "class_id": student_class_id,
                             "class_name": student_class_name,
                             "subject": live_class.get("class_name", ""),
                             "date": today,
+                            "attendance_session": matched_session_name,
                             "created_at": datetime.utcnow()
                         }
                     },
                     upsert=True
                 )
+
                 logger.info(f"Main attendance upserted: person_id={student_id}, type=student, date={today}, matched={upsert_result.matched_count}, modified={upsert_result.modified_count}, upserted_id={upsert_result.upserted_id}")
             
             return {

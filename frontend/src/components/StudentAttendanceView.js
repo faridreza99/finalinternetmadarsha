@@ -47,12 +47,12 @@ const StudentAttendanceView = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.get(`${API}/student/attendance`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { month: selectedMonth, year: selectedYear }
       });
-      
+
       setAttendanceData(response.data.records || []);
       setSummary(response.data.summary || null);
     } catch (error) {
@@ -258,6 +258,8 @@ const StudentAttendanceView = () => {
                   <tr className="border-b dark:border-gray-700">
                     <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-300 font-medium">তারিখ</th>
                     <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-300 font-medium">বার</th>
+                    <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-300 font-medium">সেশন</th>
+                    <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-300 font-medium">সময়</th>
                     <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-300 font-medium">অবস্থা</th>
                     <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-300 font-medium">মন্তব্য</th>
                   </tr>
@@ -270,6 +272,14 @@ const StudentAttendanceView = () => {
                       </td>
                       <td className="py-3 px-4 dark:text-gray-200">
                         {dayLabels[record.day] || record.day}
+                      </td>
+                      <td className="py-3 px-4 dark:text-gray-200">
+                        <Badge variant="outline" className="font-normal">
+                          {record.attendance_session || '-'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 dark:text-gray-200">
+                        {record.entry_time ? new Date(record.entry_time).toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' }) : '-'}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">

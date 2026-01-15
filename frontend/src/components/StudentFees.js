@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
-import { 
+import { Button } from './ui/button';
+import {
   Table,
   TableBody,
   TableCell,
@@ -10,8 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { 
-  CreditCard, 
+import {
+  CreditCard,
   CheckCircle,
   AlertCircle,
   Calendar,
@@ -47,6 +49,7 @@ const formatBengaliDate = (dateString) => {
 };
 
 const StudentFees = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [feeData, setFeeData] = useState(null);
 
@@ -190,7 +193,7 @@ const StudentFees = () => {
               <span className="font-medium">পরিশোধের অগ্রগতি</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
-              <div 
+              <div
                 className="bg-emerald-600 h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((ledger.paid_amount / ledger.total_fees) * 100, 100)}%` }}
               ></div>
@@ -312,15 +315,23 @@ const StudentFees = () => {
       {hasDues && (
         <Card className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
           <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-red-800 dark:text-red-400">ফি বাকি আছে</h3>
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  আপনার {formatBengaliCurrency(ledger.balance)} টাকা বাকি আছে। 
-                  অফিসে যোগাযোগ করে পরিশোধ করুন।
-                </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-red-800 dark:text-red-400">ফি বাকি আছে</h3>
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    আপনার {formatBengaliCurrency(ledger.balance)} টাকা বাকি আছে।
+                    অনলাইনে পরিশোধ করতে নিচের বাটনে ক্লিক করুন অথবা অফিসে যোগাযোগ করুন।
+                  </p>
+                </div>
               </div>
+              <Button
+                onClick={() => navigate('/student/payment')}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                অনলাইনে পেমেন্ট করুন
+              </Button>
             </div>
           </CardContent>
         </Card>

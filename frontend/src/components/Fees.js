@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
-import { 
+import {
   DollarSign,
   CreditCard,
   AlertTriangle,
@@ -82,18 +82,18 @@ const Fees = () => {
   // Currency context for dynamic currency display
   const { formatCurrency, getCurrencySymbol } = useCurrency();
   const { isMadrasahSimpleUI, isMadrasah, loading: institutionLoading } = useInstitution();
-  
+
   // Router-controlled tabs
   const { '*': tabPath } = useParams();
   const navigate = useNavigate();
-  
+
   // Determine current tab from URL, default to 'manage'
-  const currentTab = tabPath === 'student-specific' ? 'student-specific' 
-                    : tabPath === 'due' ? 'due'
-                    : tabPath === 'select-student' ? 'select-student'
-                    : tabPath === 'collection' ? 'collection'
-                    : 'manage';
-  
+  const currentTab = tabPath === 'student-specific' ? 'student-specific'
+    : tabPath === 'due' ? 'due'
+      : tabPath === 'select-student' ? 'select-student'
+        : tabPath === 'collection' ? 'collection'
+          : 'manage';
+
   // Tab change handler
   const handleTabChange = (newTab) => {
     console.log('🔥 TAB CHANGED TO:', newTab);
@@ -103,13 +103,13 @@ const Fees = () => {
   const [collected, setCollected] = useState(0);
   const [pending, setPending] = useState(0);
   const [overdue, setOverdue] = useState(0);
-  
+
   // Recent Payment Activity specific metrics
   const [paymentsToday, setPaymentsToday] = useState(0);
   const [todaysCollection, setTodaysCollection] = useState(0);
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [monthlyTarget, setMonthlyTarget] = useState(0);
-  
+
   // Bulk Payment specific state
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [bulkPaymentFilters, setBulkPaymentFilters] = useState({
@@ -121,6 +121,7 @@ const Fees = () => {
   // Student Specific Tab State
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [marhalas, setMarhalas] = useState([]); // Add marhalas state
   const [sections, setSections] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,7 +129,7 @@ const Fees = () => {
   const [selectedSection, setSelectedSection] = useState('all');
   const [studentPayments, setStudentPayments] = useState([]);
   const [studentFeesSummary, setStudentFeesSummary] = useState(null);
-  
+
   // Fee Collection Tab state
   const [collectionForm, setCollectionForm] = useState({
     student_id: '',
@@ -150,23 +151,23 @@ const Fees = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [dueFees, setDueFees] = useState([]);
-  
+
   // Madrasah Simple Wizard State
   const [madrasahWizardStep, setMadrasahWizardStep] = useState(1); // 1=ছাত্র নির্বাচন, 2=বেতন আদায়, 3=রসিদ
   const [lastReceipt, setLastReceipt] = useState(null); // For receipt printing
-  
+
   // Academic Hierarchy State (Madrasah)
   const [selectedMarhalaId, setSelectedMarhalaId] = useState('');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
-  
+
   const handleHierarchyChange = (selection) => {
     setSelectedMarhalaId(selection.marhala_id || '');
     setSelectedDepartmentId(selection.department_id || '');
     setSelectedSemesterId(selection.semester_id || '');
     setSelectedStudent(null);
   };
-  
+
   // School Branding for Receipt
   const [schoolBranding, setSchoolBranding] = useState({
     school_name: '',
@@ -177,31 +178,35 @@ const Fees = () => {
     email: '',
     primary_color: '#059669'
   });
-  
+
   // Modal states for new functionality
   const [showFeeConfigModal, setShowFeeConfigModal] = useState(false);
   const [currentFeeType, setCurrentFeeType] = useState('');
   const [showGenerateReportsModal, setShowGenerateReportsModal] = useState(false);
   const [showBulkPaymentModal, setShowBulkPaymentModal] = useState(false);
   const [showSendRemindersModal, setShowSendRemindersModal] = useState(false);
-  
+
   // Delete confirmation modal state
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [configToDelete, setConfigToDelete] = useState(null);
-  
+
   // Detailed Payment Modal state
   const [showDetailedPaymentModal, setShowDetailedPaymentModal] = useState(false);
   const [detailedPaymentData, setDetailedPaymentData] = useState(null);
-  
+
   // Edit mode state
   const [editingConfig, setEditingConfig] = useState(null);
 
   // Fee Configuration Storage - This will persist saved fee configs
   const [feeConfigurations, setFeeConfigurations] = useState({
     'Tuition Fees': [],
-    'Transport Fees': [],
-    'Admission Fees': []
+    'Admission Fees': [],
+    'Exam Fees': [],
+    'Other': []
   });
+  const [feeCategories, setFeeCategories] = useState([]);
+  const [feeHeads, setFeeHeads] = useState([]);
+
 
   // Form state for fee configuration modal
   const [configForm, setConfigForm] = useState({
@@ -219,7 +224,7 @@ const Fees = () => {
     fetchStudentsData();
     fetchSchoolBranding();
   }, []);
-  
+
   // Fetch school branding for receipt from institution
   const fetchSchoolBranding = async () => {
     try {
@@ -243,7 +248,7 @@ const Fees = () => {
       console.error('Error fetching institution:', error);
     }
   };
-  
+
   // Calculate collection stats when recent payments change
   useEffect(() => {
     calculateCollectionStats();
@@ -261,7 +266,7 @@ const Fees = () => {
       }
 
       // Fetch fee configurations, dashboard data, recent payments, and due fees from backend
-      const [configsRes, dashboardRes, paymentsRes, dueFeesRes] = await Promise.all([
+      const [configsRes, dashboardRes, paymentsRes, dueFeesRes, categoriesRes, headsRes, hierarchyRes] = await Promise.all([
         axios.get(`${API}/fees/configurations`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
@@ -273,7 +278,16 @@ const Fees = () => {
         }),
         axios.get(`${API}/fees/student-fees`, {
           headers: { Authorization: `Bearer ${token}` }
-        })
+        }),
+        axios.get(`${API}/student-fee-categories`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: [] })),
+        axios.get(`${API}/fee-heads`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: [] })),
+        axios.get(`${API}/academic-hierarchy`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: { hierarchy: [] } }))
       ]);
 
       // Transform backend configs to frontend format - dynamically group by fee_type
@@ -286,28 +300,35 @@ const Fees = () => {
         }
         transformedConfigs[feeType].push(config);
       });
-      
+
       setFeeConfigurations(transformedConfigs);
-      
+      setFeeConfigurations(transformedConfigs);
+      setFeeCategories(categoriesRes?.data || []);
+      setFeeHeads(headsRes?.data || []);
+
+      // key can be 'hierarchy' or 'marhalas' depending on backend response structure, handled safely
+      const hierarchyData = hierarchyRes?.data?.hierarchy || hierarchyRes?.data?.marhalas || [];
+      setMarhalas(hierarchyData);
+
       // Set dashboard data from backend
       const dashboardData = dashboardRes.data;
       setTotalFees(dashboardData.total_fees);
       setCollected(dashboardData.collected);
       setPending(dashboardData.pending);
       setOverdue(dashboardData.overdue);
-      
+
       // Set recent payment activity metrics from backend
       setPaymentsToday(dashboardData.payments_today || 0);
       setTodaysCollection(dashboardData.todays_collection || 0);
       setPendingApprovals(dashboardData.pending_approvals || 0);
       setMonthlyTarget(dashboardData.monthly_target || 0);
-      
+
       // Process and set recent payments data - use Bengali fallback for missing names
       const paymentsData = paymentsRes.data || [];
       const transformedPayments = paymentsData.map(payment => ({
         id: payment.id,
-        student_name: payment.student_name && payment.student_name.trim() !== '' && payment.student_name !== 'Unknown Student' 
-          ? payment.student_name 
+        student_name: payment.student_name && payment.student_name.trim() !== '' && payment.student_name !== 'Unknown Student'
+          ? payment.student_name
           : (payment.student_id ? `ছাত্র #${String(payment.student_id).slice(-6)}` : 'অজ্ঞাত ছাত্র'),
         amount: payment.amount || 0,
         payment_mode: payment.payment_mode || 'Cash',
@@ -318,13 +339,13 @@ const Fees = () => {
         transaction_id: payment.transaction_id || null,
         remarks: payment.remarks || null
       }));
-      
+
       setRecentPayments(transformedPayments);
-      
+
       // Set due fees data
       const dueFeesData = dueFeesRes.data || [];
       setDueFees(dueFeesData);
-      
+
       console.log('✅ Fee data loaded from backend successfully');
       console.log('📊 Today\'s metrics:', {
         payments: dashboardData.payments_today,
@@ -345,13 +366,13 @@ const Fees = () => {
       setCollected(0);
       setPending(0);
       setOverdue(0);
-      
+
       // Reset recent payment activity metrics
       setPaymentsToday(0);
       setTodaysCollection(0);
       setPendingApprovals(0);
       setMonthlyTarget(0);
-      
+
       // Reset recent payments to empty array
       setRecentPayments([]);
     }
@@ -359,15 +380,15 @@ const Fees = () => {
 
   const calculateTotalsFromConfigurations = (configs) => {
     let totalCalculated = 0;
-    
+
     // Calculate total from all fee configurations
     Object.values(configs).forEach(configArray => {
       configArray.forEach(config => {
         const classMultiplier = config.applyToClasses === 'all' ? 30 : 15;
-        const frequencyMultiplier = config.frequency === 'monthly' ? 12 : 
-                                   config.frequency === 'quarterly' ? 4 : 
-                                   config.frequency === 'half-yearly' ? 2 : 1;
-        
+        const frequencyMultiplier = config.frequency === 'monthly' ? 12 :
+          config.frequency === 'quarterly' ? 4 :
+            config.frequency === 'half-yearly' ? 2 : 1;
+
         totalCalculated += config.amount * classMultiplier * frequencyMultiplier;
       });
     });
@@ -397,7 +418,7 @@ const Fees = () => {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
-      
+
       setStudents(studentsRes.data);
       setClasses(classesRes.data);
     } catch (error) {
@@ -437,7 +458,7 @@ const Fees = () => {
       // Calculate summary from fees data
       const studentFees = feesRes.data || [];
       const studentPaymentsData = paymentsRes.data || [];
-      
+
       const summary = {
         totalFees: studentFees.reduce((sum, fee) => sum + fee.amount, 0),
         paidAmount: studentFees.reduce((sum, fee) => sum + fee.paid_amount, 0),
@@ -445,7 +466,7 @@ const Fees = () => {
         overdueFees: studentFees.reduce((sum, fee) => sum + fee.overdue_amount, 0),
         lastPaymentDate: studentPaymentsData[0]?.payment_date?.split('T')[0] || null
       };
-      
+
       // Transform payments data for UI
       const transformedPayments = studentPaymentsData.map(payment => ({
         id: payment.id,
@@ -457,7 +478,7 @@ const Fees = () => {
         status: 'Paid',
         dueDate: payment.payment_date?.split('T')[0]
       }));
-      
+
       // Add pending fees as "payment" entries
       const pendingFees = studentFees.filter(fee => fee.pending_amount > 0).map(fee => ({
         id: `pending_${fee.id}`,
@@ -469,7 +490,7 @@ const Fees = () => {
         status: 'Pending',
         dueDate: fee.due_date
       }));
-      
+
       // Add overdue fees as "payment" entries
       const overdueFees = studentFees.filter(fee => fee.overdue_amount > 0).map(fee => ({
         id: `overdue_${fee.id}`,
@@ -481,10 +502,10 @@ const Fees = () => {
         status: 'Overdue',
         dueDate: fee.due_date
       }));
-      
+
       setStudentFeesSummary(summary);
       setStudentPayments([...transformedPayments, ...pendingFees, ...overdueFees]);
-      
+
     } catch (error) {
       console.error('Failed to fetch student financials:', error);
       toast.error('❌ Failed to Load Student Financials', {
@@ -509,6 +530,41 @@ const Fees = () => {
     setSelectedStudent(student);
     fetchStudentFinancials(student.id);
   };
+
+  // Auto-fill amount based on fee configuration (Student Specific > Class Based)
+  useEffect(() => {
+    if (selectedStudent && collectionForm.fee_type) {
+      const studentClass = selectedStudent.class || selectedStudent.class_name || selectedStudent.class_id;
+      let config = null;
+
+      // FIRST PRIORITY: Check for student-specific monthly fee config (for Tuition Fees)
+      if (collectionForm.fee_type === 'Tuition Fees' && (selectedStudent.monthly_fee_config_id || selectedStudent.fee_type_id)) {
+        // Search all fee categories for this specific config ID
+        for (const type in feeConfigurations) {
+          const targetId = selectedStudent.fee_type_id || selectedStudent.monthly_fee_config_id;
+          const specificConfig = feeConfigurations[type].find(c => c.id === targetId);
+          if (specificConfig) {
+            config = specificConfig;
+            break;
+          }
+        }
+      }
+
+      // SECOND PRIORITY: Class-based configuration
+      if (!config) {
+        const configs = feeConfigurations[collectionForm.fee_type] || [];
+        config = configs.find(c => c.apply_to_classes === studentClass || c.applyToClasses === studentClass) ||
+          configs.find(c => c.apply_to_classes === 'all' || c.applyToClasses === 'all');
+      }
+
+      if (config) {
+        setCollectionForm(prev => ({ ...prev, amount: config.amount }));
+      } else {
+        // Clear amount if no config found, or keep previous? Better to clear to avoid confusion
+        setCollectionForm(prev => ({ ...prev, amount: '' }));
+      }
+    }
+  }, [collectionForm.fee_type, selectedStudent, feeConfigurations]);
 
   // Open detailed payment modal for a student
   const openDetailedPaymentModal = async (student, feeData) => {
@@ -608,19 +664,39 @@ const Fees = () => {
   };
 
   const filteredStudents = students.filter(student => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.admission_no.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesClass = selectedClass === 'all' || student.class_id === selectedClass;
     const matchesSection = selectedSection === 'all' || student.section_id === selectedSection;
-    
+
     return matchesSearch && matchesClass && matchesSection;
   });
 
-  const getClassName = (classId) => {
+  const getClassName = (classId, student = null) => {
+    // Debug log to trace why class is unknown
+    if (!classes.find(c => c.id === classId) && !student?.class_name && !student?.class) {
+      console.warn('getClassName: Missing class data', { classId, student });
+    }
+
     const cls = classes.find(c => c.id === classId);
-    return cls ? (cls.display_name || cls.name) : (isMadrasahSimpleUI ? 'অজ্ঞাত শ্রেণি' : 'Unknown');
+    if (cls) return cls.name || cls.display_name;
+
+    // Fallbacks
+    if (student?.class_name) return student.class_name;
+    if (student?.class) return student.class;
+
+    // Check Marhala if class lookup failed
+    if (student?.marhala_id) {
+      const marhala = marhalas.find(m => m.id === student.marhala_id);
+      if (marhala) return marhala.name_bn || marhala.name || marhala.name_en;
+    }
+
+    // If we have an ID but no name, show the ID at least
+    if (classId) return isMadrasahSimpleUI ? `শ্রেণি ${classId}` : `Class ${classId}`;
+
+    return isMadrasahSimpleUI ? 'অজ্ঞাত শ্রেণি' : 'Unknown';
   };
 
   const getStatusBadge = (status) => {
@@ -663,7 +739,7 @@ const Fees = () => {
       if (bulkPaymentFilters.class !== 'all' && student.class_id !== bulkPaymentFilters.class) {
         return false;
       }
-      
+
       // For now, include all students - in real implementation, filter by fee status and type
       return true;
     });
@@ -673,7 +749,7 @@ const Fees = () => {
     // Calculate actual amounts from selected students' pending fees
     let totalAmount = 0;
     let lateFees = 0;
-    
+
     selectedStudents.forEach(student => {
       // Get student's actual pending amount from fee data
       const studentFee = dueFees.find(f => f.student_id === student.id);
@@ -682,7 +758,7 @@ const Fees = () => {
       totalAmount += pendingAmount;
       lateFees += overdueAmount;
     });
-    
+
     return {
       studentsCount: selectedStudents.length,
       totalAmount,
@@ -738,10 +814,10 @@ const Fees = () => {
 
       // Close modal
       setShowBulkPaymentModal(false);
-      
+
       // Clear selected students
       setSelectedStudents([]);
-      
+
       // Use dashboard stats from response for instant update (no race condition!)
       if (result.dashboard_stats) {
         console.log('📊 Using returned dashboard stats for instant update');
@@ -752,12 +828,12 @@ const Fees = () => {
         setPaymentsToday(result.dashboard_stats.payments_today);
         setTodaysCollection(result.dashboard_stats.todays_collection);
       }
-      
+
       // Background refresh for recent payments list
       console.log('🔄 bulk payment ok → refreshing dashboard in background...');
       loadFeeDataFromBackend();
       console.log('✅ bulk refresh initiated');
-      
+
       // Show success message
       toast.success(`💰 Bulk Payment Processed Successfully!`, {
         description: `${result.payments_count} payments processed. Total: ${formatCurrency(result.total_amount)}. Dashboard updated instantly.`,
@@ -801,7 +877,7 @@ const Fees = () => {
 
       // Close modal
       setShowSendRemindersModal(false);
-      
+
       // Show success message
       toast.success(`📧 Fee Reminders Sent Successfully!`, {
         description: `${result.sent_count} reminders sent to students with pending fees. ${result.failed_count} failed.`,
@@ -823,7 +899,7 @@ const Fees = () => {
   const handleExportReport = async (format = 'excel', reportType = 'student_wise') => {
     try {
       setLoading(true);
-      
+
       const token = localStorage.getItem('token');
       if (!token) {
         toast.error('⚠️ Authentication Required', {
@@ -832,7 +908,7 @@ const Fees = () => {
         });
         return;
       }
-      
+
       // Call backend API to generate and download report
       const response = await fetch(`${API}/reports/export?format=${format}&report_type=${reportType}`, {
         method: 'GET',
@@ -841,19 +917,19 @@ const Fees = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         // Get filename from response headers or create default
         const contentDisposition = response.headers.get('Content-Disposition');
         let filename = `fee_report_${reportType}_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
-        
+
         if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename=\"(.+)\"/);  
+          const filenameMatch = contentDisposition.match(/filename=\"(.+)\"/);
           if (filenameMatch) {
             filename = filenameMatch[1];
           }
         }
-        
+
         // Create blob and download
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -864,7 +940,7 @@ const Fees = () => {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         toast.success(`📊 ${format.toUpperCase()} Report Downloaded!`, {
           description: `${reportType.replace('_', ' ')} report exported successfully.`,
           duration: 4000
@@ -911,15 +987,15 @@ const Fees = () => {
       });
 
       const paymentResult = response.data;
-      
+
       // Find student details for the toast message
       const student = students.find(s => s.id === paymentData.student_id);
       const studentName = student ? student.name : paymentResult.student_name;
       const studentAdmissionNo = student ? student.admission_no : paymentResult.admission_no;
-      
+
       // Close payment modal first
       setShowPaymentModal(false);
-      
+
       // Use dashboard stats from payment response for instant update (no race condition!)
       if (paymentResult.dashboard_stats) {
         console.log('📊 Using returned dashboard stats for instant update');
@@ -930,7 +1006,7 @@ const Fees = () => {
         setPaymentsToday(paymentResult.dashboard_stats.payments_today);
         setTodaysCollection(paymentResult.dashboard_stats.todays_collection);
       }
-      
+
       // Use updated_student_fees from response to update dueFees state directly
       // This fixes the partial payment status button not updating issue
       if (paymentResult.updated_student_fees && paymentResult.updated_student_fees.length > 0) {
@@ -941,7 +1017,7 @@ const Fees = () => {
           return [...otherStudentsFees, ...paymentResult.updated_student_fees];
         });
       }
-      
+
       // Also refresh student financials and full dashboard data in background
       console.log('🔄 payment ok → refreshing student financials...');
       await Promise.all([
@@ -950,22 +1026,22 @@ const Fees = () => {
       ]);
       console.log('✅ refresh complete');
       console.log('✅ refresh complete');
-      
+
       // Auto-generate and download receipt immediately after payment
       generateReceipt(paymentResult.receipt_no);
-      
+
       // Show success toast with real-time update confirmation
       toast.success(`Payment Collected Successfully!`, {
         description: `${formatCurrency(paymentData.amount)} collected from ${studentName} (${studentAdmissionNo}) for ${paymentData.fee_type}. Dashboard updated. Receipt: ${paymentResult.receipt_no}`,
         duration: 5000,
         action: {
-          label: "Download Again", 
+          label: "Download Again",
           onClick: () => generateReceipt(paymentResult.receipt_no)
         }
       });
-      
+
       return true;
-      
+
     } catch (error) {
       console.error('Payment failed:', error);
       const errorMessage = getErrorMessage(error, 'Unable to process payment. Please try again.');
@@ -1024,7 +1100,7 @@ const Fees = () => {
     setConfigToDelete(config);
     setShowDeleteConfirmModal(true);
   };
-  
+
   // Handle edit button click
   const handleEditConfig = (config) => {
     // Populate form with existing config data
@@ -1037,7 +1113,7 @@ const Fees = () => {
       lateFee: config.late_fee ? config.late_fee.toString() : '',
       discount: config.discount ? config.discount.toString() : ''
     });
-    
+
     toast.info('✏️ Edit Mode', {
       description: 'Modify the configuration and click Save to update.',
       duration: 3000
@@ -1053,12 +1129,12 @@ const Fees = () => {
     // Store selected student for payment processing
     setSelectedStudent(student);
     setShowPaymentModal(true);
-    
+
     // Get proper student properties with fallbacks
     const studentName = student.name || 'Unknown Student';
     const admissionNo = student.admission_no || student.admission || 'N/A';
     const pendingAmount = student.pending_amount || student.amount || student.total_due || 0; // Use actual amount or 0
-    
+
     toast.info(`💰 Collecting Payment`, {
       description: `Opening payment collection for ${studentName} (${admissionNo}) - ${formatCurrency(pendingAmount)}`,
       duration: 3000
@@ -1075,7 +1151,7 @@ const Fees = () => {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
-      
+
       // Create download link
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -1113,13 +1189,13 @@ const Fees = () => {
       });
       return;
     }
-    
+
     // Show success message and provide navigation hint
     toast.success('📄 View All Receipts', {
       description: `Viewing all receipts for ${student.name}. Check the Payment History table below.`,
       duration: 4000
     });
-    
+
     // Scroll to payment history table
     const paymentHistoryElement = document.querySelector('[role="table"]');
     if (paymentHistoryElement) {
@@ -1135,7 +1211,7 @@ const Fees = () => {
       });
       return;
     }
-    
+
     // Copy phone number to clipboard
     navigator.clipboard.writeText(student.guardian_phone).then(() => {
       toast.success('📞 Guardian Contact Copied', {
@@ -1149,7 +1225,7 @@ const Fees = () => {
         duration: 5000
       });
     });
-    
+
     // Try to open phone dialer on mobile devices
     const phoneLink = document.createElement('a');
     phoneLink.href = `tel:${student.guardian_phone}`;
@@ -1161,7 +1237,7 @@ const Fees = () => {
     if (formData.student_id && formData.fee_type && formData.amount) {
       const student = students.find(s => s.id === formData.student_id);
       const nextReceiptNo = `RCP2025-${String(recentPayments.length + 1).padStart(3, '0')}`;
-      
+
       setReceiptPreview({
         receiptNo: nextReceiptNo,
         student: student ? {
@@ -1182,16 +1258,16 @@ const Fees = () => {
 
   const calculateCollectionStats = () => {
     const today = new Date().toDateString();
-    const todaysPayments = recentPayments.filter(p => 
+    const todaysPayments = recentPayments.filter(p =>
       new Date(p.created_at || Date.now()).toDateString() === today
     );
-    
+
     const todaysCollection = todaysPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const avgPayment = todaysPayments.length > 0 ? todaysCollection / todaysPayments.length : 0;
     const cashBalance = todaysPayments
       .filter(p => p.payment_mode === 'Cash')
       .reduce((sum, p) => sum + (p.amount || 0), 0);
-    
+
     setCollectionStats({
       todaysCollection,
       transactions: todaysPayments.length,
@@ -1233,7 +1309,7 @@ const Fees = () => {
       });
       return;
     }
-    
+
     const paymentData = {
       student_id: collectionForm.student_id,
       amount: parseFloat(collectionForm.amount),
@@ -1242,10 +1318,10 @@ const Fees = () => {
       transaction_id: collectionForm.transaction_id || null,
       remarks: collectionForm.remarks || 'Fee Collection Tab payment'
     };
-    
+
     try {
       await submitPayment(paymentData);
-      
+
       // Add to recent payments
       const student = students.find(s => s.id === collectionForm.student_id);
       const newPayment = {
@@ -1258,9 +1334,9 @@ const Fees = () => {
         time: new Date().toLocaleTimeString(),
         created_at: new Date().toISOString()
       };
-      
+
       setRecentPayments(prev => [newPayment, ...prev.slice(0, 9)]);
-      
+
       // Clear form
       setCollectionForm({
         student_id: '',
@@ -1271,11 +1347,11 @@ const Fees = () => {
         remarks: ''
       });
       setReceiptPreview(null);
-      
+
       // Recalculate stats and refresh fee data
       setTimeout(calculateCollectionStats, 100);
       await loadFeeDataFromBackend();
-      
+
     } catch (error) {
       console.error('Payment failed:', error);
     }
@@ -1341,7 +1417,7 @@ const Fees = () => {
       '',
       'Payment History:',
       'Receipt No,Date,Fee Type,Amount,Payment Mode,Status',
-      ...reportData.payments.map(p => 
+      ...reportData.payments.map(p =>
         `${p.receiptNo},${p.date},${p.feeType},${formatCurrency(p.amount)},${p.paymentMode || 'N/A'},${p.status}`
       )
     ].join('\n');
@@ -1404,9 +1480,9 @@ const Fees = () => {
 
       // Capture edit mode state before resetting
       const isEditing = !!editingConfig;
-      
+
       let response;
-      
+
       if (isEditing) {
         // Update existing configuration
         response = await axios.put(`${API}/fees/configurations/${editingConfig.id}`, configData, {
@@ -1481,7 +1557,7 @@ const Fees = () => {
   const processSendReminders = async () => {
     try {
       setLoading(true);
-      
+
       const token = localStorage.getItem('token');
       if (!token) {
         toast.error('❌ Authentication Required', {
@@ -1497,10 +1573,10 @@ const Fees = () => {
       });
 
       const result = response.data;
-      
+
       // Close modal first
       setShowSendRemindersModal(false);
-      
+
       // Show success message with actual results
       toast.success(`📧 Reminders Sent Successfully!`, {
         description: `${result.sent_count} reminders sent to students with pending fees. ${result.failed_count} failed.`,
@@ -1553,10 +1629,10 @@ const Fees = () => {
       });
 
       const result = response.data;
-      
+
       // Close modal first
       setShowBulkPaymentModal(false);
-      
+
       // Use dashboard stats from response for instant update (no race condition!)
       if (result.dashboard_stats) {
         console.log('📊 Using returned dashboard stats for instant update');
@@ -1567,7 +1643,7 @@ const Fees = () => {
         setPaymentsToday(result.dashboard_stats.payments_today);
         setTodaysCollection(result.dashboard_stats.todays_collection);
       }
-      
+
       // Background refresh for student financials and recent payments
       console.log('🔄 bulk payment ok → refreshing in background...');
       Promise.all([
@@ -1575,7 +1651,7 @@ const Fees = () => {
         fetchStudentFinancials(bulkPaymentData.student_ids[0])
       ]);
       console.log('✅ bulk refresh initiated');
-      
+
       // Show success message with real-time update confirmation
       toast.success(`💰 Bulk Payment Processed Successfully!`, {
         description: `${result.payments_count} payments processed. Total: ${formatCurrency(result.total_amount)}. Dashboard updated instantly.`,
@@ -1607,62 +1683,62 @@ const Fees = () => {
               Export
             </Button>
           )}
-{/* Removed: বেতন আদায় button - use Reports page for payment analytics */}
+          {/* Removed: বেতন আদায় button - use Reports page for payment analytics */}
         </div>
       </div>
 
       {(!institutionLoading && !isMadrasahSimpleUI) && (<>
-      {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        <Card className="card-hover min-w-0">
-          <CardContent className="p-3 sm:p-4 md:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm sm:text-base font-medium text-gray-600">Total Fees</p>
-                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 truncate">{getCurrencySymbol()}{(totalFees/100000).toFixed(1)}L</p>
-                <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Academic Year</p>
+        {/* Financial Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+          <Card className="card-hover min-w-0">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-gray-600">Total Fees</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 truncate">{getCurrencySymbol()}{(totalFees / 100000).toFixed(1)}L</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Academic Year</p>
+                </div>
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500 flex-shrink-0" />
               </div>
-              <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="card-hover min-w-0">
-          <CardContent className="p-3 sm:p-4 md:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm sm:text-base font-medium text-gray-600">Collected</p>
-                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-emerald-600 truncate">{getCurrencySymbol()}{(collected/100000).toFixed(1)}L</p>
-                <p className="text-[10px] sm:text-xs text-emerald-500 hidden sm:block">+15% this month</p>
+            </CardContent>
+          </Card>
+          <Card className="card-hover min-w-0">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-gray-600">Collected</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-emerald-600 truncate">{getCurrencySymbol()}{(collected / 100000).toFixed(1)}L</p>
+                  <p className="text-[10px] sm:text-xs text-emerald-500 hidden sm:block">+15% this month</p>
+                </div>
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-emerald-500 flex-shrink-0" />
               </div>
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-emerald-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="card-hover min-w-0">
-          <CardContent className="p-3 sm:p-4 md:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm sm:text-base font-medium text-gray-600">Pending</p>
-                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-orange-600 truncate">{getCurrencySymbol()}{(pending/100000).toFixed(1)}L</p>
-                <p className="text-[10px] sm:text-xs text-orange-500 hidden sm:block">Due this month</p>
+            </CardContent>
+          </Card>
+          <Card className="card-hover min-w-0">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-gray-600">Pending</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-orange-600 truncate">{getCurrencySymbol()}{(pending / 100000).toFixed(1)}L</p>
+                  <p className="text-[10px] sm:text-xs text-orange-500 hidden sm:block">Due this month</p>
+                </div>
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-orange-500 flex-shrink-0" />
               </div>
-              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-orange-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="card-hover min-w-0">
-          <CardContent className="p-3 sm:p-4 md:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm sm:text-base font-medium text-gray-600">Overdue</p>
-                <p className="text-lg sm:text-2xl md:text-3xl font-bold text-red-600 truncate">{getCurrencySymbol()}{(overdue/100000).toFixed(1)}L</p>
-                <p className="text-[10px] sm:text-xs text-red-500 hidden sm:block">Needs attention</p>
+            </CardContent>
+          </Card>
+          <Card className="card-hover min-w-0">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-gray-600">Overdue</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-red-600 truncate">{getCurrencySymbol()}{(overdue / 100000).toFixed(1)}L</p>
+                  <p className="text-[10px] sm:text-xs text-red-500 hidden sm:block">Needs attention</p>
+                </div>
+                <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-red-500 flex-shrink-0" />
               </div>
-              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-red-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
       </>)}
       {/* Fees Management - Wait for institution settings to load */}
@@ -1716,30 +1792,27 @@ const Fees = () => {
 
           {/* Wizard Step Indicator */}
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6">
-            <div 
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full cursor-pointer transition-all ${
-                madrasahWizardStep === 1 ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+            <div
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full cursor-pointer transition-all ${madrasahWizardStep === 1 ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
               onClick={() => setMadrasahWizardStep(1)}
             >
               <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">১</span>
               <span className="text-sm font-medium hidden sm:inline">ছাত্র নির্বাচন</span>
             </div>
             <div className="w-8 h-0.5 bg-gray-300"></div>
-            <div 
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full cursor-pointer transition-all ${
-                madrasahWizardStep === 2 ? 'bg-emerald-500 text-white' : selectedStudent ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-              }`}
+            <div
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full cursor-pointer transition-all ${madrasahWizardStep === 2 ? 'bg-emerald-500 text-white' : selectedStudent ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                }`}
               onClick={() => selectedStudent && setMadrasahWizardStep(2)}
             >
               <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">২</span>
               <span className="text-sm font-medium hidden sm:inline">বেতন আদায়</span>
             </div>
             <div className="w-8 h-0.5 bg-gray-300"></div>
-            <div 
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full ${
-                madrasahWizardStep === 3 ? 'bg-emerald-500 text-white' : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-              }`}
+            <div
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full ${madrasahWizardStep === 3 ? 'bg-emerald-500 text-white' : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                }`}
             >
               <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">৩</span>
               <span className="text-sm font-medium hidden sm:inline">রসিদ প্রিন্ট</span>
@@ -1759,7 +1832,7 @@ const Fees = () => {
               <CardContent className="p-4 sm:p-6">
                 {/* Academic Hierarchy Selector (Madrasah) */}
                 <div className="mb-6">
-                  <AcademicHierarchySelector 
+                  <AcademicHierarchySelector
                     onSelectionChange={handleHierarchyChange}
                     showAllOption={true}
                     layout="horizontal"
@@ -1769,14 +1842,14 @@ const Fees = () => {
                 {/* Simplified Student List */}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-gray-50 px-4 py-3 border-b">
-                    <h4 className="font-medium text-gray-700">ছাত্র তালিকা ({students.filter(s => 
+                    <h4 className="font-medium text-gray-700">ছাত্র তালিকা ({students.filter(s =>
                       (!selectedMarhalaId || s.marhala_id === selectedMarhalaId) &&
                       (!selectedDepartmentId || s.department_id === selectedDepartmentId) &&
                       (!selectedSemesterId || s.semester_id === selectedSemesterId)
                     ).length} জন)</h4>
                   </div>
                   <div className="max-h-96 overflow-y-auto divide-y">
-                    {students.filter(s => 
+                    {students.filter(s =>
                       (!selectedMarhalaId || s.marhala_id === selectedMarhalaId) &&
                       (!selectedDepartmentId || s.department_id === selectedDepartmentId) &&
                       (!selectedSemesterId || s.semester_id === selectedSemesterId)
@@ -1787,7 +1860,7 @@ const Fees = () => {
                         <p className="text-sm">মারহালা, বিভাগ বা সেমিস্টার পরিবর্তন করুন</p>
                       </div>
                     ) : (
-                      students.filter(s => 
+                      students.filter(s =>
                         (!selectedMarhalaId || s.marhala_id === selectedMarhalaId) &&
                         (!selectedDepartmentId || s.department_id === selectedDepartmentId) &&
                         (!selectedSemesterId || s.semester_id === selectedSemesterId)
@@ -1801,11 +1874,10 @@ const Fees = () => {
                         } : null;
                         const hasDue = studentDue && (studentDue.pending_amount > 0 || studentDue.overdue_amount > 0);
                         return (
-                          <div 
-                            key={student.id || student._id} 
-                            className={`flex items-center justify-between p-4 hover:bg-emerald-50 cursor-pointer transition-colors ${
-                              selectedStudent?.id === student.id ? 'bg-emerald-100 border-l-4 border-l-emerald-500' : ''
-                            }`}
+                          <div
+                            key={student.id || student._id}
+                            className={`flex items-center justify-between p-4 hover:bg-emerald-50 cursor-pointer transition-colors ${selectedStudent?.id === student.id ? 'bg-emerald-100 border-l-4 border-l-emerald-500' : ''
+                              }`}
                             onClick={() => setSelectedStudent(student)}
                           >
                             <div className="flex items-center gap-3 flex-1">
@@ -1830,21 +1902,20 @@ const Fees = () => {
                                   )}
                                 </div>
                               )}
-                              <Badge className={`text-sm px-3 py-1 ${
-                                !studentDue ? 'bg-gray-100 text-gray-600' :
+                              <Badge className={`text-sm px-3 py-1 ${!studentDue ? 'bg-gray-100 text-gray-600' :
                                 studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 ? 'bg-green-100 text-green-700' :
-                                studentDue.paid_amount > 0 && hasDue ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
+                                  studentDue.paid_amount > 0 && hasDue ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                }`}>
                                 {!studentDue ? 'তথ্য নেই' :
-                                 studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 ? 'পরিশোধিত' :
-                                 studentDue.paid_amount > 0 && hasDue ? 'আংশিক পরিশোধ' :
-                                 'বকেয়া আছে'}
+                                  studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 ? 'পরিশোধিত' :
+                                    studentDue.paid_amount > 0 && hasDue ? 'আংশিক পরিশোধ' :
+                                      'বকেয়া আছে'}
                               </Badge>
                               {/* Quick Action Buttons */}
                               <div className="flex items-center gap-1">
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   variant="ghost"
                                   className="text-blue-600 hover:bg-blue-50 px-2"
                                   onClick={(e) => {
@@ -1855,8 +1926,8 @@ const Fees = () => {
                                 >
                                   <History className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   variant="ghost"
                                   className="text-purple-600 hover:bg-purple-50 px-2"
                                   onClick={(e) => {
@@ -1864,9 +1935,9 @@ const Fees = () => {
                                     // Download last receipt for this student - check by student_id, _id, or name
                                     const studentId = student.id || student._id;
                                     const studentName = student.name || student.student_name;
-                                    const lastPayment = recentPayments.find(p => 
-                                      p.student_id === studentId || 
-                                      p.studentId === studentId || 
+                                    const lastPayment = recentPayments.find(p =>
+                                      p.student_id === studentId ||
+                                      p.studentId === studentId ||
                                       p.student_name === studentName ||
                                       p.studentName === studentName
                                     );
@@ -1883,15 +1954,14 @@ const Fees = () => {
                                   <Printer className="h-4 w-4" />
                                 </Button>
                               </div>
-                              <Button 
-                                size="lg" 
-                                className={`font-bold px-6 ${
-                                  studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 
-                                    ? 'bg-green-500 hover:bg-green-600 text-white cursor-default' 
-                                    : studentDue && studentDue.paid_amount > 0 && (studentDue.pending_amount > 0 || studentDue.overdue_amount > 0)
+                              <Button
+                                size="lg"
+                                className={`font-bold px-6 ${studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0
+                                  ? 'bg-green-500 hover:bg-green-600 text-white cursor-default'
+                                  : studentDue && studentDue.paid_amount > 0 && (studentDue.pending_amount > 0 || studentDue.overdue_amount > 0)
                                     ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                                     : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                }`}
+                                  }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0) {
@@ -1902,11 +1972,11 @@ const Fees = () => {
                                   setMadrasahWizardStep(2);
                                 }}
                               >
-                                {studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0 
-                                  ? 'পরিশোধিত' 
+                                {studentDue && studentDue.pending_amount === 0 && studentDue.overdue_amount === 0
+                                  ? 'পরিশোধিত'
                                   : studentDue && studentDue.paid_amount > 0 && (studentDue.pending_amount > 0 || studentDue.overdue_amount > 0)
-                                  ? 'আংশিক পরিশোধ'
-                                  : 'বেতন নিন'}
+                                    ? 'আংশিক পরিশোধ'
+                                    : 'বেতন নিন'}
                               </Button>
                             </div>
                           </div>
@@ -1947,7 +2017,55 @@ const Fees = () => {
                   </Avatar>
                   <div>
                     <p className="font-bold text-lg text-gray-900">{selectedStudent.name || selectedStudent.student_name}</p>
-                    <p className="text-gray-600">{getClassName(selectedStudent.class_id)} | রোল: {selectedStudent.roll_no || selectedStudent.roll || '-'}</p>
+                    {(() => {
+                      // Helper to traverse hierarchy for this specific render
+                      const getAcademicInfo = () => {
+                        // If class_id exists (School mode), prioritize that
+                        if (selectedStudent.class_id && !selectedStudent.marhala_id) {
+                          return { fullString: getClassName(selectedStudent.class_id, selectedStudent) };
+                        }
+
+                        // Madrasah Mode: Traverse Hierarchy
+                        let mName = '', dName = '', sName = '';
+
+                        // 1. Marhala
+                        const marhala = marhalas.find(m => m.id === selectedStudent.marhala_id);
+                        if (marhala) {
+                          mName = marhala.name_bn || marhala.name || marhala.name_en;
+                          // 2. Department
+                          if (selectedStudent.department_id && marhala.departments) {
+                            const dept = marhala.departments.find(d => d.id === selectedStudent.department_id);
+                            if (dept) {
+                              dName = dept.name_bn || dept.name || dept.name_en;
+                              // 3. Semester
+                              if (selectedStudent.semester_id && dept.semesters) {
+                                const sem = dept.semesters.find(s => s.id === selectedStudent.semester_id);
+                                if (sem) sName = sem.name_bn || sem.name || sem.name_en;
+                              }
+                            }
+                          }
+                        }
+
+                        // Fallback if hierarchy traversal fails but flattened names exist on student object
+                        if (!mName && selectedStudent.marhala_name) mName = selectedStudent.marhala_name;
+                        if (!dName && selectedStudent.department_name) dName = selectedStudent.department_name;
+                        if (!sName && selectedStudent.semester_name) sName = selectedStudent.semester_name;
+
+                        const parts = [mName, dName, sName].filter(Boolean);
+                        return {
+                          marhala: mName || '-',
+                          department: dName || '-',
+                          semester: sName || '-',
+                          fullString: parts.length > 0 ? parts.join(' | ') : getClassName(selectedStudent.class_id, selectedStudent)
+                        };
+                      };
+
+                      const academicInfo = getAcademicInfo();
+
+                      return (
+                        <p className="text-gray-600">{academicInfo.fullString} | রোল: {selectedStudent.roll_no || selectedStudent.roll || '-'}</p>
+                      );
+                    })()}
                     <p className="text-gray-500 text-sm">ভর্তি নং: {selectedStudent.admission_no || '-'}</p>
                   </div>
                 </div>
@@ -1958,50 +2076,107 @@ const Fees = () => {
                   const studentFeeRecords = dueFees.filter(f => f.student_id === selectedStudent.id);
                   const totalDue = studentFeeRecords.reduce((sum, f) => sum + (f.pending_amount || 0) + (f.overdue_amount || 0), 0);
                   const totalPaid = studentFeeRecords.reduce((sum, f) => sum + (f.paid_amount || 0), 0);
-                  
+
                   const getConfiguredFee = (feeType) => {
+                    // FIRST PRIORITY: Check for student-specific monthly fee config (for Tuition Fees)
+                    if (feeType === 'Tuition Fees' && selectedStudent.monthly_fee_config_id) {
+                      // Search all fee categories for this specific config ID
+                      for (const type in feeConfigurations) {
+                        const specificConfig = feeConfigurations[type].find(c => c.id === selectedStudent.monthly_fee_config_id);
+                        if (specificConfig) return specificConfig;
+                      }
+                    }
+
+                    // SECOND PRIORITY: Fee Category / Type (General / Nofol)
+                    if ((feeType === 'Tuition Fees' || feeType === 'Monthly Fees') && selectedStudent.fee_type_id) {
+                      const category = feeCategories.find(c => c.id === selectedStudent.fee_type_id);
+                      if (category) {
+                        return {
+                          amount: category.amount,
+                          fee_type: feeType,
+                          id: 'category_' + category.id
+                        };
+                      }
+                    }
+
+                    // THIRD PRIORITY: Class-based configuration
                     const configs = feeConfigurations[feeType] || [];
                     const classConfig = configs.find(c => c.apply_to_classes === studentClass || c.applyToClasses === studentClass);
                     const allClassConfig = configs.find(c => c.apply_to_classes === 'all' || c.applyToClasses === 'all');
                     return classConfig || allClassConfig;
                   };
-                  
+
                   const tuitionFee = getConfiguredFee('Tuition Fees');
                   const admissionFee = getConfiguredFee('Admission Fees');
                   const examFee = getConfiguredFee('Exam Fees');
-                  
+
+                  // Re-calculate Academic Info for this scope
+                  const getDetails = () => {
+                    let mName = '-', dName = '-', sName = '-';
+                    const marhala = marhalas.find(m => m.id === selectedStudent.marhala_id);
+                    if (marhala) {
+                      mName = marhala.name_bn || marhala.name || marhala.name_en;
+                      if (selectedStudent.department_id && marhala.departments) {
+                        const dept = marhala.departments.find(d => d.id === selectedStudent.department_id);
+                        if (dept) {
+                          dName = dept.name_bn || dept.name || dept.name_en;
+                          if (selectedStudent.semester_id && dept.semesters) {
+                            const sem = dept.semesters.find(s => s.id === selectedStudent.semester_id);
+                            if (sem) sName = sem.name_bn || sem.name || sem.name_en;
+                          }
+                        }
+                      }
+                    }
+                    // Use previous logic for marhala fallback if still '-'
+                    if (mName === '-') mName = getClassName(selectedStudent.class_id, selectedStudent) || studentClass || '-';
+
+                    return { mName, dName, sName };
+                  };
+                  const { mName, dName, sName } = getDetails();
+
                   return (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <h4 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         ফি বিবরণ (ফি সেটআপ থেকে)
                       </h4>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                         <div className="bg-white p-3 rounded border">
                           <p className="text-gray-500">মাসিক বেতন</p>
                           <p className="font-bold text-gray-800">
-                            {tuitionFee ? `৳${tuitionFee.amount?.toLocaleString()}` : 
+                            {tuitionFee ? `৳${tuitionFee.amount?.toLocaleString()}` :
                               <span className="text-yellow-600 text-xs">ফি সেটআপে নির্ধারণ করুন</span>}
                           </p>
                         </div>
                         <div className="bg-white p-3 rounded border">
                           <p className="text-gray-500">ভর্তি ফি</p>
                           <p className="font-bold text-gray-800">
-                            {admissionFee ? `৳${admissionFee.amount?.toLocaleString()}` : 
+                            {admissionFee ? `৳${admissionFee.amount?.toLocaleString()}` :
                               <span className="text-gray-400 text-xs">প্রযোজ্য নয়</span>}
                           </p>
                         </div>
                         <div className="bg-white p-3 rounded border">
                           <p className="text-gray-500">পরীক্ষা ফি</p>
                           <p className="font-bold text-gray-800">
-                            {examFee ? `৳${examFee.amount?.toLocaleString()}` : 
+                            {examFee ? `৳${examFee.amount?.toLocaleString()}` :
                               <span className="text-gray-400 text-xs">প্রযোজ্য নয়</span>}
                           </p>
                         </div>
+
+                        {/* Improved Academic Info Display */}
                         <div className="bg-white p-3 rounded border">
                           <p className="text-gray-500">মারহালা</p>
-                          <p className="font-bold text-gray-800">{getClassName(selectedStudent.class_id) || studentClass || '-'}</p>
+                          <p className="font-bold text-gray-800">{mName}</p>
                         </div>
+                        <div className="bg-white p-3 rounded border">
+                          <p className="text-gray-500">বিভাগ</p>
+                          <p className="font-bold text-gray-800">{dName}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded border">
+                          <p className="text-gray-500">সেমিস্টার</p>
+                          <p className="font-bold text-gray-800">{sName}</p>
+                        </div>
+
                         <div className="bg-green-50 p-3 rounded border border-green-200">
                           <p className="text-green-600">মোট পরিশোধিত</p>
                           <p className="font-bold text-green-700">৳{totalPaid.toLocaleString()}</p>
@@ -2024,9 +2199,9 @@ const Fees = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-2 block">বেতনের ধরন</label>
-                    <Select 
-                      value={collectionForm.fee_type || 'Tuition Fees'} 
-                      onValueChange={(value) => setCollectionForm({...collectionForm, fee_type: value})}
+                    <Select
+                      value={collectionForm.fee_type || 'Tuition Fees'}
+                      onValueChange={(value) => setCollectionForm({ ...collectionForm, fee_type: value })}
                     >
                       <SelectTrigger className="border-emerald-300 focus:border-emerald-500 h-12">
                         <SelectValue placeholder="ফি ধরন বাছুন" />
@@ -2045,7 +2220,7 @@ const Fees = () => {
                       type="number"
                       placeholder="যেমন: ৫০০"
                       value={collectionForm.amount}
-                      onChange={(e) => setCollectionForm({...collectionForm, amount: e.target.value})}
+                      onChange={(e) => setCollectionForm({ ...collectionForm, amount: e.target.value })}
                       className="h-14 text-xl font-bold text-center border-emerald-300 focus:border-emerald-500"
                     />
                   </div>
@@ -2054,11 +2229,11 @@ const Fees = () => {
                     <Input
                       placeholder="যেমন: ডিসেম্বর মাসের বেতন"
                       value={collectionForm.remarks}
-                      onChange={(e) => setCollectionForm({...collectionForm, remarks: e.target.value})}
+                      onChange={(e) => setCollectionForm({ ...collectionForm, remarks: e.target.value })}
                       className="h-12 border-gray-300"
                     />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full h-14 text-lg font-bold bg-emerald-500 hover:bg-emerald-600"
                     onClick={async () => {
                       if (!collectionForm.amount || parseFloat(collectionForm.amount) <= 0) {
@@ -2125,21 +2300,21 @@ const Fees = () => {
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
                 {/* Professional Receipt Preview - A5/A6 Print Ready */}
-                <div 
-                  className="bg-white border-2 border-gray-400 rounded-lg max-w-lg mx-auto mb-6 shadow-lg print:shadow-none print:border-black" 
+                <div
+                  className="bg-white border-2 border-gray-400 rounded-lg max-w-lg mx-auto mb-6 shadow-lg print:shadow-none print:border-black"
                   id="receipt-print"
                   style={{ fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif" }}
                 >
                   {/* Receipt Header with Institution Branding */}
-                  <div 
+                  <div
                     className="text-center py-4 px-4 border-b-2 border-gray-300"
                     style={{ backgroundColor: schoolBranding.primary_color || '#059669' }}
                   >
                     <div className="flex items-center justify-center gap-3 mb-2">
                       {schoolBranding.logo_url && (
-                        <img 
-                          src={schoolBranding.logo_url} 
-                          alt="Logo" 
+                        <img
+                          src={schoolBranding.logo_url}
+                          alt="Logo"
                           className="h-14 w-14 rounded-full bg-white p-1 object-contain"
                         />
                       )}
@@ -2224,21 +2399,21 @@ const Fees = () => {
                         <div className="flex justify-between">
                           <span className="text-gray-600">বেতন ধরন:</span>
                           <span className="font-medium text-gray-800">
-                            {lastReceipt.fee_type === 'Tuition Fees' ? 'মাসিক বেতন' : 
-                             lastReceipt.fee_type === 'Transport Fees' ? 'পরিবহন ফি' :
-                             lastReceipt.fee_type === 'Admission Fees' ? 'ভর্তি ফি' :
-                             lastReceipt.fee_type || 'মাসিক বেতন'}
+                            {lastReceipt.fee_type === 'Tuition Fees' ? 'মাসিক বেতন' :
+                              lastReceipt.fee_type === 'Transport Fees' ? 'পরিবহন ফি' :
+                                lastReceipt.fee_type === 'Admission Fees' ? 'ভর্তি ফি' :
+                                  lastReceipt.fee_type || 'মাসিক বেতন'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">পরিশোধ পদ্ধতি:</span>
                           <span className="font-medium text-gray-800">
                             {lastReceipt.payment_mode === 'Cash' ? 'নগদ' :
-                             lastReceipt.payment_mode === 'bKash' ? 'বিকাশ' :
-                             lastReceipt.payment_mode === 'Nagad' ? 'নগদ' :
-                             lastReceipt.payment_mode === 'Rocket' ? 'রকেট' :
-                             lastReceipt.payment_mode === 'Bank' ? 'ব্যাংক' :
-                             lastReceipt.payment_mode || 'নগদ'}
+                              lastReceipt.payment_mode === 'bKash' ? 'বিকাশ' :
+                                lastReceipt.payment_mode === 'Nagad' ? 'নগদ' :
+                                  lastReceipt.payment_mode === 'Rocket' ? 'রকেট' :
+                                    lastReceipt.payment_mode === 'Bank' ? 'ব্যাংক' :
+                                      lastReceipt.payment_mode || 'নগদ'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t border-emerald-200">
@@ -2283,7 +2458,7 @@ const Fees = () => {
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-                  <Button 
+                  <Button
                     className="flex-1 h-12 bg-emerald-500 hover:bg-emerald-600 font-bold"
                     onClick={() => {
                       window.print();
@@ -2291,12 +2466,12 @@ const Fees = () => {
                   >
                     🖨️ রসিদ প্রিন্ট করুন
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="flex-1 h-12 font-bold"
                     onClick={() => {
                       setSelectedStudent(null);
-                      setCollectionForm({...collectionForm, amount: '', remarks: ''});
+                      setCollectionForm({ ...collectionForm, amount: '', remarks: '' });
                       setLastReceipt(null);
                       setMadrasahWizardStep(1);
                     }}
@@ -2309,1462 +2484,1503 @@ const Fees = () => {
           )}
         </div>
       ) : (
-      /* ============= STANDARD FEES UI ============= */
-      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
-          <TabsTrigger value="manage" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Manage</TabsTrigger>
-          <TabsTrigger value="student-specific" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Student</TabsTrigger>
-          <TabsTrigger value="due" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Due</TabsTrigger>
-          <TabsTrigger value="select-student" className="text-xs sm:text-sm py-2 px-1 sm:px-3 hidden sm:flex">Select</TabsTrigger>
-          <TabsTrigger value="collection" className="text-xs sm:text-sm py-2 px-1 sm:px-3 hidden sm:flex">Collection</TabsTrigger>
-        </TabsList>
+        /* ============= STANDARD FEES UI ============= */
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
+            <TabsTrigger value="manage" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Manage</TabsTrigger>
+            <TabsTrigger value="student-specific" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Student</TabsTrigger>
+            <TabsTrigger value="due" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Due</TabsTrigger>
+            <TabsTrigger value="select-student" className="text-xs sm:text-sm py-2 px-1 sm:px-3 hidden sm:flex">Select</TabsTrigger>
+            <TabsTrigger value="collection" className="text-xs sm:text-sm py-2 px-1 sm:px-3 hidden sm:flex">Collection</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="manage" className="space-y-4">
-          {/* Fee Section Header */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-500 border-l-4 sm:border-l-8 rounded-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="bg-blue-500 text-white rounded-full p-2 sm:p-3 md:p-4">
-                <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              </div>
-              <div>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-700">
-                  Fee Structure Management
-                </h2>
-                <p className="text-xs sm:text-sm text-blue-600">
-                  Configure fee types, amounts, and payment schedules
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Fee Types Configuration */}
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Fee Types Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                <Card className="border-2 border-dashed border-gray-300 hover:border-emerald-500 transition-colors min-w-0">
-                  <CardContent className="p-4 sm:p-6 text-center">
-                    <DollarSign className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto text-gray-400 mb-2 sm:mb-3" />
-                    <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Tuition Fees</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">Monthly tuition charges</p>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm" onClick={() => handleFeeConfiguration('Tuition Fees')}>Configure</Button>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-2 border-dashed border-gray-300 hover:border-emerald-500 transition-colors min-w-0">
-                  <CardContent className="p-4 sm:p-6 text-center">
-                    <Receipt className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto text-gray-400 mb-2 sm:mb-3" />
-                    <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Transport Fees</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">Bus and transport charges</p>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm" onClick={() => handleFeeConfiguration('Transport Fees')}>Configure</Button>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-2 border-dashed border-gray-300 hover:border-emerald-500 transition-colors min-w-0 sm:col-span-2 lg:col-span-1">
-                  <CardContent className="p-4 sm:p-6 text-center">
-                    <CreditCard className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto text-gray-400 mb-2 sm:mb-3" />
-                    <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Admission Fees</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">One-time admission charges</p>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm" onClick={() => handleFeeConfiguration('Admission Fees')}>Configure</Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Payments Summary for Manage Fees */}
-          {!institutionLoading && (
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
-                Recent Payment Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-                <div className="text-center p-2 sm:p-4 bg-green-50 rounded-lg">
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{paymentsToday}</p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-green-600">Payments Today</p>
+          <TabsContent value="manage" className="space-y-4">
+            {/* Fee Section Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-500 border-l-4 sm:border-l-8 rounded-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-blue-500 text-white rounded-full p-2 sm:p-3 md:p-4">
+                  <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8" />
                 </div>
-                <div className="text-center p-2 sm:p-4 bg-blue-50 rounded-lg">
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
-                    {todaysCollection >= 100000 
-                      ? `${getCurrencySymbol()}${(todaysCollection / 100000).toFixed(2)}L`
-                      : `${getCurrencySymbol()}${todaysCollection.toLocaleString('en-IN')}`
-                    }
+                <div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-700">
+                    Fee Structure Management
+                  </h2>
+                  <p className="text-xs sm:text-sm text-blue-600">
+                    Configure fee types, amounts, and payment schedules
                   </p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-blue-600">Today's Collection</p>
                 </div>
-                <div className="text-center p-2 sm:p-4 bg-orange-50 rounded-lg">
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">{pendingApprovals}</p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-orange-600">Pending</p>
-                </div>
-                <div className="text-center p-2 sm:p-4 bg-purple-50 rounded-lg">
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600">{getCurrencySymbol()}{(monthlyTarget / 100000).toFixed(1)}L</p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-purple-600">Monthly Target</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          )}
-
-          {!institutionLoading && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Management Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Button className="h-20 flex flex-col gap-2 bg-blue-500 hover:bg-blue-600" onClick={handleGenerateReports}>
-                  <FileText className="h-6 w-6" />
-                  <span>Generate Reports</span>
-                </Button>
-                <Button className="h-20 flex flex-col gap-2 bg-emerald-500 hover:bg-emerald-600" onClick={handleBulkPayment}>
-                  <Users className="h-6 w-6" />
-                  <span>Bulk Payment</span>
-                </Button>
-                <Button className="h-20 flex flex-col gap-2 bg-orange-500 hover:bg-orange-600" onClick={handleSendReminders}>
-                  <AlertTriangle className="h-6 w-6" />
-                  <span>Send Reminders</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="student-specific" className="space-y-6">
-          {/* HUGE CLEAR VISUAL INDICATOR FOR STUDENT SPECIFIC TAB */}
-          <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-l-4 sm:border-l-8 border-emerald-500 rounded-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="bg-emerald-500 text-white rounded-full p-2 sm:p-3 md:p-4">
-                <User className="h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-2xl md:text-4xl font-bold text-emerald-700">👨‍🎓 STUDENT SPECIFIC TAB</h1>
-                <h2 className="text-xs sm:text-lg md:text-xl font-bold text-emerald-700">Individual Student Financial Reports</h2>
-                <p className="text-[10px] sm:text-sm md:text-base text-emerald-600">Individual student fee management, payment history, and reports</p>
               </div>
             </div>
-          </div>
-          
-          {/* Student Search & Filter */}
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
-                <Search className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0" />
-                Search & Filter Students
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex flex-col sm:grid sm:grid-cols-4 gap-3 sm:gap-4">
-                <div className="sm:col-span-2 min-w-0">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by admission number or name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 text-xs sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                  <SelectTrigger data-testid="class-select" className="text-xs sm:text-sm h-8 sm:h-10">
-                    <SelectValue placeholder="All Classes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    {classes.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedSection} onValueChange={setSelectedSection}>
-                  <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-10">
-                    <SelectValue placeholder="All Sections" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sections</SelectItem>
-                    <SelectItem value="A">Section A</SelectItem>
-                    <SelectItem value="B">Section B</SelectItem>
-                    <SelectItem value="C">Section C</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6" data-section="student-list-details">
-            {/* Student List */}
-            <div className="lg:col-span-1 min-w-0">
+            {/* Fee Types Configuration */}
+            <Card>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Fee Types Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6">
+
+                {/* Manage Fee Types Button */}
+                <div className="flex justify-end mb-4">
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => window.location.href = '/fee-heads'}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Manage Fee Types
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {/* Default Types */}
+                  {[
+                    { name: 'Tuition Fees', description: 'Monthly tuition charges', icon: DollarSign },
+                    { name: 'Transport Fees', description: 'Bus and transport charges', icon: Receipt },
+                    { name: 'Admission Fees', description: 'One-time admission charges', icon: CreditCard }
+                  ].map((type) => (
+                    <Card key={type.name} className="border-2 border-dashed border-gray-300 hover:border-emerald-500 transition-colors min-w-0">
+                      <CardContent className="p-4 sm:p-6 text-center">
+                        <type.icon className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto text-gray-400 mb-2 sm:mb-3" />
+                        <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">{type.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">{type.description}</p>
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm" onClick={() => handleFeeConfiguration(type.name)}>Configure</Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {/* Dynamic Fee Heads */}
+                  {feeHeads.map((head) => {
+                    // Skip if it matches a default type to avoid duplication
+                    if (['Tuition Fees', 'Transport Fees', 'Admission Fees'].includes(head.name)) return null;
+
+                    return (
+                      <Card key={head.id} className="border-2 border-dashed border-gray-300 hover:border-emerald-500 transition-colors min-w-0">
+                        <CardContent className="p-4 sm:p-6 text-center">
+                          <DollarSign className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto text-gray-400 mb-2 sm:mb-3" />
+                          <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">{head.name_bn || head.name}</h3>
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">{head.description || 'Custom fee type'}</p>
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm" onClick={() => handleFeeConfiguration(head.name)}>Configure</Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Payments Summary for Manage Fees */}
+            {!institutionLoading && (
               <Card>
-                <CardHeader className="p-4">
-                  <CardTitle className="text-xs sm:text-sm font-medium">
-                    Students ({filteredStudents.length})
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                    Recent Payment Activity
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <div className="max-h-64 sm:max-h-96 overflow-y-auto">
-                    {filteredStudents.length === 0 ? (
-                      <div className="p-6 text-center text-gray-500">
-                        <Users className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-gray-300 mb-2 sm:mb-3" />
-                        <p className="text-xs sm:text-sm">No students found</p>
-                      </div>
-                    ) : (
-                      filteredStudents.map((student) => (
-                        <div
-                          key={student.id}
-                          className={`p-3 sm:p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedStudent?.id === student.id ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : ''
-                          }`}
-                          onClick={() => handleStudentSelect(student)}
-                        >
-                          <div className="flex items-center space-x-2 sm:space-x-3">
-                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-                              <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs sm:text-sm">
-                                {student.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-xs sm:text-sm truncate">{student.name}</p>
-                              <p className="text-[10px] sm:text-xs text-gray-500 truncate">{student.admission_no}</p>
-                              <p className="text-[10px] sm:text-xs text-gray-500 truncate">{getClassName(student.class_id)}</p>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                    <div className="text-center p-2 sm:p-4 bg-green-50 rounded-lg">
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{paymentsToday}</p>
+                      <p className="text-[10px] sm:text-xs md:text-sm text-green-600">Payments Today</p>
+                    </div>
+                    <div className="text-center p-2 sm:p-4 bg-blue-50 rounded-lg">
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
+                        {todaysCollection >= 100000
+                          ? `${getCurrencySymbol()}${(todaysCollection / 100000).toFixed(2)}L`
+                          : `${getCurrencySymbol()}${todaysCollection.toLocaleString('en-IN')}`
+                        }
+                      </p>
+                      <p className="text-[10px] sm:text-xs md:text-sm text-blue-600">Today's Collection</p>
+                    </div>
+                    <div className="text-center p-2 sm:p-4 bg-orange-50 rounded-lg">
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">{pendingApprovals}</p>
+                      <p className="text-[10px] sm:text-xs md:text-sm text-orange-600">Pending</p>
+                    </div>
+                    <div className="text-center p-2 sm:p-4 bg-purple-50 rounded-lg">
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600">{getCurrencySymbol()}{(monthlyTarget / 100000).toFixed(1)}L</p>
+                      <p className="text-[10px] sm:text-xs md:text-sm text-purple-600">Monthly Target</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {!institutionLoading && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Management Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Button className="h-20 flex flex-col gap-2 bg-blue-500 hover:bg-blue-600" onClick={handleGenerateReports}>
+                      <FileText className="h-6 w-6" />
+                      <span>Generate Reports</span>
+                    </Button>
+                    <Button className="h-20 flex flex-col gap-2 bg-emerald-500 hover:bg-emerald-600" onClick={handleBulkPayment}>
+                      <Users className="h-6 w-6" />
+                      <span>Bulk Payment</span>
+                    </Button>
+                    <Button className="h-20 flex flex-col gap-2 bg-orange-500 hover:bg-orange-600" onClick={handleSendReminders}>
+                      <AlertTriangle className="h-6 w-6" />
+                      <span>Send Reminders</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="student-specific" className="space-y-6">
+            {/* HUGE CLEAR VISUAL INDICATOR FOR STUDENT SPECIFIC TAB */}
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-l-4 sm:border-l-8 border-emerald-500 rounded-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-emerald-500 text-white rounded-full p-2 sm:p-3 md:p-4">
+                  <User className="h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8" />
+                </div>
+                <div>
+                  <h1 className="text-base sm:text-2xl md:text-4xl font-bold text-emerald-700">👨‍🎓 STUDENT SPECIFIC TAB</h1>
+                  <h2 className="text-xs sm:text-lg md:text-xl font-bold text-emerald-700">Individual Student Financial Reports</h2>
+                  <p className="text-[10px] sm:text-sm md:text-base text-emerald-600">Individual student fee management, payment history, and reports</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Student Search & Filter */}
+            <Card>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0" />
+                  Search & Filter Students
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col sm:grid sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="sm:col-span-2 min-w-0">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by admission number or name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                  <Select value={selectedClass} onValueChange={setSelectedClass}>
+                    <SelectTrigger data-testid="class-select" className="text-xs sm:text-sm h-8 sm:h-10">
+                      <SelectValue placeholder="All Classes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls.id} value={cls.id}>
+                          {cls.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedSection} onValueChange={setSelectedSection}>
+                    <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-10">
+                      <SelectValue placeholder="All Sections" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sections</SelectItem>
+                      <SelectItem value="A">Section A</SelectItem>
+                      <SelectItem value="B">Section B</SelectItem>
+                      <SelectItem value="C">Section C</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6" data-section="student-list-details">
+              {/* Student List */}
+              <div className="lg:col-span-1 min-w-0">
+                <Card>
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-xs sm:text-sm font-medium">
+                      Students ({filteredStudents.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="max-h-64 sm:max-h-96 overflow-y-auto">
+                      {filteredStudents.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500">
+                          <Users className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-gray-300 mb-2 sm:mb-3" />
+                          <p className="text-xs sm:text-sm">No students found</p>
+                        </div>
+                      ) : (
+                        filteredStudents.map((student) => (
+                          <div
+                            key={student.id}
+                            className={`p-3 sm:p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${selectedStudent?.id === student.id ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : ''
+                              }`}
+                            onClick={() => handleStudentSelect(student)}
+                          >
+                            <div className="flex items-center space-x-2 sm:space-x-3">
+                              <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                                <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs sm:text-sm">
+                                  {student.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-xs sm:text-sm truncate">{student.name}</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500 truncate">{student.admission_no}</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500 truncate">{getClassName(student.class_id)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Student Details */}
+              <div className="lg:col-span-2">
+                {!selectedStudent ? (
+                  <Card>
+                    <CardContent className="p-12 text-center">
+                      <User className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Student</h3>
+                      <p className="text-gray-600">Choose a student from the list to view their financial details</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Student Profile Panel */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Student Profile</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-start space-x-4">
+                          <Avatar className="h-16 w-16">
+                            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-lg">
+                              {selectedStudent.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="font-semibold text-lg">{selectedStudent.name}</h3>
+                              <p className="text-sm text-gray-600 mb-2">Admission No: {selectedStudent.admission_no}</p>
+                              <p className="text-sm text-gray-600">{getClassName(selectedStudent.class_id)}, Section {selectedStudent.section_id}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Phone className="h-4 w-4 mr-2" />
+                                {selectedStudent.phone}
+                              </div>
+                              {selectedStudent.email && (
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  {selectedStudent.email}
+                                </div>
+                              )}
+                              <div className="flex items-center text-sm text-gray-600">
+                                <User className="h-4 w-4 mr-2" />
+                                Guardian: {selectedStudent.guardian_name}
+                              </div>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Phone className="h-4 w-4 mr-2" />
+                                {selectedStudent.guardian_phone}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      ))
+                      </CardContent>
+                    </Card>
+
+                    {/* Payment Summary */}
+                    {studentFeesSummary && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                              <PieChart className="h-5 w-5 text-emerald-500" />
+                              Payment Summary
+                            </span>
+                            <span className="text-sm text-gray-500">Academic Year 2024-25</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                              <p className="text-2xl font-bold text-blue-600">{formatCurrency(studentFeesSummary.totalFees)}</p>
+                              <p className="text-sm text-blue-600">Total Fees</p>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                              <p className="text-2xl font-bold text-green-600">{formatCurrency(studentFeesSummary.paidAmount)}</p>
+                              <p className="text-sm text-green-600">Paid Amount</p>
+                            </div>
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                              <p className="text-2xl font-bold text-yellow-600">{formatCurrency(studentFeesSummary.pendingFees)}</p>
+                              <p className="text-sm text-yellow-600">Pending Fees</p>
+                            </div>
+                            <div className="text-center p-4 bg-red-50 rounded-lg">
+                              <p className="text-2xl font-bold text-red-600">{formatCurrency(studentFeesSummary.overdueFees)}</p>
+                              <p className="text-sm text-red-600">Overdue Fees</p>
+                            </div>
+                          </div>
+
+                          {/* Payment Progress Bar */}
+                          <div className="mt-6">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">Payment Progress</span>
+                              <span className="text-sm text-gray-500">
+                                {((studentFeesSummary.paidAmount / (studentFeesSummary.totalFees || 1)) * 100).toFixed(1)}% Complete
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-3">
+                              <div
+                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-in-out"
+                                style={{
+                                  width: `${Math.min(((studentFeesSummary.paidAmount / (studentFeesSummary.totalFees || 1)) * 100), 100)}%`
+                                }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-between mt-1 text-xs text-gray-500">
+                              <span>{formatCurrency(studentFeesSummary.paidAmount)} Paid</span>
+                              <span>{formatCurrency(studentFeesSummary.totalFees)} Total</span>
+                            </div>
+                          </div>
+
+                          {studentFeesSummary.lastPaymentDate && (
+                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                              <p className="text-sm text-gray-600">
+                                Last Payment: <span className="font-medium">{new Date(studentFeesSummary.lastPaymentDate).toLocaleDateString()}</span>
+                              </p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     )}
+
+                    {/* Quick Actions */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Quick Actions</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-3">
+                          <Button
+                            onClick={handleCollectPayment}
+                            className="bg-emerald-500 hover:bg-emerald-600"
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Collect Payment
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => exportStudentReport(selectedStudent)}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export Report
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleViewAllReceipts(selectedStudent)}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            View All Receipts
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleContactGuardian(selectedStudent)}
+                          >
+                            <Phone className="h-4 w-4 mr-2" />
+                            Contact Guardian
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Payment History */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Receipt className="h-5 w-5 text-emerald-500" />
+                          Payment History
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-3">
+                          <Button className="bg-emerald-500 hover:bg-emerald-600">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Collect Payment
+                          </Button>
+                          <Button variant="outline">
+                            <Download className="h-4 w-4 mr-2" />
+                            Export Report
+                          </Button>
+                          <Button variant="outline">
+                            <Receipt className="h-4 w-4 mr-2" />
+                            View Receipts
+                          </Button>
+                          <Button variant="outline">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Fee Statement
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Payment History Table */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <Receipt className="h-5 w-5 text-emerald-500" />
+                            Payment History
+                          </span>
+                          <Badge variant="secondary">{studentPayments.length} records</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Receipt No.</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Fee Type</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Payment Mode</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Due Date</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {studentPayments.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                                    No payment records found
+                                  </TableCell>
+                                </TableRow>
+                              ) : (
+                                studentPayments.map((payment) => (
+                                  <TableRow key={payment.id} className={payment.status === 'Overdue' ? 'bg-red-50' : ''}>
+                                    <TableCell className="font-medium">
+                                      {payment.receiptNo}
+                                    </TableCell>
+                                    <TableCell>
+                                      {payment.date ? new Date(payment.date).toLocaleDateString() : '-'}
+                                    </TableCell>
+                                    <TableCell>{payment.feeType}</TableCell>
+                                    <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
+                                    <TableCell>{payment.paymentMode || '-'}</TableCell>
+                                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                                    <TableCell className={payment.status === 'Overdue' ? 'text-red-600 font-medium' : ''}>
+                                      {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString() : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center space-x-2">
+                                        {payment.status === 'Paid' && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDownloadReceipt(payment.receiptNo)}
+                                            title="Download Receipt"
+                                          >
+                                            <Download className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                        {(payment.status === 'Pending' || payment.status === 'Overdue') && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-emerald-600"
+                                            onClick={() => handleStudentPayNow(payment)}
+                                            title="Collect Payment"
+                                          >
+                                            <CreditCard className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Pending & Overdue Fees */}
+                    {studentPayments.some(p => p.status === 'Pending' || p.status === 'Overdue') && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-orange-500" />
+                            Outstanding Payments
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {studentPayments
+                              .filter(p => p.status === 'Pending' || p.status === 'Overdue')
+                              .map((payment) => (
+                                <div
+                                  key={payment.id}
+                                  className={`p-4 rounded-lg border-l-4 ${payment.status === 'Overdue'
+                                    ? 'bg-red-50 border-l-red-500'
+                                    : 'bg-yellow-50 border-l-yellow-500'
+                                    }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-medium">{payment.feeType}</p>
+                                      <p className="text-sm text-gray-600">
+                                        Due: {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString() : 'No due date'}
+                                        {payment.status === 'Overdue' && (
+                                          <span className="ml-2 text-red-600 font-medium">
+                                            (Overdue by {Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 60 * 60 * 24))} days)
+                                          </span>
+                                        )}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="font-bold text-lg">{formatCurrency(payment.amount)}</p>
+                                      <Button
+                                        size="sm"
+                                        className={payment.status === 'Overdue' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}
+                                        onClick={() => handleStudentPayNow(payment)}
+                                      >
+                                        Pay Now
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="due" className="space-y-6">
+            {/* HUGE CLEAR VISUAL INDICATOR FOR FEE DUE TAB */}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-8 border-red-500 rounded-lg p-8 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-500 text-white rounded-full p-4">
+                  <AlertTriangle className="h-8 w-8" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-red-700">⚠️ FEE DUE TAB</h1>
+                  <h2 className="text-xl font-bold text-red-700">Pending & Overdue Fee Management</h2>
+                  <p className="text-red-600">Track and collect pending fees, send reminders, manage overdue accounts</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Cards - Dynamic Data from Backend */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Pending Fees</p>
+                      <p className="text-2xl font-bold text-orange-600">{formatCurrency(pending)}</p>
+                      <p className="text-xs text-orange-500">{dueFees.filter(f => f.status === 'pending').length} students</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Overdue Fees</p>
+                      <p className="text-2xl font-bold text-red-600">{formatCurrency(overdue)}</p>
+                      <p className="text-xs text-red-500">{dueFees.filter(f => f.status === 'overdue').length} students</p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-red-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Due Students</p>
+                      <p className="text-2xl font-bold text-yellow-600">{dueFees.length}</p>
+                      <p className="text-xs text-yellow-500">Total: {formatCurrency(pending + overdue)}</p>
+                    </div>
+                    <Calendar className="h-8 w-8 text-yellow-500" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Student Details */}
-            <div className="lg:col-span-2">
-              {!selectedStudent ? (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <User className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Student</h3>
-                    <p className="text-gray-600">Choose a student from the list to view their financial details</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-6">
-                  {/* Student Profile Panel */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Student Profile</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-16 w-16">
-                          <AvatarFallback className="bg-emerald-100 text-emerald-700 text-lg">
-                            {selectedStudent.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="font-semibold text-lg">{selectedStudent.name}</h3>
-                            <p className="text-sm text-gray-600 mb-2">Admission No: {selectedStudent.admission_no}</p>
-                            <p className="text-sm text-gray-600">{getClassName(selectedStudent.class_id)}, Section {selectedStudent.section_id}</p>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Phone className="h-4 w-4 mr-2" />
-                              {selectedStudent.phone}
-                            </div>
-                            {selectedStudent.email && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Mail className="h-4 w-4 mr-2" />
-                                {selectedStudent.email}
-                              </div>
-                            )}
-                            <div className="flex items-center text-sm text-gray-600">
-                              <User className="h-4 w-4 mr-2" />
-                              Guardian: {selectedStudent.guardian_name}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Phone className="h-4 w-4 mr-2" />
-                              {selectedStudent.guardian_phone}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Payment Summary */}
-                  {studentFeesSummary && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <PieChart className="h-5 w-5 text-emerald-500" />
-                            Payment Summary
-                          </span>
-                          <span className="text-sm text-gray-500">Academic Year 2024-25</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="text-center p-4 bg-blue-50 rounded-lg">
-                            <p className="text-2xl font-bold text-blue-600">{formatCurrency(studentFeesSummary.totalFees)}</p>
-                            <p className="text-sm text-blue-600">Total Fees</p>
-                          </div>
-                          <div className="text-center p-4 bg-green-50 rounded-lg">
-                            <p className="text-2xl font-bold text-green-600">{formatCurrency(studentFeesSummary.paidAmount)}</p>
-                            <p className="text-sm text-green-600">Paid Amount</p>
-                          </div>
-                          <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                            <p className="text-2xl font-bold text-yellow-600">{formatCurrency(studentFeesSummary.pendingFees)}</p>
-                            <p className="text-sm text-yellow-600">Pending Fees</p>
-                          </div>
-                          <div className="text-center p-4 bg-red-50 rounded-lg">
-                            <p className="text-2xl font-bold text-red-600">{formatCurrency(studentFeesSummary.overdueFees)}</p>
-                            <p className="text-sm text-red-600">Overdue Fees</p>
-                          </div>
-                        </div>
-                        
-                        {/* Payment Progress Bar */}
-                        <div className="mt-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">Payment Progress</span>
-                            <span className="text-sm text-gray-500">
-                              {((studentFeesSummary.paidAmount / (studentFeesSummary.totalFees || 1)) * 100).toFixed(1)}% Complete
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-3">
-                            <div
-                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-in-out"
-                              style={{ 
-                                width: `${Math.min(((studentFeesSummary.paidAmount / (studentFeesSummary.totalFees || 1)) * 100), 100)}%` 
-                              }}
-                            ></div>
-                          </div>
-                          <div className="flex justify-between mt-1 text-xs text-gray-500">
-                            <span>{formatCurrency(studentFeesSummary.paidAmount)} Paid</span>
-                            <span>{formatCurrency(studentFeesSummary.totalFees)} Total</span>
-                          </div>
-                        </div>
-                        
-                        {studentFeesSummary.lastPaymentDate && (
-                          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-600">
-                              Last Payment: <span className="font-medium">{new Date(studentFeesSummary.lastPaymentDate).toLocaleDateString()}</span>
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Quick Actions */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-3">
-                        <Button 
-                          onClick={handleCollectPayment}
-                          className="bg-emerald-500 hover:bg-emerald-600"
-                        >
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Collect Payment
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => exportStudentReport(selectedStudent)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Export Report
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => handleViewAllReceipts(selectedStudent)}
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          View All Receipts
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => handleContactGuardian(selectedStudent)}
-                        >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Contact Guardian
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Payment History */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Receipt className="h-5 w-5 text-emerald-500" />
-                        Payment History
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-3">
-                        <Button className="bg-emerald-500 hover:bg-emerald-600">
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Collect Payment
-                        </Button>
-                        <Button variant="outline">
-                          <Download className="h-4 w-4 mr-2" />
-                          Export Report
-                        </Button>
-                        <Button variant="outline">
-                          <Receipt className="h-4 w-4 mr-2" />
-                          View Receipts
-                        </Button>
-                        <Button variant="outline">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Fee Statement
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Payment History Table */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <Receipt className="h-5 w-5 text-emerald-500" />
-                          Payment History
-                        </span>
-                        <Badge variant="secondary">{studentPayments.length} records</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Receipt No.</TableHead>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Fee Type</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Payment Mode</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Due Date</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {studentPayments.length === 0 ? (
-                              <TableRow>
-                                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                                  No payment records found
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              studentPayments.map((payment) => (
-                                <TableRow key={payment.id} className={payment.status === 'Overdue' ? 'bg-red-50' : ''}>
-                                  <TableCell className="font-medium">
-                                    {payment.receiptNo}
-                                  </TableCell>
-                                  <TableCell>
-                                    {payment.date ? new Date(payment.date).toLocaleDateString() : '-'}
-                                  </TableCell>
-                                  <TableCell>{payment.feeType}</TableCell>
-                                  <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
-                                  <TableCell>{payment.paymentMode || '-'}</TableCell>
-                                  <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                                  <TableCell className={payment.status === 'Overdue' ? 'text-red-600 font-medium' : ''}>
-                                    {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString() : '-'}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center space-x-2">
-                                      {payment.status === 'Paid' && (
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm"
-                                          onClick={() => handleDownloadReceipt(payment.receiptNo)}
-                                          title="Download Receipt"
-                                        >
-                                          <Download className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                      {(payment.status === 'Pending' || payment.status === 'Overdue') && (
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="text-emerald-600"
-                                          onClick={() => handleStudentPayNow(payment)}
-                                          title="Collect Payment"
-                                        >
-                                          <CreditCard className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                            )}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Pending & Overdue Fees */}
-                  {studentPayments.some(p => p.status === 'Pending' || p.status === 'Overdue') && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <AlertTriangle className="h-5 w-5 text-orange-500" />
-                          Outstanding Payments
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {studentPayments
-                            .filter(p => p.status === 'Pending' || p.status === 'Overdue')
-                            .map((payment) => (
-                              <div 
-                                key={payment.id} 
-                                className={`p-4 rounded-lg border-l-4 ${
-                                  payment.status === 'Overdue' 
-                                    ? 'bg-red-50 border-l-red-500' 
-                                    : 'bg-yellow-50 border-l-yellow-500'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="font-medium">{payment.feeType}</p>
-                                    <p className="text-sm text-gray-600">
-                                      Due: {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString() : 'No due date'}
-                                      {payment.status === 'Overdue' && (
-                                        <span className="ml-2 text-red-600 font-medium">
-                                          (Overdue by {Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 60 * 60 * 24))} days)
-                                        </span>
-                                      )}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-bold text-lg">{formatCurrency(payment.amount)}</p>
-                                    <Button 
-                                      size="sm" 
-                                      className={payment.status === 'Overdue' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}
-                                      onClick={() => handleStudentPayNow(payment)}
-                                    >
-                                      Pay Now
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="due" className="space-y-6">
-          {/* HUGE CLEAR VISUAL INDICATOR FOR FEE DUE TAB */}
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-8 border-red-500 rounded-lg p-8 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-red-500 text-white rounded-full p-4">
-                <AlertTriangle className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-red-700">⚠️ FEE DUE TAB</h1>
-                <h2 className="text-xl font-bold text-red-700">Pending & Overdue Fee Management</h2>
-                <p className="text-red-600">Track and collect pending fees, send reminders, manage overdue accounts</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Summary Cards - Dynamic Data from Backend */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Fee Due List */}
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending Fees</p>
-                    <p className="text-2xl font-bold text-orange-600">{formatCurrency(pending)}</p>
-                    <p className="text-xs text-orange-500">{dueFees.filter(f => f.status === 'pending').length} students</p>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                    Outstanding Payments
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleExportReport('excel', 'overdue_students')}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export List
+                    </Button>
+                    <Button className="bg-orange-500 hover:bg-orange-600" size="sm" onClick={handleSendReminders}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Reminders
+                    </Button>
                   </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Overdue Fees</p>
-                    <p className="text-2xl font-bold text-red-600">{formatCurrency(overdue)}</p>
-                    <p className="text-xs text-red-500">{dueFees.filter(f => f.status === 'overdue').length} students</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-red-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Due Students</p>
-                    <p className="text-2xl font-bold text-yellow-600">{dueFees.length}</p>
-                    <p className="text-xs text-yellow-500">Total: {formatCurrency(pending + overdue)}</p>
-                  </div>
-                  <Calendar className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Fee Due List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
-                  Outstanding Payments
-                </span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleExportReport('excel', 'overdue_students')}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export List
-                  </Button>
-                  <Button className="bg-orange-500 hover:bg-orange-600" size="sm" onClick={handleSendReminders}>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Reminders
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Admission No</TableHead>
-                      <TableHead>Class</TableHead>
-                      <TableHead>Fee Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Days Overdue</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dueFees.length > 0 ? (
-                      dueFees
-                        .sort((a, b) => b.days_overdue - a.days_overdue)
-                        .map((fee, index) => (
-                          <TableRow 
-                            key={fee.id || index} 
-                            className={fee.days_overdue > 7 ? 'bg-red-50' : fee.days_overdue > 0 ? 'bg-yellow-50' : ''}
-                          >
-                            <TableCell className="font-medium">{fee.student_name}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{fee.admission_no}</Badge>
-                            </TableCell>
-                            <TableCell>{getClassName(fee.class_id) || 'Unknown'}</TableCell>
-                            <TableCell>{fee.fee_type}</TableCell>
-                            <TableCell className="font-medium">{formatCurrency(fee.total_due)}</TableCell>
-                            <TableCell>
-                              {fee.due_date ? new Date(fee.due_date).toLocaleDateString() : 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={
-                                fee.days_overdue > 7 ? 'bg-red-100 text-red-800' :
-                                fee.days_overdue > 0 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-green-100 text-green-800'
-                              }>
-                                {fee.days_overdue > 0 ? `${fee.days_overdue} days` : 'On time'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Button 
-                                  size="sm" 
-                                  className="bg-emerald-500 hover:bg-emerald-600" 
-                                  onClick={() => handleStudentCollectPayment({
-                                    id: fee.student_id,
-                                    name: fee.student_name,
-                                    admission_no: fee.admission_no,
-                                    pending_amount: fee.total_due,
-                                    class_id: fee.class_id,
-                                    section_id: fee.section_id
-                                  })}
-                                >
-                                  <CreditCard className="h-4 w-4 mr-1" />
-                                  Collect
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => handleContactGuardian({
-                                    name: fee.student_name,
-                                    admission: fee.admission_no
-                                  })}
-                                >
-                                  <Phone className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                          <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                          <p>No outstanding payments found</p>
-                          <p className="text-sm">All students are up to date with their fees!</p>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="select-student" className="space-y-6">
-          {/* HUGE CLEAR VISUAL INDICATOR FOR SELECT STUDENT TAB */}
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-l-8 border-purple-500 rounded-lg p-8 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-purple-500 text-white rounded-full p-4">
-                <Users className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-purple-700">👥 SELECT STUDENT TAB</h1>
-                <h2 className="text-xl font-bold text-purple-700">Student Selection & Quick Actions</h2>
-                <p className="text-purple-600">Quick student lookup with fee collection and profile access</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Search */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="h-5 w-5 text-purple-500" />
-                Quick Student Search
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by admission number, name, or phone..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Button 
-                  className="bg-purple-500 hover:bg-purple-600"
-                  onClick={() => {
-                    toast.success('🔍 Advanced Search', {
-                      description: 'Use the Class and Section filters above to refine your search results.',
-                      duration: 4000
-                    });
-                    // Focus on class selector
-                    const classSelector = document.querySelector('[data-testid="class-select"]');
-                    if (classSelector) classSelector.focus();
-                  }}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Advanced Search
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Student Grid with Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Student for Fee Operations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredStudents.slice(0, 9).map((student) => (
-                  <Card key={student.id} className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-200 group">
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarFallback className="bg-purple-100 text-purple-700 group-hover:bg-purple-200">
-                            {student.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{student.name}</h3>
-                          <p className="text-sm text-gray-500">{student.admission_no}</p>
-                          <p className="text-xs text-gray-500">{getClassName(student.class_id)}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Quick Fee Status */}
-                      <div className="space-y-2 mb-4">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">Pending:</span>
-                          <span className="text-orange-600 font-medium">{getCurrencySymbol()}12,500</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">Overdue:</span>
-                          <span className="text-red-600 font-medium">{getCurrencySymbol()}3,200</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{width: '65%'}}></div>
-                        </div>
-                        <p className="text-xs text-gray-500 text-center">65% fees paid</p>
-                      </div>
-
-                      {/* Quick Actions */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button 
-                          size="sm" 
-                          className="bg-purple-500 hover:bg-purple-600 text-xs"
-                          onClick={() => {
-                            // Set selected student and show details in toast for grid view
-                            setSelectedStudent(student);
-                            fetchStudentFinancials(student.id);
-                            toast.success(`👤 ${student.name}`, {
-                              description: `Viewing details for ${student.name} (${student.admission_no}) - ${getClassName(student.class_id)}`,
-                              duration: 4000
-                            });
-                            // Scroll to the list view section to show details
-                            const studentListSection = document.querySelector('[data-section="student-list-details"]');
-                            if (studentListSection) {
-                              studentListSection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }}
-                        >
-                          <User className="h-3 w-3 mr-1" />
-                          View Details
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-xs"
-                          onClick={() => handleStudentCollectPayment(student)}
-                        >
-                          <CreditCard className="h-3 w-3 mr-1" />
-                          Collect Fee
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              {filteredStudents.length === 0 && (
-                <div className="text-center py-12">
-                  <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
-                  <p className="text-gray-600">Try adjusting your search criteria</p>
-                </div>
-              )}
-
-              {filteredStudents.length > 9 && (
-                <div className="text-center mt-6">
-                  <Button 
-                    variant="outline" 
-                    className="border-purple-200 text-purple-600 hover:bg-purple-50"
-                    onClick={() => {
-                      toast.info(`👥 All Students`, {
-                        description: `Showing first 9 of ${filteredStudents.length} students. Use search filters to refine results.`,
-                        duration: 4000
-                      });
-                    }}
-                  >
-                    View All {filteredStudents.length} Students
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="collection" className="space-y-6">
-          {/* Header - Different for Madrasah Simple UI */}
-          <div className={`bg-gradient-to-r ${isMadrasahSimpleUI ? 'from-emerald-50 to-green-50 border-emerald-500' : 'from-green-50 to-emerald-50 border-green-500'} border-l-8 rounded-lg p-6 sm:p-8 mb-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${isMadrasahSimpleUI ? 'bg-emerald-500' : 'bg-green-500'} text-white rounded-full p-3 sm:p-4`}>
-                <CreditCard className="h-6 w-6 sm:h-8 sm:w-8" />
-              </div>
-              <div>
-                <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${isMadrasahSimpleUI ? 'text-emerald-700' : 'text-green-700'}`}>
-                  {isMadrasahSimpleUI ? '💰 বেতন আদায়' : '💳 FEE COLLECTION TAB'}
-                </h1>
-                <p className={`text-sm sm:text-base ${isMadrasahSimpleUI ? 'text-emerald-600' : 'text-green-600'}`}>
-                  {isMadrasahSimpleUI ? 'মারহালা → শাখা → ছাত্র নির্বাচন → বেতন আদায়' : 'Process payments, generate receipts, and track daily collections'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Analytics Stats - HIDE for Madrasah Simple UI */}
-          {!isMadrasahSimpleUI && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Today's Collection</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {getCurrencySymbol()}{collectionStats.todaysCollection ? (collectionStats.todaysCollection/1000).toFixed(0) + 'K' : '0'}
-                    </p>
-                    <p className="text-xs text-green-500">{collectionStats.transactions || 0} payments today</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-blue-500">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Transactions</p>
-                    <p className="text-2xl font-bold text-blue-600">{collectionStats.transactions || 0}</p>
-                    <p className="text-xs text-blue-500">payments processed</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-purple-500">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Avg Payment</p>
-                    <p className="text-2xl font-bold text-purple-600">
-                      {formatCurrency(collectionStats.avgPayment || 0)}
-                    </p>
-                    <p className="text-xs text-purple-500">per transaction</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-orange-500">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Cash Balance</p>
-                    <p className="text-2xl font-bold text-orange-600">
-                      {formatCurrency(collectionStats.cashBalance || 0)}
-                    </p>
-                    <p className="text-xs text-orange-500">to be deposited</p>
-                  </div>
-                  <Receipt className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          )}
-
-          {/* Madrasah Simple UI - Class/Section Flow */}
-          {isMadrasahSimpleUI ? (
-            <Card className="border-2 border-emerald-200">
-              <CardHeader className="bg-emerald-50">
-                <CardTitle className="flex items-center gap-2 text-emerald-700">
-                  <Users className="h-5 w-5" />
-                  ছাত্র নির্বাচন ও বেতন আদায়
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                {/* Step 1: Academic Hierarchy Selection */}
-                <div className="mb-6">
-                  <AcademicHierarchySelector
-                    onSelectionChange={(selection) => {
-                      setSelectedClass(selection.semester_id || selection.marhala_id || 'all');
-                      setSelectedSection('all');
-                      setSelectedStudent(null);
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Admission No</TableHead>
+                        <TableHead>Class</TableHead>
+                        <TableHead>Fee Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Days Overdue</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dueFees.length > 0 ? (
+                        dueFees
+                          .sort((a, b) => b.days_overdue - a.days_overdue)
+                          .map((fee, index) => (
+                            <TableRow
+                              key={fee.id || index}
+                              className={fee.days_overdue > 7 ? 'bg-red-50' : fee.days_overdue > 0 ? 'bg-yellow-50' : ''}
+                            >
+                              <TableCell className="font-medium">{fee.student_name}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{fee.admission_no}</Badge>
+                              </TableCell>
+                              <TableCell>{getClassName(fee.class_id) || 'Unknown'}</TableCell>
+                              <TableCell>{fee.fee_type}</TableCell>
+                              <TableCell className="font-medium">{formatCurrency(fee.total_due)}</TableCell>
+                              <TableCell>
+                                {fee.due_date ? new Date(fee.due_date).toLocaleDateString() : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={
+                                  fee.days_overdue > 7 ? 'bg-red-100 text-red-800' :
+                                    fee.days_overdue > 0 ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-green-100 text-green-800'
+                                }>
+                                  {fee.days_overdue > 0 ? `${fee.days_overdue} days` : 'On time'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-emerald-500 hover:bg-emerald-600"
+                                    onClick={() => handleStudentCollectPayment({
+                                      id: fee.student_id,
+                                      name: fee.student_name,
+                                      admission_no: fee.admission_no,
+                                      pending_amount: fee.total_due,
+                                      class_id: fee.class_id,
+                                      section_id: fee.section_id
+                                    })}
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-1" />
+                                    Collect
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleContactGuardian({
+                                      name: fee.student_name,
+                                      admission: fee.admission_no
+                                    })}
+                                  >
+                                    <Phone className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                            <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                            <p>No outstanding payments found</p>
+                            <p className="text-sm">All students are up to date with their fees!</p>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="select-student" className="space-y-6">
+            {/* HUGE CLEAR VISUAL INDICATOR FOR SELECT STUDENT TAB */}
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-l-8 border-purple-500 rounded-lg p-8 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-500 text-white rounded-full p-4">
+                  <Users className="h-8 w-8" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-purple-700">👥 SELECT STUDENT TAB</h1>
+                  <h2 className="text-xl font-bold text-purple-700">Student Selection & Quick Actions</h2>
+                  <p className="text-purple-600">Quick student lookup with fee collection and profile access</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Search */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-purple-500" />
+                  Quick Student Search
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by admission number, name, or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    className="bg-purple-500 hover:bg-purple-600"
+                    onClick={() => {
+                      toast.success('🔍 Advanced Search', {
+                        description: 'Use the Class and Section filters above to refine your search results.',
+                        duration: 4000
+                      });
+                      // Focus on class selector
+                      const classSelector = document.querySelector('[data-testid="class-select"]');
+                      if (classSelector) classSelector.focus();
                     }}
-                    showAllOption={true}
-                    layout="horizontal"
-                  />
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Advanced Search
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Grid with Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Student for Fee Operations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredStudents.slice(0, 9).map((student) => (
+                    <Card key={student.id} className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-200 group">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarFallback className="bg-purple-100 text-purple-700 group-hover:bg-purple-200">
+                              {student.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900">{student.name}</h3>
+                            <p className="text-sm text-gray-500">{student.admission_no}</p>
+                            <p className="text-xs text-gray-500">{getClassName(student.class_id)}</p>
+                          </div>
+                        </div>
+
+                        {/* Quick Fee Status */}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">Pending:</span>
+                            <span className="text-orange-600 font-medium">{getCurrencySymbol()}12,500</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600">Overdue:</span>
+                            <span className="text-red-600 font-medium">{getCurrencySymbol()}3,200</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-green-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+                          </div>
+                          <p className="text-xs text-gray-500 text-center">65% fees paid</p>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-purple-500 hover:bg-purple-600 text-xs"
+                            onClick={() => {
+                              // Set selected student and show details in toast for grid view
+                              setSelectedStudent(student);
+                              fetchStudentFinancials(student.id);
+                              toast.success(`👤 ${student.name}`, {
+                                description: `Viewing details for ${student.name} (${student.admission_no}) - ${getClassName(student.class_id)}`,
+                                duration: 4000
+                              });
+                              // Scroll to the list view section to show details
+                              const studentListSection = document.querySelector('[data-section="student-list-details"]');
+                              if (studentListSection) {
+                                studentListSection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }}
+                          >
+                            <User className="h-3 w-3 mr-1" />
+                            View Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                            onClick={() => handleStudentCollectPayment(student)}
+                          >
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            Collect Fee
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
 
-                {/* Step 2: Student List with Paid/Due Status */}
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-3 border-b">
-                    <h4 className="font-medium text-gray-700">ছাত্র তালিকা ({students.filter(s => 
-                      (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass) &&
-                      (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection)
-                    ).length} জন)</h4>
+                {filteredStudents.length === 0 && (
+                  <div className="text-center py-12">
+                    <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
+                    <p className="text-gray-600">Try adjusting your search criteria</p>
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {students.filter(s => 
-                      (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass) &&
-                      (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection)
-                    ).map((student) => (
-                      <div 
-                        key={student.id || student._id} 
-                        className={`flex items-center justify-between p-4 border-b hover:bg-emerald-50 cursor-pointer transition-colors ${selectedStudent?.id === student.id ? 'bg-emerald-100 border-l-4 border-l-emerald-500' : ''}`}
-                        onClick={() => setSelectedStudent(student)}
-                      >
+                )}
+
+                {filteredStudents.length > 9 && (
+                  <div className="text-center mt-6">
+                    <Button
+                      variant="outline"
+                      className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                      onClick={() => {
+                        toast.info(`👥 All Students`, {
+                          description: `Showing first 9 of ${filteredStudents.length} students. Use search filters to refine results.`,
+                          duration: 4000
+                        });
+                      }}
+                    >
+                      View All {filteredStudents.length} Students
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="collection" className="space-y-6">
+            {/* Header - Different for Madrasah Simple UI */}
+            <div className={`bg-gradient-to-r ${isMadrasahSimpleUI ? 'from-emerald-50 to-green-50 border-emerald-500' : 'from-green-50 to-emerald-50 border-green-500'} border-l-8 rounded-lg p-6 sm:p-8 mb-6`}>
+              <div className="flex items-center gap-3">
+                <div className={`${isMadrasahSimpleUI ? 'bg-emerald-500' : 'bg-green-500'} text-white rounded-full p-3 sm:p-4`}>
+                  <CreditCard className="h-6 w-6 sm:h-8 sm:w-8" />
+                </div>
+                <div>
+                  <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${isMadrasahSimpleUI ? 'text-emerald-700' : 'text-green-700'}`}>
+                    {isMadrasahSimpleUI ? '💰 বেতন আদায়' : '💳 FEE COLLECTION TAB'}
+                  </h1>
+                  <p className={`text-sm sm:text-base ${isMadrasahSimpleUI ? 'text-emerald-600' : 'text-green-600'}`}>
+                    {isMadrasahSimpleUI ? 'মারহালা → শাখা → ছাত্র নির্বাচন → বেতন আদায়' : 'Process payments, generate receipts, and track daily collections'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Analytics Stats - HIDE for Madrasah Simple UI */}
+            {!isMadrasahSimpleUI && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="border-l-4 border-l-green-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Today's Collection</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {getCurrencySymbol()}{collectionStats.todaysCollection ? (collectionStats.todaysCollection / 1000).toFixed(0) + 'K' : '0'}
+                        </p>
+                        <p className="text-xs text-green-500">{collectionStats.transactions || 0} payments today</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Transactions</p>
+                        <p className="text-2xl font-bold text-blue-600">{collectionStats.transactions || 0}</p>
+                        <p className="text-xs text-blue-500">payments processed</p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-blue-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Avg Payment</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {formatCurrency(collectionStats.avgPayment || 0)}
+                        </p>
+                        <p className="text-xs text-purple-500">per transaction</p>
+                      </div>
+                      <DollarSign className="h-8 w-8 text-purple-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-orange-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Cash Balance</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {formatCurrency(collectionStats.cashBalance || 0)}
+                        </p>
+                        <p className="text-xs text-orange-500">to be deposited</p>
+                      </div>
+                      <Receipt className="h-8 w-8 text-orange-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Madrasah Simple UI - Class/Section Flow */}
+            {isMadrasahSimpleUI ? (
+              <Card className="border-2 border-emerald-200">
+                <CardHeader className="bg-emerald-50">
+                  <CardTitle className="flex items-center gap-2 text-emerald-700">
+                    <Users className="h-5 w-5" />
+                    ছাত্র নির্বাচন ও বেতন আদায়
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  {/* Step 1: Academic Hierarchy Selection */}
+                  <div className="mb-6">
+                    <AcademicHierarchySelector
+                      onSelectionChange={(selection) => {
+                        setSelectedClass(selection.semester_id || selection.marhala_id || 'all');
+                        setSelectedSection('all');
+                        setSelectedStudent(null);
+                      }}
+                      showAllOption={true}
+                      layout="horizontal"
+                    />
+                  </div>
+
+                  {/* Step 2: Student List with Paid/Due Status */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-3 border-b">
+                      <h4 className="font-medium text-gray-700">ছাত্র তালিকা ({students.filter(s =>
+                        (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass) &&
+                        (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection)
+                      ).length} জন)</h4>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {students.filter(s =>
+                        (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass) &&
+                        (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection)
+                      ).map((student) => (
+                        <div
+                          key={student.id || student._id}
+                          className={`flex items-center justify-between p-4 border-b hover:bg-emerald-50 cursor-pointer transition-colors ${selectedStudent?.id === student.id ? 'bg-emerald-100 border-l-4 border-l-emerald-500' : ''}`}
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            // Auto-select Tuition Fees for simple UI to trigger auto-fill
+                            setCollectionForm(prev => ({ ...prev, fee_type: 'Tuition Fees' }));
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                                {(student.name || student.student_name || 'S').charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-gray-900">{student.name || student.student_name}</p>
+                              <p className="text-xs text-gray-500">{student.class || student.class_name} - {student.section || student.section_name} | রোল: {student.roll_no || student.roll || '-'}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className={student.fee_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {student.fee_status === 'paid' ? 'পরিশোধিত' : 'বাকি'}
+                            </Badge>
+                            {student.due_amount > 0 && (
+                              <p className="text-sm font-bold text-red-600 mt-1">{formatCurrency(student.due_amount)}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {students.filter(s =>
+                        (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass) &&
+                        (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection)
+                      ).length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                            <p>কোন ছাত্র পাওয়া যায়নি</p>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+
+                  {/* Step 3: Quick Collect - Selected Student */}
+                  {selectedStudent && (
+                    <div className="mt-6 p-4 bg-emerald-50 rounded-lg border-2 border-emerald-300">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                              {(student.name || student.student_name || 'S').charAt(0)}
+                          <Avatar className="h-12 w-12">
+                            <AvatarFallback className="bg-emerald-200 text-emerald-800 text-lg">
+                              {(selectedStudent.name || selectedStudent.student_name || 'S').charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-gray-900">{student.name || student.student_name}</p>
-                            <p className="text-xs text-gray-500">{student.class || student.class_name} - {student.section || student.section_name} | রোল: {student.roll_no || student.roll || '-'}</p>
+                            <p className="font-bold text-lg text-gray-900">{selectedStudent.name || selectedStudent.student_name}</p>
+                            <p className="text-sm text-gray-600">{getClassName(selectedStudent.class_id, selectedStudent)} - {selectedStudent.section || selectedStudent.section_name}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <Badge className={student.fee_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {student.fee_status === 'paid' ? 'পরিশোধিত' : 'বাকি'}
-                          </Badge>
-                          {student.due_amount > 0 && (
-                            <p className="text-sm font-bold text-red-600 mt-1">{formatCurrency(student.due_amount)}</p>
+                          <p className="text-sm text-gray-600">মাসিক বেতন</p>
+                          <Input
+                            type="number"
+                            placeholder="টাকার পরিমাণ"
+                            className="w-32 text-right font-bold"
+                            value={collectionForm.amount}
+                            onChange={(e) => setCollectionForm(prev => ({ ...prev, amount: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <Select
+                          value={collectionForm.payment_mode || 'Cash'}
+                          onValueChange={(value) => setCollectionForm(prev => ({ ...prev, payment_mode: value }))}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="পেমেন্ট মোড" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Cash">নগদ</SelectItem>
+                            <SelectItem value="bKash">বিকাশ</SelectItem>
+                            <SelectItem value="Nagad">নগদ (ডিজিটাল)</SelectItem>
+                            <SelectItem value="Bank">ব্যাংক</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          className="bg-emerald-500 hover:bg-emerald-600 px-8"
+                          disabled={loading || !collectionForm.amount || parseFloat(collectionForm.amount) <= 0}
+                          onClick={async () => {
+                            const paymentData = {
+                              student_id: selectedStudent.id || selectedStudent._id,
+                              fee_type: 'Monthly Fee',
+                              amount: parseFloat(collectionForm.amount),
+                              payment_mode: collectionForm.payment_mode || 'Cash',
+                              remarks: 'মাসিক বেতন আদায়'
+                            };
+                            const success = await submitPayment(paymentData);
+                            if (success) {
+                              setSelectedStudent(null);
+                              setCollectionForm(prev => ({ ...prev, amount: '', payment_mode: 'Cash' }));
+                              toast.success('✅ বেতন আদায় সফল!');
+                            }
+                          }}
+                        >
+                          {loading ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : (
+                            <>
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              বেতন আদায় করুন
+                            </>
                           )}
-                        </div>
+                        </Button>
                       </div>
-                    ))}
-                    {students.filter(s => 
-                      (selectedClass === 'all' || s.class === selectedClass || s.class_name === selectedClass) &&
-                      (selectedSection === 'all' || s.section === selectedSection || s.section_name === selectedSection)
-                    ).length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                        <p>কোন ছাত্র পাওয়া যায়নি</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-green-500" />
+                    Fee Collection Form
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Student Information *</label>
+                        <Select value={collectionForm.student_id} onValueChange={(value) => {
+                          setCollectionForm(prev => ({ ...prev, student_id: value }));
+                          updateReceiptPreview({ ...collectionForm, student_id: value });
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select or search student..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {students.map((student) => (
+                              <SelectItem key={student.id} value={student.id}>
+                                {student.name} - {student.admission_no}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Step 3: Quick Collect - Selected Student */}
-                {selectedStudent && (
-                  <div className="mt-6 p-4 bg-emerald-50 rounded-lg border-2 border-emerald-300">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarFallback className="bg-emerald-200 text-emerald-800 text-lg">
-                            {(selectedStudent.name || selectedStudent.student_name || 'S').charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-bold text-lg text-gray-900">{selectedStudent.name || selectedStudent.student_name}</p>
-                          <p className="text-sm text-gray-600">{selectedStudent.class || selectedStudent.class_name} - {selectedStudent.section || selectedStudent.section_name}</p>
-                        </div>
+                      <div>
+                        <label className="text-sm font-medium">Fee Type *</label>
+                        <Select value={collectionForm.fee_type} onValueChange={(value) => {
+                          setCollectionForm(prev => ({ ...prev, fee_type: value }));
+                          updateReceiptPreview({ ...collectionForm, fee_type: value });
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select fee type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {/* Merged Defaults + Dynamic Heads */}
+                            {[
+                              'Tuition Fees',
+                              'Transport Fees',
+                              'Admission Fees',
+                              'Exam Fees',
+                              'Library Fees',
+                              'Lab Fees',
+                              'Other'
+                            ].map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+
+                            {/* Dynamic Heads (avoiding duplicates) */}
+                            {feeHeads.map(head => {
+                              const defaultTypes = [
+                                'Tuition Fees', 'Transport Fees', 'Admission Fees',
+                                'Exam Fees', 'Library Fees', 'Lab Fees', 'Other',
+                                'Tuition Fee', 'Transport Fee', 'Admission Fee' // Handle potential variations
+                              ];
+                              if (defaultTypes.includes(head.name)) return null;
+
+                              return (
+                                <SelectItem key={head.id} value={head.name}>
+                                  {head.name_bn || head.name}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">মাসিক বেতন</p>
+
+                      <div>
+                        <label className="text-sm font-medium">Amount *</label>
                         <Input
                           type="number"
-                          placeholder="টাকার পরিমাণ"
-                          className="w-32 text-right font-bold"
+                          placeholder="Enter amount"
+                          min="1"
                           value={collectionForm.amount}
-                          onChange={(e) => setCollectionForm(prev => ({ ...prev, amount: e.target.value }))}
+                          onChange={(e) => {
+                            setCollectionForm(prev => ({ ...prev, amount: e.target.value }));
+                            updateReceiptPreview({ ...collectionForm, amount: e.target.value });
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Payment Mode *</label>
+                        <Select value={collectionForm.payment_mode} onValueChange={(value) => {
+                          setCollectionForm(prev => ({ ...prev, payment_mode: value }));
+                          updateReceiptPreview({ ...collectionForm, payment_mode: value });
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Cash">Cash</SelectItem>
+                            <SelectItem value="Debit/Credit Card">Debit/Credit Card</SelectItem>
+                            <SelectItem value="UPI">UPI</SelectItem>
+                            <SelectItem value="Net Banking">Net Banking</SelectItem>
+                            <SelectItem value="Cheque">Cheque</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Transaction ID</label>
+                        <Input
+                          placeholder="Enter transaction ID (optional)"
+                          value={collectionForm.transaction_id}
+                          onChange={(e) => setCollectionForm(prev => ({ ...prev, transaction_id: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Remarks</label>
+                        <Input
+                          placeholder="Additional notes (optional)"
+                          value={collectionForm.remarks}
+                          onChange={(e) => setCollectionForm(prev => ({ ...prev, remarks: e.target.value }))}
                         />
                       </div>
                     </div>
-                    <div className="flex gap-3">
-                      <Select 
-                        value={collectionForm.payment_mode || 'Cash'} 
-                        onValueChange={(value) => setCollectionForm(prev => ({ ...prev, payment_mode: value }))}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="পেমেন্ট মোড" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Cash">নগদ</SelectItem>
-                          <SelectItem value="bKash">বিকাশ</SelectItem>
-                          <SelectItem value="Nagad">নগদ (ডিজিটাল)</SelectItem>
-                          <SelectItem value="Bank">ব্যাংক</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        className="bg-emerald-500 hover:bg-emerald-600 px-8"
-                        disabled={loading || !collectionForm.amount || parseFloat(collectionForm.amount) <= 0}
-                        onClick={async () => {
-                          const paymentData = {
-                            student_id: selectedStudent.id || selectedStudent._id,
-                            fee_type: 'Monthly Fee',
-                            amount: parseFloat(collectionForm.amount),
-                            payment_mode: collectionForm.payment_mode || 'Cash',
-                            remarks: 'মাসিক বেতন আদায়'
-                          };
-                          const success = await submitPayment(paymentData);
-                          if (success) {
-                            setSelectedStudent(null);
-                            setCollectionForm(prev => ({ ...prev, amount: '', payment_mode: 'Cash' }));
-                            toast.success('✅ বেতন আদায় সফল!');
-                          }
-                        }}
-                      >
-                        {loading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                        ) : (
-                          <>
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            বেতন আদায় করুন
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-green-500" />
-                Fee Collection Form
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Student Information *</label>
-                    <Select value={collectionForm.student_id} onValueChange={(value) => {
-                      setCollectionForm(prev => ({ ...prev, student_id: value }));
-                      updateReceiptPreview({ ...collectionForm, student_id: value });
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select or search student..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {students.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name} - {student.admission_no}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Fee Type *</label>
-                    <Select value={collectionForm.fee_type} onValueChange={(value) => {
-                      setCollectionForm(prev => ({ ...prev, fee_type: value }));
-                      updateReceiptPreview({ ...collectionForm, fee_type: value });
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select fee type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Tuition Fee">Tuition Fee</SelectItem>
-                        <SelectItem value="Transport Fee">Transport Fee</SelectItem>
-                        <SelectItem value="Lab Fee">Lab Fee</SelectItem>
-                        <SelectItem value="Library Fee">Library Fee</SelectItem>
-                        <SelectItem value="Exam Fee">Exam Fee</SelectItem>
-                        <SelectItem value="Annual Fee">Annual Fee</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Amount *</label>
-                    <Input
-                      type="number"
-                      placeholder="Enter amount"
-                      min="1"
-                      value={collectionForm.amount}
-                      onChange={(e) => {
-                        setCollectionForm(prev => ({ ...prev, amount: e.target.value }));
-                        updateReceiptPreview({ ...collectionForm, amount: e.target.value });
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Payment Mode *</label>
-                    <Select value={collectionForm.payment_mode} onValueChange={(value) => {
-                      setCollectionForm(prev => ({ ...prev, payment_mode: value }));
-                      updateReceiptPreview({ ...collectionForm, payment_mode: value });
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Debit/Credit Card">Debit/Credit Card</SelectItem>
-                        <SelectItem value="UPI">UPI</SelectItem>
-                        <SelectItem value="Net Banking">Net Banking</SelectItem>
-                        <SelectItem value="Cheque">Cheque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Transaction ID</label>
-                    <Input
-                      placeholder="Enter transaction ID (optional)"
-                      value={collectionForm.transaction_id}
-                      onChange={(e) => setCollectionForm(prev => ({ ...prev, transaction_id: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Remarks</label>
-                    <Input
-                      placeholder="Additional notes (optional)"
-                      value={collectionForm.remarks}
-                      onChange={(e) => setCollectionForm(prev => ({ ...prev, remarks: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Receipt Preview</label>
-                    {receiptPreview ? (
-                      <div className="border border-green-200 bg-green-50 rounded-lg p-4">
-                        <div className="text-center mb-4">
-                          <Receipt className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                          <p className="font-bold text-green-800">Receipt #{receiptPreview.receiptNo}</p>
-                          <p className="text-xs text-green-600">{receiptPreview.date} • {receiptPreview.time}</p>
-                        </div>
-                        {receiptPreview.student && (
-                          <div className="space-y-1 text-sm">
-                            <p><strong>Student:</strong> {receiptPreview.student.name}</p>
-                            <p><strong>Admission:</strong> {receiptPreview.student.admission_no}</p>
-                            <p><strong>Class:</strong> {receiptPreview.student.class}</p>
-                            <p><strong>Fee Type:</strong> {receiptPreview.fee_type}</p>
-                            <p><strong>Amount:</strong> {formatCurrency(receiptPreview.amount)}</p>
-                            {receiptPreview.payment_mode && (
-                              <p><strong>Payment Mode:</strong> {receiptPreview.payment_mode}</p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Receipt Preview</label>
+                        {receiptPreview ? (
+                          <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+                            <div className="text-center mb-4">
+                              <Receipt className="h-8 w-8 mx-auto text-green-600 mb-2" />
+                              <p className="font-bold text-green-800">Receipt #{receiptPreview.receiptNo}</p>
+                              <p className="text-xs text-green-600">{receiptPreview.date} • {receiptPreview.time}</p>
+                            </div>
+                            {receiptPreview.student && (
+                              <div className="space-y-1 text-sm">
+                                <p><strong>Student:</strong> {receiptPreview.student.name}</p>
+                                <p><strong>Admission:</strong> {receiptPreview.student.admission_no}</p>
+                                <p><strong>Class:</strong> {receiptPreview.student.class}</p>
+                                <p><strong>Fee Type:</strong> {receiptPreview.fee_type}</p>
+                                <p><strong>Amount:</strong> {formatCurrency(receiptPreview.amount)}</p>
+                                {receiptPreview.payment_mode && (
+                                  <p><strong>Payment Mode:</strong> {receiptPreview.payment_mode}</p>
+                                )}
+                              </div>
                             )}
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <Receipt className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                            <p className="text-sm text-gray-500">Receipt will be generated after payment</p>
+                            <p className="text-xs text-gray-400 mt-2">Fill form to preview receipt</p>
                           </div>
                         )}
                       </div>
+
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 className="font-medium text-green-800 mb-2">Quick Actions</h4>
+                        <div className="space-y-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-green-700 border-green-300"
+                            onClick={() => {
+                              if (!collectionForm.student_id) {
+                                toast.error('⚠️ Select Student First', {
+                                  description: 'Please select a student to view their profile.',
+                                  duration: 3000
+                                });
+                                return;
+                              }
+                              const student = students.find(s => s.id === collectionForm.student_id);
+                              setSelectedStudent(student);
+                              fetchStudentFinancials(student.id);
+                              handleTabChange('student-specific');
+                              toast.success(`👤 ${student.name}`, {
+                                description: `Viewing profile for ${student.name} - switched to Student Specific tab.`,
+                                duration: 4000
+                              });
+                            }}
+                          >
+                            <User className="h-4 w-4 mr-2" />
+                            View Student Profile
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-green-700 border-green-300"
+                            onClick={() => {
+                              if (!collectionForm.student_id) {
+                                toast.error('⚠️ Select Student First', {
+                                  description: 'Please select a student to view their payment history.',
+                                  duration: 3000
+                                });
+                                return;
+                              }
+                              const student = students.find(s => s.id === collectionForm.student_id);
+                              setSelectedStudent(student);
+                              fetchStudentFinancials(student.id);
+                              handleTabChange('student-specific');
+                              toast.success(`📄 Payment History`, {
+                                description: `Viewing payment history for ${student.name} - switched to Student Specific tab.`,
+                                duration: 4000
+                              });
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Payment History
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-green-700 border-green-300"
+                            onClick={() => {
+                              if (!collectionForm.student_id) {
+                                toast.error('⚠️ Select Student First', {
+                                  description: 'Please select a student to contact their parent.',
+                                  duration: 3000
+                                });
+                                return;
+                              }
+                              const student = students.find(s => s.id === collectionForm.student_id);
+                              handleContactGuardian(student);
+                            }}
+                          >
+                            <Phone className="h-4 w-4 mr-2" />
+                            Contact Parent
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCollectionForm({
+                          student_id: '',
+                          fee_type: '',
+                          amount: '',
+                          payment_mode: '',
+                          transaction_id: '',
+                          remarks: ''
+                        });
+                        setReceiptPreview(null);
+                        toast.info('Form cleared');
+                      }}
+                    >
+                      Clear Form
+                    </Button>
+                    <Button
+                      className="bg-green-500 hover:bg-green-600"
+                      disabled={loading || !collectionForm.student_id || !collectionForm.fee_type || !collectionForm.amount || !collectionForm.payment_mode}
+                      onClick={async () => {
+                        if (!collectionForm.student_id) {
+                          toast.error('Please select a student');
+                          return;
+                        }
+                        if (!collectionForm.fee_type) {
+                          toast.error('Please select a fee type');
+                          return;
+                        }
+                        if (!collectionForm.amount || parseFloat(collectionForm.amount) <= 0) {
+                          toast.error('Please enter a valid amount');
+                          return;
+                        }
+                        if (!collectionForm.payment_mode) {
+                          toast.error('Please select a payment mode');
+                          return;
+                        }
+
+                        const paymentData = {
+                          student_id: collectionForm.student_id,
+                          fee_type: collectionForm.fee_type,
+                          amount: parseFloat(collectionForm.amount),
+                          payment_mode: collectionForm.payment_mode,
+                          transaction_id: collectionForm.transaction_id || null,
+                          remarks: collectionForm.remarks || null
+                        };
+
+                        const success = await submitPayment(paymentData);
+
+                        // Only clear form after successful payment
+                        if (success) {
+                          setCollectionForm({
+                            student_id: '',
+                            fee_type: '',
+                            amount: '',
+                            payment_mode: '',
+                            transaction_id: '',
+                            remarks: ''
+                          });
+                          setReceiptPreview(null);
+                        }
+                      }}
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Process Payment & Generate Receipt
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recent Collections - Hide for Madrasah Simple UI */}
+            {!isMadrasahSimpleUI && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-green-500" />
+                      Recent Collections Today
+                    </span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      Last updated: {new Date().toLocaleTimeString()}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {recentPayments.length > 0 ? (
+                      recentPayments.slice(0, 10).map((payment, index) => (
+                        <div key={payment.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-green-100 text-green-700 rounded-full p-2">
+                              <CheckCircle className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{payment.student_name}</p>
+                              <p className="text-xs text-gray-500">{payment.time} • {payment.payment_mode}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-green-600">{formatCurrency(payment.amount)}</p>
+                            <p className="text-xs text-gray-500">{payment.receipt_no}</p>
+                          </div>
+                        </div>
+                      ))
                     ) : (
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <Receipt className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                        <p className="text-sm text-gray-500">Receipt will be generated after payment</p>
-                        <p className="text-xs text-gray-400 mt-2">Fill form to preview receipt</p>
+                      <div className="text-center py-8 text-gray-500">
+                        <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                        <p>No recent payments today</p>
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-medium text-green-800 mb-2">Quick Actions</h4>
-                    <div className="space-y-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="w-full text-green-700 border-green-300"
-                        onClick={() => {
-                          if (!collectionForm.student_id) {
-                            toast.error('⚠️ Select Student First', {
-                              description: 'Please select a student to view their profile.',
-                              duration: 3000
-                            });
-                            return;
-                          }
-                          const student = students.find(s => s.id === collectionForm.student_id);
-                          setSelectedStudent(student);
-                          fetchStudentFinancials(student.id);
-                          handleTabChange('student-specific');
-                          toast.success(`👤 ${student.name}`, {
-                            description: `Viewing profile for ${student.name} - switched to Student Specific tab.`,
-                            duration: 4000
-                          });
-                        }}
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        View Student Profile
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="w-full text-green-700 border-green-300"
-                        onClick={() => {
-                          if (!collectionForm.student_id) {
-                            toast.error('⚠️ Select Student First', {
-                              description: 'Please select a student to view their payment history.',
-                              duration: 3000
-                            });
-                            return;
-                          }
-                          const student = students.find(s => s.id === collectionForm.student_id);
-                          setSelectedStudent(student);
-                          fetchStudentFinancials(student.id);
-                          handleTabChange('student-specific');
-                          toast.success(`📄 Payment History`, {
-                            description: `Viewing payment history for ${student.name} - switched to Student Specific tab.`,
-                            duration: 4000
-                          });
-                        }}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Payment History
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="w-full text-green-700 border-green-300"
-                        onClick={() => {
-                          if (!collectionForm.student_id) {
-                            toast.error('⚠️ Select Student First', {
-                              description: 'Please select a student to contact their parent.',
-                              duration: 3000
-                            });
-                            return;
-                          }
-                          const student = students.find(s => s.id === collectionForm.student_id);
-                          handleContactGuardian(student);
-                        }}
-                      >
-                        <Phone className="h-4 w-4 mr-2" />
-                        Contact Parent
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setCollectionForm({
-                      student_id: '',
-                      fee_type: '',
-                      amount: '',
-                      payment_mode: '',
-                      transaction_id: '',
-                      remarks: ''
-                    });
-                    setReceiptPreview(null);
-                    toast.info('Form cleared');
-                  }}
-                >
-                  Clear Form
-                </Button>
-                <Button 
-                  className="bg-green-500 hover:bg-green-600"
-                  disabled={loading || !collectionForm.student_id || !collectionForm.fee_type || !collectionForm.amount || !collectionForm.payment_mode}
-                  onClick={async () => {
-                    if (!collectionForm.student_id) {
-                      toast.error('Please select a student');
-                      return;
-                    }
-                    if (!collectionForm.fee_type) {
-                      toast.error('Please select a fee type');
-                      return;
-                    }
-                    if (!collectionForm.amount || parseFloat(collectionForm.amount) <= 0) {
-                      toast.error('Please enter a valid amount');
-                      return;
-                    }
-                    if (!collectionForm.payment_mode) {
-                      toast.error('Please select a payment mode');
-                      return;
-                    }
-                    
-                    const paymentData = {
-                      student_id: collectionForm.student_id,
-                      fee_type: collectionForm.fee_type,
-                      amount: parseFloat(collectionForm.amount),
-                      payment_mode: collectionForm.payment_mode,
-                      transaction_id: collectionForm.transaction_id || null,
-                      remarks: collectionForm.remarks || null
-                    };
-                    
-                    const success = await submitPayment(paymentData);
-                    
-                    // Only clear form after successful payment
-                    if (success) {
-                      setCollectionForm({
-                        student_id: '',
-                        fee_type: '',
-                        amount: '',
-                        payment_mode: '',
-                        transaction_id: '',
-                        remarks: ''
-                      });
-                      setReceiptPreview(null);
-                    }
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Process Payment & Generate Receipt
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          )}
-
-          {/* Recent Collections - Hide for Madrasah Simple UI */}
-          {!isMadrasahSimpleUI && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-green-500" />
-                  Recent Collections Today
-                </span>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  Last updated: {new Date().toLocaleTimeString()}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentPayments.length > 0 ? (
-                  recentPayments.slice(0, 10).map((payment, index) => (
-                    <div key={payment.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-green-100 text-green-700 rounded-full p-2">
-                          <CheckCircle className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{payment.student_name}</p>
-                          <p className="text-xs text-gray-500">{payment.time} • {payment.payment_mode}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-600">{formatCurrency(payment.amount)}</p>
-                        <p className="text-xs text-gray-500">{payment.receipt_no}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p>No recent payments today</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          )}
-        </TabsContent>
-
-      </Tabs>
+        </Tabs>
       )}
 
       {/* Payment Collection Modal */}
@@ -3779,11 +3995,12 @@ const Fees = () => {
               Select student and enter payment details
             </DialogDescription>
           </DialogHeader>
-          
-          <PaymentForm 
+
+          <PaymentForm
             students={students}
             classes={classes}
             feeConfigurations={feeConfigurations}
+            feeHeads={feeHeads}
             onSubmit={submitPayment}
             onCancel={() => setShowPaymentModal(false)}
             loading={loading}
@@ -3793,7 +4010,7 @@ const Fees = () => {
 
       {/* CSV Export Modal */}
       {showExportOptions && (
-        <CSVExportModal 
+        <CSVExportModal
           onClose={() => setShowExportOptions(false)}
           onExport={handleExportCSV}
         />
@@ -3811,7 +4028,7 @@ const Fees = () => {
               Manage fee structures, amounts, and payment schedules for {currentFeeType}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Fee Configuration Options */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -3822,9 +4039,9 @@ const Fees = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Amount ({getCurrencySymbol()})</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Enter amount" 
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
                       value={configForm.amount}
                       onChange={(e) => setConfigForm(prev => ({ ...prev, amount: e.target.value }))}
                     />
@@ -3846,8 +4063,8 @@ const Fees = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Due Date</label>
-                    <Input 
-                      type="date" 
+                    <Input
+                      type="date"
                       value={configForm.dueDate}
                       onChange={(e) => setConfigForm(prev => ({ ...prev, dueDate: e.target.value }))}
                     />
@@ -3878,18 +4095,18 @@ const Fees = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Late Fee</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Late fee amount" 
+                    <Input
+                      type="number"
+                      placeholder="Late fee amount"
                       value={configForm.lateFee}
                       onChange={(e) => setConfigForm(prev => ({ ...prev, lateFee: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Discount</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Discount percentage" 
+                    <Input
+                      type="number"
+                      placeholder="Discount percentage"
                       value={configForm.discount}
                       onChange={(e) => setConfigForm(prev => ({ ...prev, discount: e.target.value }))}
                     />
@@ -3924,7 +4141,7 @@ const Fees = () => {
                             const classObj = classes.find(c => c.id === config.apply_to_classes);
                             className = classObj ? `${classObj.name} (${classObj.standard})` : config.apply_to_classes;
                           }
-                          
+
                           return (
                             <tr key={config.id || index} className="border-b">
                               <td className="p-3">{className}</td>
@@ -3932,16 +4149,16 @@ const Fees = () => {
                               <td className="p-3">{config.frequency}</td>
                               <td className="p-3">{config.due_date}</td>
                               <td className="p-3">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   className="mr-2"
                                   onClick={() => handleEditConfig(config)}
                                 >
                                   Edit
                                 </Button>
-                                <Button 
-                                  variant="destructive" 
+                                <Button
+                                  variant="destructive"
                                   size="sm"
                                   onClick={() => handleDeleteConfig(config)}
                                 >
@@ -3986,7 +4203,7 @@ const Fees = () => {
               Are you sure you want to delete this fee configuration? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          
+
           {configToDelete && (
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm space-y-1">
@@ -4001,16 +4218,16 @@ const Fees = () => {
               </div>
             </div>
           )}
-          
+
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowDeleteConfirmModal(false)}
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => deleteFeeConfiguration(configToDelete?.id)}
             >
               Delete Configuration
@@ -4031,7 +4248,7 @@ const Fees = () => {
               Generate comprehensive fee reports with filters and export options
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Report Type Selection */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -4183,7 +4400,7 @@ const Fees = () => {
               Collect fees from multiple students simultaneously
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Student Selection */}
             <Card>
@@ -4195,7 +4412,7 @@ const Fees = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Filter by Class</label>
-                      <Select value={bulkPaymentFilters.class} onValueChange={(value) => setBulkPaymentFilters(prev => ({...prev, class: value}))}>
+                      <Select value={bulkPaymentFilters.class} onValueChange={(value) => setBulkPaymentFilters(prev => ({ ...prev, class: value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select class" />
                         </SelectTrigger>
@@ -4209,7 +4426,7 @@ const Fees = () => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Fee Type</label>
-                      <Select value={bulkPaymentFilters.feeType} onValueChange={(value) => setBulkPaymentFilters(prev => ({...prev, feeType: value}))}>
+                      <Select value={bulkPaymentFilters.feeType} onValueChange={(value) => setBulkPaymentFilters(prev => ({ ...prev, feeType: value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select fee type" />
                         </SelectTrigger>
@@ -4235,7 +4452,7 @@ const Fees = () => {
                       </Select>
                     </div>
                   </div>
-                  
+
                   {/* Student Selection List */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -4244,17 +4461,17 @@ const Fees = () => {
                         {selectedStudents.length === getEligibleStudentsForBulkPayment().length ? 'Deselect All' : 'Select All'}
                       </Button>
                     </div>
-                    
+
                     <div className="max-h-64 overflow-y-auto border rounded-lg">
                       {getEligibleStudentsForBulkPayment().map((student) => {
                         const isSelected = selectedStudents.find(s => s.id === student.id);
                         return (
-                          <div key={student.id} 
-                               className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${isSelected ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : ''}`}
-                               onClick={() => toggleStudentSelection(student)}>
+                          <div key={student.id}
+                            className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${isSelected ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : ''}`}
+                            onClick={() => toggleStudentSelection(student)}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
-                                <input type="checkbox" checked={!!isSelected} onChange={() => {}} className="rounded" />
+                                <input type="checkbox" checked={!!isSelected} onChange={() => { }} className="rounded" />
                                 <div>
                                   <p className="font-medium text-sm">{student.name}</p>
                                   <p className="text-xs text-gray-500">{student.admission_no} • {getClassName(student.class_id)}</p>
@@ -4270,7 +4487,7 @@ const Fees = () => {
                       })}
                     </div>
                   </div>
-                  
+
                   {/* Payment Summary */}
                   {selectedStudents.length > 0 && (
                     <Card className="bg-emerald-50 border-emerald-200">
@@ -4304,8 +4521,8 @@ const Fees = () => {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setShowBulkPaymentModal(false)}>Cancel</Button>
-            <Button 
-              className="bg-emerald-500 hover:bg-emerald-600" 
+            <Button
+              className="bg-emerald-500 hover:bg-emerald-600"
               onClick={() => submitBulkPayment({
                 fee_type: bulkPaymentFilters.feeType,
                 payment_mode: 'Cash',
@@ -4319,227 +4536,227 @@ const Fees = () => {
         </DialogContent>
       </Dialog>
 
-          {/* Send Reminders Modal */}
-          <Dialog open={showSendRemindersModal} onOpenChange={setShowSendRemindersModal}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
-                  Send Fee Reminders
-                </DialogTitle>
-                <DialogDescription>
-                  Send automated reminders to students with pending or overdue fee payments
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Reminder Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Reminder Type</label>
-                        <Select defaultValue="both">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select reminder type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="email">Email Only</SelectItem>
-                            <SelectItem value="sms">SMS Only</SelectItem>
-                            <SelectItem value="both">Email + SMS</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Fee Status Filter</label>
-                        <Select defaultValue="all">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Pending</SelectItem>
-                            <SelectItem value="pending">Pending Only</SelectItem>
-                            <SelectItem value="overdue">Overdue Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <h4 className="font-medium text-orange-800 mb-2">Reminder Preview</h4>
-                      <div className="text-sm text-orange-700">
-                        <p><strong>Subject:</strong> Fee Payment Reminder - School ERP</p>
-                        <p><strong>Message:</strong> Dear Student/Parent, this is a reminder about pending fee payments. Please make the payment at your earliest convenience.</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+      {/* Send Reminders Modal */}
+      <Dialog open={showSendRemindersModal} onOpenChange={setShowSendRemindersModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Send Fee Reminders
+            </DialogTitle>
+            <DialogDescription>
+              Send automated reminders to students with pending or overdue fee payments
+            </DialogDescription>
+          </DialogHeader>
 
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setShowSendRemindersModal(false)}>Cancel</Button>
-                <Button 
-                  className="bg-orange-500 hover:bg-orange-600" 
-                  onClick={() => submitSendReminders({})}
-                  disabled={loading}
-                >
-                  {loading ? 'Sending...' : 'Send Reminders'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Detailed Payment Modal */}
-          <Dialog open={showDetailedPaymentModal} onOpenChange={setShowDetailedPaymentModal}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-xl">
-                  <FileText className="h-6 w-6 text-emerald-500" />
-                  বিস্তারিত পেমেন্ট তথ্য
-                </DialogTitle>
-                <DialogDescription>
-                  {detailedPaymentData?.student?.name} - {detailedPaymentData?.student?.class}
-                </DialogDescription>
-              </DialogHeader>
-
-              {detailedPaymentData && (
-                <div className="space-y-6">
-                  {/* Student Info */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarFallback className="bg-emerald-100 text-emerald-700 text-2xl font-bold">
-                          {(detailedPaymentData.student?.name || 'ছ').charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">{detailedPaymentData.student?.name}</h3>
-                        <p className="text-sm text-gray-600">রোল: {detailedPaymentData.student?.roll || '-'} | ভর্তি নং: {detailedPaymentData.student?.admission_no || '-'}</p>
-                        <p className="text-sm text-gray-600">মারহালা: {detailedPaymentData.student?.class}</p>
-                      </div>
-                    </div>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Reminder Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Reminder Type</label>
+                    <Select defaultValue="both">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reminder type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="email">Email Only</SelectItem>
+                        <SelectItem value="sms">SMS Only</SelectItem>
+                        <SelectItem value="both">Email + SMS</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                      <p className="text-sm text-blue-600 mb-1">মোট ফি</p>
-                      <p className="text-2xl font-bold text-blue-700">৳{detailedPaymentData.summary?.totalFees?.toLocaleString() || 0}</p>
-                    </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                      <p className="text-sm text-green-600 mb-1">পরিশোধিত</p>
-                      <p className="text-2xl font-bold text-green-700">৳{detailedPaymentData.summary?.paidAmount?.toLocaleString() || 0}</p>
-                    </div>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                      <p className="text-sm text-yellow-600 mb-1">বকেয়া</p>
-                      <p className="text-2xl font-bold text-yellow-700">৳{detailedPaymentData.summary?.pendingAmount?.toLocaleString() || 0}</p>
-                    </div>
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                      <p className="text-sm text-red-600 mb-1">মোট বাকি</p>
-                      <p className="text-2xl font-bold text-red-700">৳{detailedPaymentData.summary?.balance?.toLocaleString() || 0}</p>
-                    </div>
-                  </div>
-
-                  {/* Fee Breakdown by Type */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-100 px-4 py-3 border-b">
-                      <h4 className="font-semibold text-gray-800">ফি ধরন অনুযায়ী বিভাজন</h4>
-                    </div>
-                    <div className="divide-y">
-                      {Object.entries(detailedPaymentData.feesByType || {}).map(([type, data]) => (
-                        <div key={type} className="flex items-center justify-between p-4 hover:bg-gray-50">
-                          <div>
-                            <p className="font-medium text-gray-900">{type}</p>
-                            <p className="text-sm text-gray-500">মোট: ৳{data.amount?.toLocaleString()}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-green-600 text-sm">পেইড: ৳{data.paid?.toLocaleString() || 0}</p>
-                            {(data.pending > 0 || data.overdue > 0) && (
-                              <p className="text-red-600 text-sm font-medium">বাকি: ৳{((data.pending || 0) + (data.overdue || 0)).toLocaleString()}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      {Object.keys(detailedPaymentData.feesByType || {}).length === 0 && (
-                        <div className="p-4 text-center text-gray-500">কোনো ফি রেকর্ড নেই</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Payment History */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-emerald-50 px-4 py-3 border-b flex items-center justify-between">
-                      <h4 className="font-semibold text-emerald-800">পেমেন্ট ইতিহাস</h4>
-                      <Badge className="bg-emerald-100 text-emerald-700">{detailedPaymentData.payments?.length || 0} টি পেমেন্ট</Badge>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto divide-y">
-                      {detailedPaymentData.payments?.length > 0 ? (
-                        detailedPaymentData.payments.map((payment, idx) => (
-                          <div key={payment.id || idx} className="flex items-center justify-between p-4 hover:bg-gray-50">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                                <Check className="h-5 w-5 text-green-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900">{payment.fee_type || 'পেমেন্ট'}</p>
-                                <p className="text-sm text-gray-500">
-                                  {payment.date || 'তারিখ নেই'} {payment.month && `• ${payment.month}`}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-green-600">৳{payment.amount?.toLocaleString() || 0}</p>
-                              <p className="text-xs text-gray-500">
-                                {payment.receipt_no && `রসিদ: ${payment.receipt_no}`}
-                                {payment.payment_method && ` • ${payment.payment_method}`}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-6 text-center text-gray-500">
-                          <AlertTriangle className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                          <p>কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি</p>
-                        </div>
-                      )}
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Fee Status Filter</label>
+                    <Select defaultValue="all">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Pending</SelectItem>
+                        <SelectItem value="pending">Pending Only</SelectItem>
+                        <SelectItem value="overdue">Overdue Only</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              )}
 
-              <DialogFooter className="gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowDetailedPaymentModal(false)}
-                >
-                  বন্ধ করুন
-                </Button>
-                {detailedPaymentData?.summary?.balance > 0 && (
-                  <Button 
-                    className="bg-emerald-500 hover:bg-emerald-600"
-                    onClick={() => {
-                      setShowDetailedPaymentModal(false);
-                      const student = students.find(s => s.id === detailedPaymentData.student?.id);
-                      if (student) {
-                        setSelectedStudent(student);
-                        setMadrasahWizardStep(2);
-                      }
-                    }}
-                  >
-                    বেতন আদায় করুন
-                  </Button>
-                )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <h4 className="font-medium text-orange-800 mb-2">Reminder Preview</h4>
+                  <div className="text-sm text-orange-700">
+                    <p><strong>Subject:</strong> Fee Payment Reminder - School ERP</p>
+                    <p><strong>Message:</strong> Dear Student/Parent, this is a reminder about pending fee payments. Please make the payment at your earliest convenience.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowSendRemindersModal(false)}>Cancel</Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={() => submitSendReminders({})}
+              disabled={loading}
+            >
+              {loading ? 'Sending...' : 'Send Reminders'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detailed Payment Modal */}
+      <Dialog open={showDetailedPaymentModal} onOpenChange={setShowDetailedPaymentModal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <FileText className="h-6 w-6 text-emerald-500" />
+              বিস্তারিত পেমেন্ট তথ্য
+            </DialogTitle>
+            <DialogDescription>
+              {detailedPaymentData?.student?.name} - {detailedPaymentData?.student?.class}
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailedPaymentData && (
+            <div className="space-y-6">
+              {/* Student Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-2xl font-bold">
+                      {(detailedPaymentData.student?.name || 'ছ').charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">{detailedPaymentData.student?.name}</h3>
+                    <p className="text-sm text-gray-600">রোল: {detailedPaymentData.student?.roll || '-'} | ভর্তি নং: {detailedPaymentData.student?.admission_no || '-'}</p>
+                    <p className="text-sm text-gray-600">মারহালা: {detailedPaymentData.student?.class}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-blue-600 mb-1">মোট ফি</p>
+                  <p className="text-2xl font-bold text-blue-700">৳{detailedPaymentData.summary?.totalFees?.toLocaleString() || 0}</p>
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-green-600 mb-1">পরিশোধিত</p>
+                  <p className="text-2xl font-bold text-green-700">৳{detailedPaymentData.summary?.paidAmount?.toLocaleString() || 0}</p>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-yellow-600 mb-1">বকেয়া</p>
+                  <p className="text-2xl font-bold text-yellow-700">৳{detailedPaymentData.summary?.pendingAmount?.toLocaleString() || 0}</p>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-red-600 mb-1">মোট বাকি</p>
+                  <p className="text-2xl font-bold text-red-700">৳{detailedPaymentData.summary?.balance?.toLocaleString() || 0}</p>
+                </div>
+              </div>
+
+              {/* Fee Breakdown by Type */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-100 px-4 py-3 border-b">
+                  <h4 className="font-semibold text-gray-800">ফি ধরন অনুযায়ী বিভাজন</h4>
+                </div>
+                <div className="divide-y">
+                  {Object.entries(detailedPaymentData.feesByType || {}).map(([type, data]) => (
+                    <div key={type} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                      <div>
+                        <p className="font-medium text-gray-900">{type}</p>
+                        <p className="text-sm text-gray-500">মোট: ৳{data.amount?.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-600 text-sm">পেইড: ৳{data.paid?.toLocaleString() || 0}</p>
+                        {(data.pending > 0 || data.overdue > 0) && (
+                          <p className="text-red-600 text-sm font-medium">বাকি: ৳{((data.pending || 0) + (data.overdue || 0)).toLocaleString()}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {Object.keys(detailedPaymentData.feesByType || {}).length === 0 && (
+                    <div className="p-4 text-center text-gray-500">কোনো ফি রেকর্ড নেই</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment History */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-emerald-50 px-4 py-3 border-b flex items-center justify-between">
+                  <h4 className="font-semibold text-emerald-800">পেমেন্ট ইতিহাস</h4>
+                  <Badge className="bg-emerald-100 text-emerald-700">{detailedPaymentData.payments?.length || 0} টি পেমেন্ট</Badge>
+                </div>
+                <div className="max-h-64 overflow-y-auto divide-y">
+                  {detailedPaymentData.payments?.length > 0 ? (
+                    detailedPaymentData.payments.map((payment, idx) => (
+                      <div key={payment.id || idx} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <Check className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{payment.fee_type || 'পেমেন্ট'}</p>
+                            <p className="text-sm text-gray-500">
+                              {payment.date || 'তারিখ নেই'} {payment.month && `• ${payment.month}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">৳{payment.amount?.toLocaleString() || 0}</p>
+                          <p className="text-xs text-gray-500">
+                            {payment.receipt_no && `রসিদ: ${payment.receipt_no}`}
+                            {payment.payment_method && ` • ${payment.payment_method}`}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center text-gray-500">
+                      <AlertTriangle className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                      <p>কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDetailedPaymentModal(false)}
+            >
+              বন্ধ করুন
+            </Button>
+            {detailedPaymentData?.summary?.balance > 0 && (
+              <Button
+                className="bg-emerald-500 hover:bg-emerald-600"
+                onClick={() => {
+                  setShowDetailedPaymentModal(false);
+                  const student = students.find(s => s.id === detailedPaymentData.student?.id);
+                  if (student) {
+                    setSelectedStudent(student);
+                    setMadrasahWizardStep(2);
+                  }
+                }}
+              >
+                বেতন আদায় করুন
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
 // Payment Form Component
-const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfigurations = {} }) => {
+const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfigurations = {}, feeHeads = [] }) => {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [amount, setAmount] = useState('');
   const [feeType, setFeeType] = useState('');
@@ -4559,13 +4776,13 @@ const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfig
     if (selectedStudent && feeType) {
       const student = students.find(s => s.id === selectedStudent);
       console.log('👤 Selected Student:', student);
-      
+
       if (student && student.class_id) {
         // Find fee configuration matching student's class and selected fee type
         const configs = feeConfigurations[feeType] || [];
         console.log(`💰 Fee configs for ${feeType}:`, configs);
         console.log('🔍 Looking for class_id:', student.class_id);
-        
+
         const matchingConfig = configs.find(config => {
           console.log('🔎 Checking config:', {
             config_class: config.apply_to_classes,
@@ -4574,9 +4791,9 @@ const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfig
           });
           return config.apply_to_classes === student.class_id || config.apply_to_classes === 'all';
         });
-        
+
         console.log('🎯 Matching config found:', matchingConfig);
-        
+
         if (matchingConfig && matchingConfig.amount) {
           setAmount(matchingConfig.amount.toString());
           console.log(`✅ Auto-filled amount: ${matchingConfig.amount} for ${feeType} (${student.name})`);
@@ -4591,7 +4808,7 @@ const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfig
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!selectedStudent || !amount || !feeType || !paymentMode) {
       alert('Please fill in all required fields');
       return;
@@ -4635,6 +4852,7 @@ const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfig
           </SelectTrigger>
           <SelectContent>
             {/* Dynamic fee types from saved configurations */}
+            {/* Dynamic fee types from saved configurations */}
             {Object.keys(feeConfigurations || {}).map(feeType => (
               feeConfigurations[feeType]?.length > 0 && (
                 <SelectItem key={feeType} value={feeType}>
@@ -4642,7 +4860,19 @@ const PaymentForm = ({ students, classes, onSubmit, onCancel, loading, feeConfig
                 </SelectItem>
               )
             ))}
-            {/* Default fee types if no configurations exist */}
+
+            {/* Dynamic Fee Heads (if not already in configurations) */}
+            {feeHeads.map((head) => {
+              if (feeConfigurations[head.name]?.length > 0) return null; // Already shown above
+              if (['Tuition Fees', 'Transport Fees', 'Admission Fees', 'Exam Fees', 'Library Fee', 'Lab Fee', 'Other'].includes(head.name)) return null; // Skip defaults
+              return (
+                <SelectItem key={head.id} value={head.name}>
+                  {head.name_bn || head.name}
+                </SelectItem>
+              );
+            })}
+
+            {/* Default fee types fallback */}
             <SelectItem value="Tuition Fees">Tuition Fees</SelectItem>
             <SelectItem value="Transport Fees">Transport Fees</SelectItem>
             <SelectItem value="Admission Fees">Admission Fees</SelectItem>

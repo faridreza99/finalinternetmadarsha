@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+# Add current directory to sys.path to allow local imports even when run from parent directory
+sys.path.append(str(Path(__file__).parent))
+
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request, File, UploadFile, BackgroundTasks, Form
 from starlette.background import BackgroundTask
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -10,9 +15,29 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from pathlib import Path
-from id_card_pdf import generate_student_id_card_pdf
-from weasyprint_pdf import generate_student_list_pdf, generate_generic_report_pdf, generate_staff_list_pdf, generate_financial_report_pdf, generate_attendance_report_pdf, generate_result_report_pdf, generate_payroll_report_pdf, generate_pdf_report
-from id_card_generator import generate_staff_id_card_pdf
+try:
+    from backend.id_card_pdf import generate_student_id_card_pdf
+except ImportError:
+    try:
+        from id_card_pdf import generate_student_id_card_pdf
+    except ImportError:
+        print("Warning: id_card_pdf module not found. ID card generation will be disabled.")
+        generate_student_id_card_pdf = None
+try:
+    from backend.weasyprint_pdf import generate_student_list_pdf, generate_generic_report_pdf, generate_staff_list_pdf, generate_financial_report_pdf, generate_attendance_report_pdf, generate_result_report_pdf, generate_payroll_report_pdf, generate_pdf_report
+except ImportError:
+    try:
+        from weasyprint_pdf import generate_student_list_pdf, generate_generic_report_pdf, generate_staff_list_pdf, generate_financial_report_pdf, generate_attendance_report_pdf, generate_result_report_pdf, generate_payroll_report_pdf, generate_pdf_report
+    except ImportError:
+        print("Warning: weasyprint_pdf module not found.")
+
+try:
+    from backend.id_card_generator import generate_staff_id_card_pdf
+except ImportError:
+    try:
+        from id_card_generator import generate_staff_id_card_pdf
+    except ImportError:
+        print("Warning: id_card_generator module not found.")
 
 
 # Performance optimization modules
@@ -57,8 +82,10 @@ import cloudinary.uploader
 from notification_service import get_notification_service, NotificationEventType
 
 from attendance_management import setup_attendance_routes
+from attendance_session_management import setup_attendance_session_routes
 from live_class_management import setup_live_class_routes
 from student_portal import setup_student_portal_routes
+from payment_gateway import setup_payment_gateway_routes
 from payroll_management import (
     SalaryStructureCreate, PayrollSettings, PayrollProcessRequest,
     PayrollItemUpdate, PayrollApprovalRequest, BonusCreate, 
@@ -464,7 +491,7 @@ class Student(BaseModel):
     roll_no: str
     name: Optional[str] = "Unknown"
     father_name: str
-    mother_name: str
+    mother_name: Optional[str] = None
     date_of_birth: str
     gender: str
     class_id: str
@@ -481,9 +508,19 @@ class Student(BaseModel):
     guardian_name: str
     guardian_phone: str
     photo_url: Optional[str] = None
-    father_whatsapp: Optional[str] = None  # Father's WhatsApp number
+    father_whatsapp: Optional[str] = None  # Father's WhatsApp number (Deprecated, use whatsapp_number)
     mother_phone: Optional[str] = None  # Mother's phone number
     mother_whatsapp: Optional[str] = None  # Mother's WhatsApp number
+    
+    # New Fields
+    blood_group: Optional[str] = None
+    whatsapp_number: Optional[str] = None
+    resident_status: str = "native"  # native, expatriate
+    country: Optional[str] = "Bangladesh"
+    batch_type: str = "offline"  # online, offline
+    monthly_fee_config_id: Optional[str] = None
+    fee_type_id: Optional[str] = None  # Level 2: General/Nofol Category
+    
     tags: List[str] = []  # Student tags for categorization
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -495,7 +532,7 @@ class StudentCreate(BaseModel):
     roll_no: str
     name: Optional[str] = "Unknown"
     father_name: str
-    mother_name: str
+    mother_name: Optional[str] = None
     date_of_birth: str
     gender: str
     class_id: str
@@ -511,6 +548,16 @@ class StudentCreate(BaseModel):
     address: Optional[str] = None
     guardian_name: str
     guardian_phone: str
+    
+    # New Fields
+    blood_group: Optional[str] = None
+    whatsapp_number: Optional[str] = None
+    resident_status: str = "native"
+    country: Optional[str] = "Bangladesh"
+    batch_type: str = "offline"
+    monthly_fee_config_id: Optional[str] = None
+    fee_type_id: Optional[str] = None
+    
     tags: List[str] = []  # Student tags for categorization
 
 class StudentCredentials(BaseModel):
@@ -528,7 +575,7 @@ class StudentCreateResponse(BaseModel):
     roll_no: str
     name: Optional[str] = "Unknown"
     father_name: str
-    mother_name: str
+    mother_name: Optional[str] = None
     date_of_birth: str
     gender: str
     class_id: str
@@ -548,6 +595,16 @@ class StudentCreateResponse(BaseModel):
     father_whatsapp: Optional[str] = None
     mother_phone: Optional[str] = None
     mother_whatsapp: Optional[str] = None
+    
+    # New Fields
+    blood_group: Optional[str] = None
+    whatsapp_number: Optional[str] = None
+    resident_status: str = "native"
+    country: Optional[str] = "Bangladesh"
+    batch_type: str = "offline"
+    monthly_fee_config_id: Optional[str] = None
+    fee_type_id: Optional[str] = None
+    
     tags: List[str] = []
     is_active: bool = True
     created_at: datetime
@@ -4345,17 +4402,19 @@ async def delete_student(
     if current_user.role not in ["super_admin", "admin", "teacher"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    # Find ACTIVE student first
     existing_student = await db.students.find_one({
         "id": student_id,
-        "tenant_id": current_user.tenant_id
+        "tenant_id": current_user.tenant_id,
+        "is_active": True
     })
     
     if not existing_student:
         raise HTTPException(status_code=404, detail="Student not found")
     
-    # Soft delete by setting is_active to False
+    # Soft delete by setting is_active to False using the unique _id
     await db.students.update_one(
-        {"id": student_id, "tenant_id": current_user.tenant_id},
+        {"_id": existing_student["_id"]},
         {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
     )
     
@@ -6184,10 +6243,12 @@ class AttendanceRecord(BaseModel):
     marked_by: Optional[str] = None
     type: str = "staff"  # staff or student
     notes: Optional[str] = None
+    attendance_session: Optional[str] = None # Added field
 
 class BulkAttendanceRequest(BaseModel):
     date: str
     type: str
+    attendance_session: Optional[str] = None # Added field
     records: List[AttendanceRecord]
 
 @api_router.get("/attendance")
@@ -6195,11 +6256,12 @@ async def get_attendance(
     date: Optional[str] = None,
     type: str = "staff",
     department: Optional[str] = None,
+    attendance_session: Optional[str] = None, # Added param
     current_user: User = Depends(get_current_user)
 ):
     """Get attendance records for a specific date and type"""
     try:
-        logging.info(f"[ATTENDANCE-GET] date={date}, type={type}, department={department}, tenant={current_user.tenant_id}")
+        logging.info(f"[ATTENDANCE-GET] date={date}, type={type}, department={department}, session={attendance_session}, tenant={current_user.tenant_id}")
         
         filter_criteria = {
             "tenant_id": current_user.tenant_id,
@@ -6226,6 +6288,9 @@ async def get_attendance(
         
         if department and department != "all_departments":
             filter_criteria["department"] = department
+
+        if attendance_session:
+            filter_criteria["attendance_session"] = attendance_session
         
         logging.info(f"[ATTENDANCE-GET] Filter: {filter_criteria}")
         
@@ -6291,14 +6356,18 @@ async def save_bulk_attendance(
 ):
     """Save bulk attendance records for a specific date"""
     try:
-        logging.info(f"[ATTENDANCE-POST] date={request_data.date}, type={request_data.type}, count={len(request_data.records)}, tenant={current_user.tenant_id}")
+        logging.info(f"[ATTENDANCE-POST] date={request_data.date}, type={request_data.type}, session={request_data.attendance_session}, count={len(request_data.records)}, tenant={current_user.tenant_id}")
         
-        # Delete existing attendance for this date and type
+        # Delete existing attendance for this date and type (and session if provided)
         delete_filter = {
             "tenant_id": current_user.tenant_id,
             "date": request_data.date,
             "type": request_data.type
         }
+
+        if request_data.attendance_session:
+             delete_filter["attendance_session"] = request_data.attendance_session
+
         delete_result = await db.attendance.delete_many(delete_filter)
         logging.info(f"[ATTENDANCE-POST] Deleted {delete_result.deleted_count} existing records for date={request_data.date}")
         
@@ -6317,6 +6386,9 @@ async def save_bulk_attendance(
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
+
+            if record.attendance_session:
+                attendance_doc["attendance_session"] = record.attendance_session
             
             # Add type-specific fields
             if record.type == "student":
@@ -10995,6 +11067,140 @@ async def assign_students_to_route(
     except Exception as e:
         logging.error(f"Failed to assign students to route: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to assign students: {str(e)}")
+
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+    """
+    Get aggregated dashboard statistics.
+    Optimized to return pre-calculated counts instead of raw lists.
+    """
+    try:
+        tenant_id = current_user.tenant_id
+        
+        # 1. Student Stats Aggregation
+        student_pipeline = [
+            {"$match": {"tenant_id": tenant_id}},
+            {"$facet": {
+                "total": [{"$count": "count"}],
+                "active": [{"$match": {"$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}}, {"$count": "count"}],
+                "new_this_month": [
+                    {
+                        "$match": {
+                            "$expr": {
+                                "$and": [
+                                    {"$eq": [{"$year": "$created_at"}, datetime.now().year]},
+                                    {"$eq": [{"$month": "$created_at"}, datetime.now().month]}
+                                ]
+                            }
+                        }
+                    },
+                    {"$count": "count"}
+                ],
+                "class_wise": [
+                    {"$group": {"_id": "$class_id", "count": {"$sum": 1}}}
+                ]
+            }}
+        ]
+        
+        student_stats_result = await db.students.aggregate(student_pipeline).to_list(1)
+        student_stats = student_stats_result[0] if student_stats_result else {}
+        
+        total_students = student_stats.get("total", [{}])[0].get("count", 0)
+        active_students = student_stats.get("active", [{}])[0].get("count", 0)
+        new_students = student_stats.get("new_this_month", [{}])[0].get("count", 0)
+        
+        # Process class-wise counts
+        class_counts = {item["_id"]: item["count"] for item in student_stats.get("class_wise", []) if item["_id"]}
+
+        # 2. Get Class Details for mapping names
+        classes = await db.classes.find({"tenant_id": tenant_id}).to_list(100)
+        class_data = []
+        for cls in classes:
+            count = class_counts.get(str(cls["_id"]), 0)
+            if count > 0:
+                class_data.append({
+                    "name": cls.get("name") or cls.get("standard"),
+                    "students": count
+                })
+        
+        # 3. Fees Stats (Reusing efficient pipeline)
+        fees_pipeline = [
+            {"$match": {"tenant_id": tenant_id}},
+            {"$group": {
+                "_id": None,
+                "total_fees": {"$sum": "$amount"},
+                "collected": {"$sum": "$paid_amount"},
+                "pending": {"$sum": "$pending_amount"},
+                "overdue": {"$sum": "$overdue_amount"}
+            }}
+        ]
+        fees_result = await db.student_fees.aggregate(fees_pipeline).to_list(1)
+        fees_data = fees_result[0] if fees_result else {}
+        
+        # 4. Recent Payments
+        recent_payments = await db.payments.find(
+            {"tenant_id": tenant_id}
+        ).sort("payment_date", -1).limit(5).to_list(5)
+        
+        cleaned_payments = []
+        for payment in recent_payments:
+            cleaned_payments.append(sanitize_mongo_data(payment))
+
+        # 5. Attendance Summary (Today)
+        today = datetime.now().strftime("%Y-%m-%d")
+        attendance_stats = await db.attendance.aggregate([
+            {
+                "$match": {
+                    "tenant_id": tenant_id,
+                    "type": "student",
+                    "$or": [
+                        {"date": today},
+                        {"date": {"$regex": f"^{today}"}}
+                    ]
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$status",
+                    "count": {"$sum": 1}
+                }
+            }
+        ]).to_list(10)
+        
+        attendance_map = {item["_id"]: item["count"] for item in attendance_stats}
+        
+        return {
+            "students": {
+                "total": total_students,
+                "active": active_students,
+                "new_this_month": new_students
+            },
+            "classes": class_data,
+            "fees": {
+                "total": fees_data.get("total_fees", 0),
+                "collected": fees_data.get("collected", 0),
+                "pending": fees_data.get("pending", 0),
+                "overdue": fees_data.get("overdue", 0)
+            },
+            "recent_payments": cleaned_payments,
+            "attendance": {
+                "present": attendance_map.get("present", 0),
+                "absent": attendance_map.get("absent", 0),
+                "late": attendance_map.get("late", 0),
+                "total": sum(attendance_map.values())
+            }
+        }
+
+    except Exception as e:
+        logging.error(f"Dashboard Stats Error: {str(e)}")
+        # Return graceful empty structure on error
+        return {
+            "students": {"total": 0, "active": 0, "new_this_month": 0},
+            "classes": [],
+            "fees": {"total": 0, "collected": 0, "pending": 0, "overdue": 0},
+            "attendance": {"present": 0, "absent": 0, "late": 0, "total": 0},
+            "recent_payments": []
+        }
 
 # ==================== REPORTS API ====================
 
@@ -15757,6 +15963,50 @@ class FeeConfigurationUpdate(BaseModel):
     discount: Optional[float] = None
     is_active: Optional[bool] = None
 
+class StudentFeeCategory(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tenant_id: str
+    school_id: Optional[str] = None
+    name: str  # General, Nofol Sadakah
+    name_bn: Optional[str] = None # Bengali Name
+    amount: float
+    description: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class StudentFeeCategoryCreate(BaseModel):
+    name: str
+    name_bn: Optional[str] = None
+    amount: float
+    description: Optional[str] = None
+
+class StudentFeeCategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    name_bn: Optional[str] = None
+    amount: Optional[float] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class FeeHead(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tenant_id: str
+    school_id: Optional[str] = None
+    name: str
+    name_bn: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class FeeHeadCreate(BaseModel):
+    name: str
+    name_bn: Optional[str] = None
+
+class FeeHeadUpdate(BaseModel):
+    name: Optional[str] = None
+    name_bn: Optional[str] = None
+    is_active: Optional[bool] = None
+
 class StudentFee(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
@@ -17576,6 +17826,196 @@ async def delete_fee_configuration(
         logging.error(f"Failed to delete fee configuration: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete fee configuration")
 
+# ==================== FEE HEAD (TYPE) ENDPOINTS ====================
+
+@api_router.post("/fee-heads", response_model=FeeHead)
+async def create_fee_head(
+    fee_head: FeeHeadCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new fee head (fee type)"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to create fee heads")
+
+    try:
+        new_fee_head = FeeHead(
+            tenant_id=current_user.tenant_id,
+            school_id=current_user.school_id,
+            **fee_head.dict()
+        )
+        
+        await db.fee_heads.insert_one(new_fee_head.dict())
+        return new_fee_head
+    except Exception as e:
+        logging.error(f"Failed to create fee head: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create fee head")
+
+@api_router.get("/fee-heads", response_model=List[FeeHead])
+async def get_fee_heads(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all active fee heads"""
+    try:
+        cursor = db.fee_heads.find({
+            "tenant_id": current_user.tenant_id,
+            "is_active": True
+        })
+        return await cursor.to_list(length=100)
+    except Exception as e:
+        logging.error(f"Failed to fetch fee heads: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch fee heads")
+
+@api_router.put("/fee-heads/{head_id}", response_model=FeeHead)
+async def update_fee_head(
+    head_id: str,
+    fee_head_update: FeeHeadUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a fee head"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to update fee heads")
+
+    try:
+        update_data = {k: v for k, v in fee_head_update.dict(exclude_unset=True).items()}
+        update_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.fee_heads.update_one(
+            {"id": head_id, "tenant_id": current_user.tenant_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Fee head not found")
+            
+        updated_head = await db.fee_heads.find_one({"id": head_id})
+        return FeeHead(**updated_head)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to update fee head: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update fee head")
+
+@api_router.delete("/fee-heads/{head_id}")
+async def delete_fee_head(
+    head_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Soft delete a fee head"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete fee heads")
+
+    try:
+        result = await db.fee_heads.update_one(
+            {"id": head_id, "tenant_id": current_user.tenant_id},
+            {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Fee head not found")
+            
+        return {"message": "Fee head deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to delete fee head: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete fee head")
+
+# ==================== FEE CATEGORY MANAGEMENT (3-Tier Logic) ====================
+
+@api_router.post("/student-fee-categories")
+async def create_student_fee_category(
+    category_data: StudentFeeCategoryCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new student fee category (e.g., General, Nofol Sadakah)"""
+    try:
+        if current_user.role not in ["admin", "super_admin"]:
+            raise HTTPException(status_code=403, detail="Not authorized")
+            
+        category_dict = category_data.dict()
+        category_dict["tenant_id"] = current_user.tenant_id
+        category_dict["is_active"] = True
+        
+        # Check if name already exists
+        existing = await db.student_fee_categories.find_one({
+            "tenant_id": current_user.tenant_id,
+            "name": category_data.name,
+            "is_active": True
+        })
+        
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Category '{category_data.name}' already exists")
+            
+        category = StudentFeeCategory(**category_dict)
+        await db.student_fee_categories.insert_one(category.dict())
+        
+        logging.info(f"Fee category created: {category.name} by {current_user.full_name}")
+        return category
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to create fee category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create fee category")
+
+@api_router.get("/student-fee-categories")
+async def get_student_fee_categories(current_user: User = Depends(get_current_user)):
+    """Get all active student fee categories"""
+    categories = await db.student_fee_categories.find({
+        "tenant_id": current_user.tenant_id,
+        "is_active": True
+    }).sort("created_at", -1).to_list(100)
+    
+    return categories
+
+@api_router.put("/student-fee-categories/{category_id}")
+async def update_student_fee_category(
+    category_id: str,
+    category_data: StudentFeeCategoryUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a student fee category"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    existing = await db.student_fee_categories.find_one({
+        "id": category_id,
+        "tenant_id": current_user.tenant_id,
+        "is_active": True
+    })
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    update_data = category_data.dict(exclude_unset=True)
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.student_fee_categories.update_one(
+        {"id": category_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Fee category updated successfully"}
+
+@api_router.delete("/student-fee-categories/{category_id}")
+async def delete_student_fee_category(
+    category_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete (soft) a student fee category"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    result = await db.student_fee_categories.update_one(
+        {"id": category_id, "tenant_id": current_user.tenant_id},
+        {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    return {"message": "Fee category deleted successfully"}
+
 @api_router.post("/fees/generate-due")
 async def generate_student_fees(
     config_id: Optional[str] = None,
@@ -19002,17 +19442,51 @@ async def apply_payment_to_student_fees(payment: Payment, current_user: User):
             })
             
             if student:
-                # Look up configured fee amount for this student's class and fee type
-                student_class_id = student.get("class_id")
-                fee_config = await db.fee_configurations.find_one({
-                    "tenant_id": current_user.tenant_id,
-                    "fee_type": payment.fee_type,
-                    "is_active": True,
-                    "$or": [
-                        {"apply_to_classes": "all"},
-                        {"apply_to_classes": student_class_id}
-                    ]
-                })
+                # Look up configured fee amount for this student
+                # FIRST PRIORITY: Student-specific configuration (if set)
+                # SECOND PRIORITY: Class-based configuration
+                
+                fee_config = None
+                student_fee_config_id = student.get("monthly_fee_config_id")
+                
+                # Check for student specific config if attempting to pay 'Tuition Fees' or generic monthly fee
+                if student_fee_config_id and (payment.fee_type == 'Tuition Fees' or payment.fee_type == 'Monthly Fees'):
+                    logging.info(f"Using student specific fee config {student_fee_config_id} for {student['name']}")
+                    fee_config = await db.fee_configurations.find_one({
+                        "id": student_fee_config_id,
+                        "tenant_id": current_user.tenant_id
+                    })
+                
+                # SECOND PRIORITY: Fee Category / Type (General / Nofol)
+                if not fee_config:
+                    student_fee_type_id = student.get("fee_type_id")
+                    if student_fee_type_id and (payment.fee_type == 'Tuition Fees' or payment.fee_type == 'Monthly Fees'):
+                        fee_category = await db.student_fee_categories.find_one({
+                            "id": student_fee_type_id,
+                            "tenant_id": current_user.tenant_id
+                        })
+                        if fee_category:
+                             logging.info(f"Using fee category {fee_category['name']} for {student['name']}")
+                             # Create a mock config object to match expected structure
+                             fee_config = {
+                                 "id": fee_category["id"],
+                                 "amount": fee_category["amount"],
+                                 "fee_type": payment.fee_type,
+                                 "frequency": "Monthly" # Default assumption for categories
+                             }
+                
+                # Fallback to class-based lookup if no specific config found/set
+                if not fee_config:
+                    student_class_id = student.get("class_id")
+                    fee_config = await db.fee_configurations.find_one({
+                        "tenant_id": current_user.tenant_id,
+                        "fee_type": payment.fee_type,
+                        "is_active": True,
+                        "$or": [
+                            {"apply_to_classes": "all"},
+                            {"apply_to_classes": student_class_id}
+                        ]
+                    })
                 
                 # If we found a fee config, use its amount as the "total fee"
                 # Otherwise fall back to payment amount (legacy behavior)
@@ -33542,6 +34016,12 @@ app.include_router(video_lessons.router)
 # Include madrasha academic router
 madrasha_academic.set_dependencies(db, get_current_user)
 app.include_router(madrasha_academic.router)
+
+# Setup attendance session routes
+setup_attendance_session_routes(api_router, db, get_current_user, User)
+
+# Setup payment gateway routes
+setup_payment_gateway_routes(api_router, db, get_current_user)
 
 app.include_router(api_router)
 

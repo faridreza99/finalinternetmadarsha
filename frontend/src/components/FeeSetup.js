@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
-import { 
+import {
   Settings,
   DollarSign,
   Plus,
@@ -46,6 +46,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from './ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import FeeHeadManagement from './FeeHeadManagement';
 
 const API = process.env.REACT_APP_API_URL || '/api';
 
@@ -63,17 +65,18 @@ const getErrorMessage = (error, fallback = 'An error occurred. Please try again.
   return fallback;
 };
 
-const FeeSetup = () => {
+const FeeConfiguration = () => {
   const { formatCurrency } = useCurrency();
   const { isMadrasahSimpleUI, loading: institutionLoading } = useInstitution();
-  
+
   const [feeConfigs, setFeeConfigs] = useState([]);
   const [classes, setClasses] = useState([]);
   const [marhalas, setMarhalas] = useState([]);
+  const [feeHeads, setFeeHeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     fee_type: 'Tuition Fees',
     amount: '',
@@ -91,7 +94,7 @@ const FeeSetup = () => {
     is_active: true
   });
 
-  const feeTypes = [
+  const defaultFeeTypes = [
     { value: 'Tuition Fees', label: 'মাসিক বেতন', labelEn: 'Monthly Tuition' },
     { value: 'Admission Fees', label: 'ভর্তি ফি', labelEn: 'Admission Fee' },
     { value: 'Exam Fees', label: 'পরীক্ষা ফি', labelEn: 'Exam Fee' },
@@ -148,11 +151,24 @@ const FeeSetup = () => {
     }
   }, []);
 
+  const fetchFeeHeads = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/fee-heads`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFeeHeads(response.data || []);
+    } catch (error) {
+      console.error('Error fetching fee heads:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchFeeConfigs();
     fetchClasses();
     fetchMarhalas();
-  }, [fetchFeeConfigs, fetchClasses, fetchMarhalas]);
+    fetchFeeHeads();
+  }, [fetchFeeConfigs, fetchClasses, fetchMarhalas, fetchFeeHeads]);
 
   const handleSubmit = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -278,8 +294,15 @@ const FeeSetup = () => {
   };
 
   const getFeeTypeLabel = (type) => {
-    const found = feeTypes.find(f => f.value === type);
-    return isMadrasahSimpleUI ? (found?.label || type) : (found?.labelEn || type);
+    const foundDefault = defaultFeeTypes.find(f => f.value === type);
+    if (foundDefault) {
+      return isMadrasahSimpleUI ? (foundDefault?.label || type) : (foundDefault?.labelEn || type);
+    }
+    const foundHead = feeHeads.find(h => h.name === type);
+    if (foundHead) {
+      return foundHead.name_bn || foundHead.name;
+    }
+    return type;
   };
 
   const getFrequencyLabel = (freq) => {
@@ -332,7 +355,7 @@ const FeeSetup = () => {
                 {isMadrasahSimpleUI ? 'মারহালা অনুযায়ী ফি কনফিগার করুন - এটি ফি আদায়ের একমাত্র উৎস' : 'Configure fees by class - This is the single source of truth for fee collection'}
               </p>
             </div>
-            <Button 
+            <Button
               className="bg-emerald-500 hover:bg-emerald-600"
               onClick={() => {
                 resetForm();
@@ -355,7 +378,7 @@ const FeeSetup = () => {
               <p className="text-gray-500 mb-4">
                 {isMadrasahSimpleUI ? 'প্রথমে মারহালা অনুযায়ী ফি সেট করুন' : 'Please set up fees by class first'}
               </p>
-              <Button 
+              <Button
                 className="bg-emerald-500 hover:bg-emerald-600"
                 onClick={() => {
                   resetForm();
@@ -415,23 +438,23 @@ const FeeSetup = () => {
                               </span>
                             </TableCell>
                             <TableCell className="text-center">
-                              <Switch 
+                              <Switch
                                 checked={config.is_active !== false}
                                 onCheckedChange={() => handleToggleActive(config)}
                               />
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   variant="ghost"
                                   className="text-blue-600 hover:bg-blue-50"
                                   onClick={() => handleEdit(config)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   variant="ghost"
                                   className="text-red-600 hover:bg-red-50"
                                   onClick={() => handleDelete(config.id)}
@@ -457,7 +480,7 @@ const FeeSetup = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5 text-emerald-500" />
-              {editingConfig 
+              {editingConfig
                 ? (isMadrasahSimpleUI ? 'ফি সম্পাদনা করুন' : 'Edit Fee Configuration')
                 : (isMadrasahSimpleUI ? 'নতুন ফি যোগ করুন' : 'Add New Fee Configuration')
               }
@@ -472,19 +495,27 @@ const FeeSetup = () => {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 {isMadrasahSimpleUI ? 'ফি ধরন *' : 'Fee Type *'}
               </label>
-              <Select 
-                value={formData.fee_type} 
-                onValueChange={(value) => setFormData({...formData, fee_type: value})}
+              <Select
+                value={formData.fee_type}
+                onValueChange={(value) => setFormData({ ...formData, fee_type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {feeTypes.map((type) => (
+                  {defaultFeeTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {isMadrasahSimpleUI ? type.label : type.labelEn}
                     </SelectItem>
                   ))}
+                  {feeHeads.map((head) => {
+                    if (defaultFeeTypes.some(t => t.value === head.name)) return null;
+                    return (
+                      <SelectItem key={head.id} value={head.name}>
+                        {head.name_bn || head.name}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -500,9 +531,9 @@ const FeeSetup = () => {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   Apply to Class *
                 </label>
-                <Select 
-                  value={formData.apply_to_classes} 
-                  onValueChange={(value) => setFormData({...formData, apply_to_classes: value})}
+                <Select
+                  value={formData.apply_to_classes}
+                  onValueChange={(value) => setFormData({ ...formData, apply_to_classes: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -527,7 +558,7 @@ const FeeSetup = () => {
                 type="number"
                 placeholder={isMadrasahSimpleUI ? 'যেমন: ৫০০' : 'e.g., 500'}
                 value={formData.amount}
-                onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 className="text-lg font-bold"
               />
             </div>
@@ -536,9 +567,9 @@ const FeeSetup = () => {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 {isMadrasahSimpleUI ? 'পুনরাবৃত্তি' : 'Frequency'}
               </label>
-              <Select 
-                value={formData.frequency} 
-                onValueChange={(value) => setFormData({...formData, frequency: value})}
+              <Select
+                value={formData.frequency}
+                onValueChange={(value) => setFormData({ ...formData, frequency: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -563,7 +594,7 @@ const FeeSetup = () => {
                   min="1"
                   max="31"
                   value={formData.due_date}
-                  onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                 />
               </div>
               <div>
@@ -574,7 +605,7 @@ const FeeSetup = () => {
                   type="number"
                   min="0"
                   value={formData.late_fee}
-                  onChange={(e) => setFormData({...formData, late_fee: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, late_fee: e.target.value })}
                 />
               </div>
             </div>
@@ -584,12 +615,12 @@ const FeeSetup = () => {
             <Button variant="outline" onClick={() => setShowAddModal(false)}>
               {isMadrasahSimpleUI ? 'বাতিল' : 'Cancel'}
             </Button>
-            <Button 
+            <Button
               className="bg-emerald-500 hover:bg-emerald-600"
               onClick={handleSubmit}
             >
               <Save className="h-4 w-4 mr-2" />
-              {editingConfig 
+              {editingConfig
                 ? (isMadrasahSimpleUI ? 'আপডেট করুন' : 'Update')
                 : (isMadrasahSimpleUI ? 'সংরক্ষণ করুন' : 'Save')
               }
@@ -597,6 +628,36 @@ const FeeSetup = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const FeeSetup = () => {
+  const { isMadrasahSimpleUI } = useInstitution();
+
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{isMadrasahSimpleUI ? 'ফি ব্যবস্থাপনা' : 'Fee Management'}</h1>
+          <p className="text-gray-600 mt-1">{isMadrasahSimpleUI ? 'ফি সেটআপ এবং ধরণ ব্যবস্থাপনা' : 'Configure fees and manage fee types'}</p>
+        </div>
+
+        <Tabs defaultValue="configuration" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+            <TabsTrigger value="configuration">{isMadrasahSimpleUI ? 'ফি কনফিগারেশন' : 'Fee Configuration'}</TabsTrigger>
+            <TabsTrigger value="types">{isMadrasahSimpleUI ? 'ফি ধরণ' : 'Fee Types'}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="configuration" className="mt-6">
+            <FeeConfiguration />
+          </TabsContent>
+
+          <TabsContent value="types" className="mt-6">
+            <FeeHeadManagement />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

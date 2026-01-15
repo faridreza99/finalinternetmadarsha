@@ -40,7 +40,9 @@ import {
   EyeOff,
   Globe,
   Image,
+  Database,
 } from "lucide-react";
+import { Switch } from "./ui/switch";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -175,7 +177,7 @@ const MadrasahSimpleSettings = () => {
         site_title: institutionData.siteTitle,
         favicon_url: institutionData.faviconUrl,
       });
-      
+
       if (institutionData.siteTitle) {
         document.title = institutionData.siteTitle;
       }
@@ -186,7 +188,7 @@ const MadrasahSimpleSettings = () => {
         link.href = institutionData.faviconUrl;
         document.head.appendChild(link);
       }
-      
+
       toast.success("প্রতিষ্ঠান তথ্য সংরক্ষিত হয়েছে");
       fetchData();
     } catch (error) {
@@ -199,27 +201,27 @@ const MadrasahSimpleSettings = () => {
   const handleFaviconUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const validTypes = ["image/png", "image/x-icon", "image/vnd.microsoft.icon", "image/ico"];
     if (!validTypes.includes(file.type) && !file.name.endsWith('.ico')) {
       toast.error("শুধুমাত্র PNG বা ICO ফাইল আপলোড করুন");
       return;
     }
-    
+
     if (file.size > 500 * 1024) {
       toast.error("ফাইল সাইজ ৫০০KB এর বেশি হতে পারবে না");
       return;
     }
-    
+
     setUploadingFavicon(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-      
+
       const response = await axios.post(`${API_BASE_URL}/institution/favicon`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      
+
       if (response.data.favicon_url) {
         setInstitutionData(prev => ({ ...prev, faviconUrl: response.data.favicon_url }));
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
@@ -280,7 +282,7 @@ const MadrasahSimpleSettings = () => {
   const handleToggleUserActive = async (user) => {
     const userId = user.id || user.user_id;
     const newStatus = user.is_active === false ? true : false;
-    
+
     try {
       await axios.put(`${API_BASE_URL}/admin/users/${userId}`, {
         is_active: newStatus
@@ -474,6 +476,13 @@ const MadrasahSimpleSettings = () => {
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">সাবস্ক্রিপশন তথ্য</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="payment"
+            className="flex items-center gap-2 py-3 text-sm"
+          >
+            <Database className="h-4 w-4" />
+            <span className="hidden sm:inline">পেমেন্ট গেটওয়ে</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="institution" className="mt-6">
@@ -639,9 +648,9 @@ const MadrasahSimpleSettings = () => {
                   <div className="flex items-center gap-4">
                     {institutionData.faviconUrl && (
                       <div className="flex items-center gap-2 p-2 border rounded-lg bg-gray-50">
-                        <img 
-                          src={institutionData.faviconUrl} 
-                          alt="Favicon" 
+                        <img
+                          src={institutionData.faviconUrl}
+                          alt="Favicon"
                           className="w-8 h-8 object-contain"
                           onError={(e) => e.target.style.display = 'none'}
                         />
@@ -945,8 +954,8 @@ const MadrasahSimpleSettings = () => {
                       <Badge className={getRoleBadgeColor(user.role)}>
                         {getRoleLabel(user.role)}
                       </Badge>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setSelectedUserForReset(user);
@@ -956,7 +965,7 @@ const MadrasahSimpleSettings = () => {
                       >
                         <KeyRound className="h-4 w-4" />
                       </Button>
-                      <Button 
+                      <Button
                         variant={user.is_active !== false ? "outline" : "default"}
                         size="sm"
                         onClick={() => handleToggleUserActive(user)}
@@ -1058,6 +1067,11 @@ const MadrasahSimpleSettings = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+
+        <TabsContent value="payment" className="mt-6">
+          <PaymentGatewaySettings API_BASE_URL={API_BASE_URL} />
         </TabsContent>
       </Tabs>
 
@@ -1199,7 +1213,7 @@ const MadrasahSimpleSettings = () => {
             >
               বাতিল
             </Button>
-            <Button 
+            <Button
               onClick={handleResetPassword}
               disabled={resettingPassword || !newPassword || newPassword !== confirmPassword}
               className="bg-orange-500 hover:bg-orange-600"
@@ -1211,6 +1225,121 @@ const MadrasahSimpleSettings = () => {
         </DialogContent>
       </Dialog>
     </div>
+  );
+};
+
+const PaymentGatewaySettings = ({ API_BASE_URL }) => {
+  const [settings, setSettings] = useState({
+    store_id: '',
+    store_passwd: '',
+    is_sandbox: true,
+    is_active: false
+  });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/setup/payment-gateway`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data) {
+        setSettings(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching payment settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/setup/payment-gateway`, settings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('পেমেন্ট গেটওয়ে সেটিংস সংরক্ষিত হয়েছে');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('সেটিংস সংরক্ষণ করতে সমস্যা হয়েছে');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Database className="h-5 w-5 text-emerald-500" />
+          SSLCommerz কনফিগারেশন
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="active-mode"
+            checked={settings.is_active}
+            onCheckedChange={(checked) => setSettings({ ...settings, is_active: checked })}
+          />
+          <Label htmlFor="active-mode" className="text-base">অনলাইন পেমেন্ট চালু করুন</Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="sandbox-mode"
+            checked={settings.is_sandbox}
+            onCheckedChange={(checked) => setSettings({ ...settings, is_sandbox: checked })}
+          />
+          <Label htmlFor="sandbox-mode" className="text-base">স্যান্ডবক্স মোড (টেস্ট মোড)</Label>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-base">স্টোর আইডি (Store ID)</Label>
+          <Input
+            value={settings.store_id}
+            onChange={(e) => setSettings({ ...settings, store_id: e.target.value })}
+            placeholder="e.g. yourstore001"
+            className="text-lg py-3"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-base">স্টোর পাসওয়ার্ড (Store Password)</Label>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={settings.store_passwd}
+              onChange={(e) => setSettings({ ...settings, store_passwd: e.target.value })}
+              placeholder="Store Password"
+              className="text-lg py-3"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"
+            >
+              {showPassword ? "লুকান" : "দেখুন"}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={handleSave} disabled={loading} size="lg" className="px-8">
+            <Save className="h-5 w-5 mr-2" />
+            {loading ? "সংরক্ষণ হচ্ছে..." : "সংরক্ষণ করুন"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

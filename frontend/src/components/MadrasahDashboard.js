@@ -58,57 +58,40 @@ const MadrasahDashboard = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [studentsRes, feesRes, attendanceRes, classesRes, paymentsRes, institutionRes] = await Promise.all([
-        axios.get(`${API}/students`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API}/fees/dashboard`, { headers }).catch(() => ({ data: {} })),
-        axios.get(`${API}/attendance/summary?type=student`, { headers }).catch(() => ({ data: {} })),
-        axios.get(`${API}/classes`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API}/fees/payments/recent?limit=5`, { headers }).catch(() => ({ data: [] })),
+      // Performance Optimization: Fetch pre-calculated stats from backend
+      // instead of fetching all students and calculating on client
+      const [statsRes, institutionRes] = await Promise.all([
+        axios.get(`${API}/dashboard/stats`, { headers }).catch(() => ({ data: {} })),
         axios.get(`${API}/institution`, { headers }).catch(() => ({ data: {} })),
       ]);
 
-      const studentsRaw = studentsRes.data;
-      const students = Array.isArray(studentsRaw) ? studentsRaw : (studentsRaw?.students || studentsRaw?.data || []);
-      const fees = feesRes.data || {};
-      const attendance = attendanceRes.data || {};
-      const classesRaw = classesRes.data;
-      const classes = Array.isArray(classesRaw) ? classesRaw : (classesRaw?.classes || classesRaw?.data || []);
-      const paymentsRaw = paymentsRes.data;
-      const recentPayments = Array.isArray(paymentsRaw) ? paymentsRaw : (paymentsRaw?.payments || paymentsRaw?.data || []);
+      const stats = statsRes.data || {};
 
-      const classWiseStudents = (classes || []).map(cls => {
-        const count = students.filter(s => s.class_id === cls.id).length;
-        return { name: cls.name || cls.standard, students: count };
-      }).filter(c => c.students > 0);
-
+      // Use efficient backend stats directly
       setDashboardData({
         students: {
-          total: students.length,
-          active: students.filter(s => s.is_active !== false).length,
-          new_this_month: students.filter(s => {
-            const created = new Date(s.created_at);
-            const now = new Date();
-            return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
-          }).length,
+          total: stats.students?.total || 0,
+          active: stats.students?.active || 0,
+          new_this_month: stats.students?.new_this_month || 0,
         },
         fees: {
-          total: fees.total_fees || 0,
-          collected: fees.collected || 0,
-          pending: fees.pending || 0,
-          overdue: fees.overdue || 0,
-          todays_collection: fees.todays_collection || 0,
-          payments_today: fees.payments_today || 0,
+          total: stats.fees?.total || 0,
+          collected: stats.fees?.collected || 0,
+          pending: stats.fees?.pending || 0,
+          overdue: stats.fees?.overdue || 0,
+          todays_collection: 0, // This detailing might be less critical or could be added to backend stats if needed
+          payments_today: 0,
         },
         attendance: {
-          present: attendance.present || 0,
-          absent: attendance.absent || 0,
-          late: attendance.late || 0,
-          total: (attendance.present || 0) + (attendance.absent || 0) + (attendance.late || 0),
+          present: stats.attendance?.present || 0,
+          absent: stats.attendance?.absent || 0,
+          late: stats.attendance?.late || 0,
+          total: stats.attendance?.total || 0,
         },
-        classes: classWiseStudents,
-        recentPayments: Array.isArray(recentPayments) ? recentPayments : [],
-        monthlyFees: Array.isArray(fees.monthly_collection) ? fees.monthly_collection : [],
-        weeklyAttendance: Array.isArray(attendance.weekly) ? attendance.weekly : [],
+        classes: stats.classes || [],
+        recentPayments: stats.recent_payments || [],
+        monthlyFees: [], // Could be added to backend stats if strictly needed
+        weeklyAttendance: [], // Could be added to backend stats if strictly needed
       });
 
       const institution = institutionRes.data || {};
@@ -143,7 +126,7 @@ const MadrasahDashboard = () => {
     return (
       <div className="space-y-6 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => (
+          {[1, 2, 3, 4].map(i => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border animate-pulse">
               <div className="flex items-center justify-between mb-4">
                 <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -191,7 +174,7 @@ const MadrasahDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm font-medium">মোট ছাত্র</p>
-                <p className="text-3xl font-bold mt-1">{students.total}</p>
+                <p className="text-3xl font-bold mt-1">{students.active}</p>
                 <p className="text-blue-100 text-xs mt-2">
                   <TrendingUp className="h-3 w-3 inline mr-1" />
                   এই মাসে নতুন {students.new_this_month} জন
@@ -273,14 +256,14 @@ const MadrasahDashboard = () => {
                 <AreaChart data={monthlyFees}>
                   <defs>
                     <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                   <XAxis dataKey="name" tick={{ fill: '#6B7280', fontSize: 12 }} />
-                  <YAxis tick={{ fill: '#6B7280', fontSize: 12 }} tickFormatter={(v) => `৳${v/1000}k`} />
-                  <Tooltip 
+                  <YAxis tick={{ fill: '#6B7280', fontSize: 12 }} tickFormatter={(v) => `৳${v / 1000}k`} />
+                  <Tooltip
                     formatter={(value) => [`৳${value.toLocaleString()}`, 'আদায়']}
                     contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }}
                   />
@@ -311,7 +294,7 @@ const MadrasahDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                   <XAxis dataKey="day" tick={{ fill: '#6B7280', fontSize: 12 }} />
                   <YAxis tick={{ fill: '#6B7280', fontSize: 12 }} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }}
                   />
                   <Bar dataKey="present" name="উপস্থিত" fill="#10B981" radius={[4, 4, 0, 0]} />

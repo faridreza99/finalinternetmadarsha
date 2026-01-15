@@ -410,12 +410,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           path: "/fees/structure",
           roles: ["super_admin", "admin"],
         },
-        {
-          title: "Fee Types",
-          madrasahTitle: "ফি প্রকার",
-          path: "/fee-types",
-          roles: ["super_admin", "admin"],
-        },
+
         {
           title: "Monthly Payments",
           madrasahTitle: "মাসিক পেমেন্ট",
@@ -599,6 +594,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           path: "/admin/user-management",
           roles: ["super_admin", "admin"],
         },
+
         {
           title: "Contact Links",
           madrasahTitle: "যোগাযোগ লিংক",
@@ -853,11 +849,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 >
                   <CollapsibleTrigger asChild>
                     <button
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-all hover:bg-white/10 ${
-                        isActive
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "text-gray-300 hover:text-white"
-                      }`}
+                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-all hover:bg-white/10 ${isActive
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : "text-gray-300 hover:text-white"
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <Icon className="h-5 w-5" />
@@ -898,11 +893,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                         <button
                           key={index}
                           onClick={() => handleNavigation(subItem.path)}
-                          className={`w-full text-left p-2 rounded-md text-sm transition-all hover:bg-white/10 ${
-                            location.pathname === subItem.path
-                              ? "bg-emerald-500/20 text-emerald-300"
-                              : "text-gray-400 hover:text-white"
-                          }`}
+                          className={`w-full text-left p-2 rounded-md text-sm transition-all hover:bg-white/10 ${location.pathname === subItem.path
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "text-gray-400 hover:text-white"
+                            }`}
                         >
                           {isMadrasahSimpleUI && subItem.madrasahTitle
                             ? subItem.madrasahTitle
@@ -918,11 +912,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <button
                 key={item.key}
                 onClick={() => handleNavigation(item.path)}
-                className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all hover:bg-white/10 ${
-                  isActive
-                    ? "bg-emerald-500/20 text-emerald-300"
-                    : "text-gray-300 hover:text-white"
-                }`}
+                className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all hover:bg-white/10 ${isActive
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "text-gray-300 hover:text-white"
+                  }`}
               >
                 <Icon className="h-5 w-5" />
                 <span className="font-medium">

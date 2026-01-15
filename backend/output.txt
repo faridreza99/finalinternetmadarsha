@@ -1,0 +1,9 @@
+Total students for tenant mham5678: 8
+Active students: 2
+
+Sample students:
+- John Smith (ID: None, Class: 11)
+- Sarah Johnson (ID: None, Class: 12)
+- Mike Davis (ID: None, Class: 11)
+- Emily Wilson (ID: None, Class: 12)
+- Alex Brown (ID: None, Class: 11)

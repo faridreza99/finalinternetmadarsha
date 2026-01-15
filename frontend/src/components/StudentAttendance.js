@@ -18,11 +18,16 @@ const MarkStudentAttendance = () => {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedSession, setSelectedSession] = useState('Morning');
+  const [selectedSession, setSelectedSession] = useState('');
+  const [attendanceSessions, setAttendanceSessions] = useState([]);
   const [autoFillAllSessions, setAutoFillAllSessions] = useState(false);
   const [attendance, setAttendance] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
 
   useEffect(() => {
     if (selectedSemesterId) {
@@ -33,6 +38,20 @@ const MarkStudentAttendance = () => {
       setAttendance({});
     }
   }, [selectedSemesterId, selectedDate, selectedSession]);
+
+  const fetchSessions = async () => {
+    try {
+      const response = await axios.get(`${API}/attendance-sessions`);
+      const sessions = response.data || [];
+      const activeSessions = sessions.filter(s => s.is_active);
+      setAttendanceSessions(activeSessions);
+      if (activeSessions.length > 0 && !selectedSession) {
+        setSelectedSession(activeSessions[0].name);
+      }
+    } catch (error) {
+      console.error('Failed to load attendance sessions');
+    }
+  };
 
   const handleHierarchyChange = (selection) => {
     setSelectedMarhalaId(selection.marhala_id);
@@ -113,7 +132,7 @@ const MarkStudentAttendance = () => {
       setSaving(true);
 
       const sessionsToSave = autoFillAllSessions
-        ? ['Morning', 'Noon', 'Evening', 'Night']
+        ? attendanceSessions.map(s => s.name)
         : [selectedSession];
 
       for (const session of sessionsToSave) {
@@ -181,10 +200,15 @@ const MarkStudentAttendance = () => {
                 onChange={(e) => setSelectedSession(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md"
               >
-                <option value="Morning">সকাল (Morning)</option>
-                <option value="Noon">দুপুর (Noon)</option>
-                <option value="Evening">সন্ধ্যা (Evening)</option>
-                <option value="Night">রাত (Night)</option>
+                {attendanceSessions.length > 0 ? (
+                  attendanceSessions.map((session) => (
+                    <option key={session.id} value={session.name}>
+                      {session.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">কোন সেশন পাওয়া যায়নি</option>
+                )}
               </select>
             </div>
             <div className="md:col-span-2">
@@ -538,13 +562,18 @@ const StudentAttendanceReport = () => {
   );
 };
 
+import AttendanceSessions from './AttendanceSessions';
+
+// ... (existing imports)
+
 const StudentAttendance = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const tabs = [
     { name: 'হাজিরা দিন', path: '/students/attendance/mark' },
-    { name: 'হাজিরা রিপোর্ট', path: '/students/attendance/report' }
+    { name: 'হাজিরা রিপোর্ট', path: '/students/attendance/report' },
+    { name: 'হাজিরা সেশন', path: '/students/attendance/sessions' }
   ];
 
   return (
@@ -574,6 +603,7 @@ const StudentAttendance = () => {
       <Routes>
         <Route path="mark" element={<MarkStudentAttendance />} />
         <Route path="report" element={<StudentAttendanceReport />} />
+        <Route path="sessions" element={<AttendanceSessions />} />
         <Route path="/" element={<MarkStudentAttendance />} />
       </Routes>
     </div>

@@ -17,7 +17,7 @@ const LoginPage = () => {
     password: '',
     tenantId: FIXED_TENANT_ID
   });
-  
+
   const [schoolBranding, setSchoolBranding] = useState({
     school_name: 'ইন্টারনেট মাদ্রাসা',
     school_name_en: 'Internet Madrasa',
@@ -25,7 +25,7 @@ const LoginPage = () => {
     logo_url: null,
     primary_color: '#10B981'
   });
-  
+
   const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
   const [showPassword, setShowPassword] = useState(false);
@@ -65,13 +65,19 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const result = await login(loginData.username, loginData.password, loginData.tenantId);
-      
+
       if (result.success) {
         toast.success(currentLang === 'bn' ? 'সফলভাবে লগইন হয়েছে!' : 'Login successful!');
-        navigate('/dashboard');
+
+        // Redirect based on role
+        if (result.user?.role === 'student') {
+          navigate('/student/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         toast.error(result.error || (currentLang === 'bn' ? 'লগইন ব্যর্থ হয়েছে' : 'Login failed'));
       }
@@ -101,7 +107,7 @@ const LoginPage = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600"></div>
-        
+
         {/* Decorative Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full" style={{
@@ -119,9 +125,9 @@ const LoginPage = () => {
           {/* Logo */}
           <div className="mb-8">
             {schoolBranding.logo_url ? (
-              <img 
-                src={schoolBranding.logo_url} 
-                alt={schoolBranding.school_name} 
+              <img
+                src={schoolBranding.logo_url}
+                alt={schoolBranding.school_name}
                 className="h-28 w-28 object-contain rounded-2xl shadow-2xl bg-white/10 p-2"
               />
             ) : (
@@ -157,8 +163,8 @@ const LoginPage = () => {
           {/* Bottom Text */}
           <div className="mt-12 text-center">
             <p className="text-white/60 text-sm">
-              {currentLang === 'bn' 
-                ? '© ২০২৪ সর্বস্বত্ব সংরক্ষিত' 
+              {currentLang === 'bn'
+                ? '© ২০২৪ সর্বস্বত্ব সংরক্ষিত'
                 : '© 2024 All Rights Reserved'}
             </p>
           </div>
@@ -185,9 +191,9 @@ const LoginPage = () => {
           <div className="lg:hidden text-center mb-8">
             <div className="flex justify-center mb-4">
               {schoolBranding.logo_url ? (
-                <img 
-                  src={schoolBranding.logo_url} 
-                  alt={schoolBranding.school_name} 
+                <img
+                  src={schoolBranding.logo_url}
+                  alt={schoolBranding.school_name}
                   className="h-20 w-20 object-contain rounded-xl shadow-lg"
                 />
               ) : (
@@ -209,8 +215,8 @@ const LoginPage = () => {
                 {currentLang === 'bn' ? 'স্বাগতম!' : 'Welcome Back!'}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {currentLang === 'bn' 
-                  ? 'আপনার অ্যাকাউন্টে লগইন করুন' 
+                {currentLang === 'bn'
+                  ? 'আপনার অ্যাকাউন্টে লগইন করুন'
                   : 'Sign in to your account'}
               </p>
             </div>
@@ -226,12 +232,12 @@ const LoginPage = () => {
                   type="text"
                   placeholder={currentLang === 'bn' ? 'আপনার ইউজারনেম লিখুন' : 'Enter your username'}
                   value={loginData.username}
-                  onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+                  onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                   required
                   className="h-12 px-4 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium">
                   {currentLang === 'bn' ? 'পাসওয়ার্ড' : 'Password'}
@@ -242,7 +248,7 @@ const LoginPage = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder={currentLang === 'bn' ? 'আপনার পাসওয়ার্ড লিখুন' : 'Enter your password'}
                     value={loginData.password}
-                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                     required
                     className="h-12 px-4 pr-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                   />
@@ -256,8 +262,8 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                 disabled={loading}
               >
@@ -283,8 +289,8 @@ const LoginPage = () => {
           <div className="mt-8 text-center space-y-2">
             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
               <Clock className="h-4 w-4" />
-              {currentLang === 'bn' 
-                ? 'রিয়েল-টাইম ডেটা সিঙ্ক' 
+              {currentLang === 'bn'
+                ? 'রিয়েল-টাইম ডেটা সিঙ্ক'
                 : 'Real-time Data Sync'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500">

@@ -159,6 +159,13 @@ const StudentList = () => {
     mother_whatsapp: '',
     date_of_birth: '',
     gender: '',
+    blood_group: '',
+    whatsapp_number: '',
+    resident_status: 'native',
+    country: 'Bangladesh',
+    batch_type: 'offline',
+    monthly_fee_config_id: '',
+    fee_type_id: '',
     class_id: '',
     section_id: '',
     marhala_id: '',
@@ -172,6 +179,25 @@ const StudentList = () => {
   });
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingStudent, setViewingStudent] = useState(null);
+  const [feeConfigs, setFeeConfigs] = useState([]);
+  const [feeCategories, setFeeCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchFeeConfigs = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [configsRes, categoriesRes] = await Promise.all([
+          axios.get(`${API}/fees/configurations`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API}/student-fee-categories`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
+        ]);
+        setFeeConfigs(configsRes.data || []);
+        setFeeCategories(categoriesRes.data || []);
+      } catch (error) {
+        console.error('Error fetching fee data:', error);
+      }
+    };
+    fetchFeeConfigs();
+  }, []);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -417,15 +443,6 @@ const StudentList = () => {
       return;
     }
 
-    // Photo is required for new students in simple form
-    if (!editingStudent && isMadrasahSimpleUI && !photoFile) {
-      toast.error('ছবি আপলোড করা আবশ্যক');
-      return;
-    }
-
-    submittingRef.current = true;
-    setIsSubmitting(true);
-
     const unlockTimeout = setTimeout(() => {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -521,11 +538,18 @@ const StudentList = () => {
       father_name: student.father_name,
       father_phone: student.father_phone || '',
       father_whatsapp: student.father_whatsapp || '',
-      mother_name: student.mother_name,
+      mother_name: student.mother_name || '',
       mother_phone: student.mother_phone || '',
       mother_whatsapp: student.mother_whatsapp || '',
       date_of_birth: student.date_of_birth,
       gender: student.gender,
+      blood_group: student.blood_group || '',
+      whatsapp_number: student.whatsapp_number || '',
+      resident_status: student.resident_status || 'native',
+      country: student.country || 'Bangladesh',
+      batch_type: student.batch_type || 'offline',
+      monthly_fee_config_id: student.monthly_fee_config_id || '',
+      fee_type_id: student.fee_type_id || '',
       class_id: student.class_id,
       section_id: student.section_id,
       marhala_id: student.marhala_id || '',
@@ -533,7 +557,7 @@ const StudentList = () => {
       semester_id: student.semester_id || '',
       phone: student.phone,
       email: student.email || '',
-      address: student.address,
+      address: student.address || '',
       guardian_name: student.guardian_name,
       guardian_phone: student.guardian_phone
     });
@@ -588,6 +612,13 @@ const StudentList = () => {
       mother_whatsapp: '',
       date_of_birth: '',
       gender: '',
+      blood_group: '',
+      whatsapp_number: '',
+      resident_status: 'native',
+      country: 'Bangladesh',
+      batch_type: 'offline',
+      monthly_fee_config_id: '',
+      fee_type_id: '',
       class_id: '',
       section_id: '',
       marhala_id: '',
@@ -1040,13 +1071,24 @@ const StudentList = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="mother_name">মাতার নাম *</Label>
                   <Input
                     id="mother_name"
                     value={formData.mother_name}
                     onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
-                    required
                   />
+                </div>
+                <div>
+                  <Label htmlFor="blood_group">রক্তের গ্রুপ</Label>
+                  <Select value={formData.blood_group} onValueChange={(value) => setFormData({ ...formData, blood_group: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="রক্তের গ্রুপ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => (
+                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="date_of_birth">জন্ম তারিখ *</Label>
@@ -1221,22 +1263,82 @@ const StudentList = () => {
                     required
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="email">ইমেইল</Label>
+                  <Label htmlFor="whatsapp_number">হোয়াটসঅ্যাপ নম্বর</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    id="whatsapp_number"
+                    value={formData.whatsapp_number}
+                    onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
+                    placeholder="88017..."
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="address">ঠিকানা *</Label>
+                <div>
+                  <Label htmlFor="resident_status">আবাসিক অবস্থা *</Label>
+                  <Select value={formData.resident_status} onValueChange={(value) => setFormData({ ...formData, resident_status: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="native">দেশী (Native)</SelectItem>
+                      <SelectItem value="expatriate">প্রবাসী (Expatriate)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formData.resident_status === 'expatriate' && (
+                  <div>
+                    <Label htmlFor="country">দেশ *</Label>
+                    <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="দেশ নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Oman', 'Bahrain', 'Malaysia', 'UK', 'USA', 'Canada', 'Australia', 'Italy', 'France', 'Germany', 'Singapore', 'Japan', 'South Korea', 'India', 'Pakistan', 'Nepal', 'Bhutan', 'Maldives', 'Sri Lanka'].sort().map(c => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div>
+                  <Label htmlFor="batch_type">ব্যাচ টাইপ *</Label>
+                  <Select value={formData.batch_type} onValueChange={(value) => setFormData({ ...formData, batch_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="offline">Offline</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="fee_type">মাসিক ফি ধরণ (Monthly Fee Type)</Label>
+                  <Select
+                    value={formData.fee_type_id}
+                    onValueChange={(value) => setFormData({ ...formData, fee_type_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="ফি ধরণ নির্বাচন করুন (e.g. General)" />
+                    </SelectTrigger>
+                    <SelectContent>
+
+                      {feeConfigs.filter(f => f.frequency === 'monthly' && f.is_active !== false).map((config) => (
+                        <SelectItem key={config.id} value={config.id}>
+                          {isMadrasahSimpleUI && config.fee_type === 'Tuition Fees' ? 'মাসিক বেতন' : config.fee_type} {config.marhala_name ? `(${config.marhala_name})` : ''} - ৳{config.amount}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="md:col-span-2 hidden">
+                  <Label htmlFor="address">ঠিকানা</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    required
                   />
                 </div>
                 <div>
@@ -1268,8 +1370,8 @@ const StudentList = () => {
               </div>
             </form>
           </CardContent>
-        </Card>
-      </div>
+        </Card >
+      </div >
     );
   }
 
@@ -1523,11 +1625,11 @@ const StudentList = () => {
                 <TableRow>
                   <TableHead className="w-10 sm:w-12 px-2 sm:px-4">#</TableHead>
                   <TableHead className="px-2 sm:px-4">ছাত্র</TableHead>
-                  <TableHead className="px-2 sm:px-4 hidden sm:table-cell">ভর্তি নম্বর</TableHead>
-                  <TableHead className="px-2 sm:px-4 hidden md:table-cell">রোল নম্বর</TableHead>
-                  <TableHead className="px-2 sm:px-4">একাডেমিক তথ্য</TableHead>
-                  <TableHead className="px-2 sm:px-4 hidden lg:table-cell">অভিভাবক</TableHead>
-                  <TableHead className="px-2 sm:px-4 hidden md:table-cell">যোগাযোগ</TableHead>
+                  <TableHead className="px-2 sm:px-4">অভিভাবক</TableHead>
+                  <TableHead className="px-2 sm:px-4">যোগাযোগ</TableHead>
+                  <TableHead className="px-2 sm:px-4">একাডেমিক</TableHead>
+                  <TableHead className="px-2 sm:px-4">ব্যক্তিগত</TableHead>
+                  <TableHead className="px-2 sm:px-4">রেসিডেন্সি</TableHead>
                   <TableHead className="px-2 sm:px-4">কার্যক্রম</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1545,25 +1647,37 @@ const StudentList = () => {
                   filteredStudents.map((student, index) => (
                     <TableRow key={student.id}>
                       <TableCell className="font-medium px-2 sm:px-4 text-xs sm:text-sm">{index + 1}</TableCell>
+
                       <TableCell className="px-2 sm:px-4">
-                        <div className="flex items-center space-x-2 sm:space-x-3">
-                          <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                            <AvatarImage src={student.photo_url ? `${BASE_URL}${student.photo_url}` : ''} />
-                            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs sm:text-sm">
-                              {student.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="font-medium text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none">{student.name}</p>
-                            <p className="text-xs text-gray-500 truncate max-w-[100px] sm:max-w-none">{student.father_name}</p>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-xs sm:text-sm">{student.name}</span>
+                          <div className="flex gap-1 mt-0.5">
+                            <Badge variant="outline" className="text-[10px] px-1 h-auto">ID: {student.admission_no}</Badge>
+                            <Badge variant="secondary" className="text-[10px] px-1 h-auto">R: {student.roll_no}</Badge>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 sm:px-4 hidden sm:table-cell">
-                        <Badge variant="outline" className="text-xs">{student.admission_no}</Badge>
+                      <TableCell className="px-2 sm:px-4">
+                        <div className="text-xs sm:text-sm">
+                          <p className="font-medium">{student.father_name}</p>
+                        </div>
                       </TableCell>
-                      <TableCell className="px-2 sm:px-4 hidden md:table-cell">
-                        <Badge variant="secondary" className="text-xs">{student.roll_no}</Badge>
+                      <TableCell className="px-2 sm:px-4">
+                        <div className="text-xs sm:text-sm">
+                          <div className="flex items-center text-gray-700">
+                            <Phone className="h-3 w-3 mr-1" /> {student.phone}
+                          </div>
+                          {student.whatsapp_number && (
+                            <div className="flex items-center text-green-600 mt-1">
+                              <span className="font-bold mr-1">WA:</span> {student.whatsapp_number}
+                            </div>
+                          )}
+                          {student.email && (
+                            <div className="flex items-center text-gray-500 mt-1">
+                              <Mail className="h-3 w-3 mr-1" /> {student.email}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4">
                         <div className="text-xs sm:text-sm flex flex-col gap-0.5">
@@ -1574,30 +1688,27 @@ const StudentList = () => {
                             <span className="text-gray-600">{getDepartmentName(student.department_id)}</span>
                           )}
                           {student.semester_id && (
-                            <span className="text-gray-500 text-xs text-xs">{getSemesterName(student.semester_id)}</span>
+                            <span className="text-gray-500 text-xs">{getSemesterName(student.semester_id)}</span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 sm:px-4 hidden lg:table-cell">
-                        <div className="text-xs sm:text-sm">
-                          <p className="font-medium truncate max-w-[120px]">{student.guardian_name}</p>
-                          <div className="flex items-center text-gray-500 text-xs">
-                            <Phone className="h-3 w-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">{student.guardian_phone}</span>
-                          </div>
+                      <TableCell className="px-2 sm:px-4">
+                        <div className="text-xs">
+                          <div>Gen: {student.gender}</div>
+                          <div>DOB: {student.date_of_birth}</div>
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 sm:px-4 hidden md:table-cell">
-                        <div className="text-xs sm:text-sm">
-                          <div className="flex items-center text-gray-500">
-                            <Phone className="h-3 w-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">{student.phone}</span>
+                      <TableCell className="px-2 sm:px-4">
+                        <div className="text-xs">
+                          <div>
+                            {student.resident_status === 'expatriate' ? (
+                              <Badge variant="outline" className="text-amber-600 border-amber-200">Probashi</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-600">Deshi</Badge>
+                            )}
                           </div>
-                          {student.email && (
-                            <div className="flex items-center text-gray-500 mt-1">
-                              <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
-                              <span className="truncate max-w-[100px]">{student.email}</span>
-                            </div>
+                          {student.country && student.country !== 'Bangladesh' && (
+                            <div className="mt-1 font-medium">{student.country}</div>
                           )}
                         </div>
                       </TableCell>
@@ -2038,8 +2149,6 @@ const StudentList = () => {
                     className="text-lg py-3"
                     required
                   />
-                </div>
-                <div>
                   <Label htmlFor="add_guardian_phone_simple" className="text-base font-semibold">অভিভাবকের ফোন *</Label>
                   <Input
                     id="add_guardian_phone_simple"
@@ -2048,6 +2157,93 @@ const StudentList = () => {
                     placeholder="০১XXXXXXXXX"
                     className="text-lg py-3"
                     required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="add_whatsapp_number" className="text-base font-semibold">হোয়াটসঅ্যাপ নম্বর</Label>
+                  <Input
+                    id="add_whatsapp_number"
+                    value={formData.whatsapp_number}
+                    onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
+                    placeholder="88017..."
+                    className="text-lg py-3"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="add_resident_status" className="text-base font-semibold">আবাসিক অবস্থা *</Label>
+                  <Select value={formData.resident_status} onValueChange={(value) => setFormData({ ...formData, resident_status: value })}>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="native">দেশী (Native)</SelectItem>
+                      <SelectItem value="expatriate">প্রবাসী (Expatriate)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.resident_status === 'expatriate' && (
+                  <div>
+                    <Label htmlFor="add_country" className="text-base font-semibold">দেশ *</Label>
+                    <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
+                      <SelectTrigger className="text-lg py-3">
+                        <SelectValue placeholder="দেশ নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Oman', 'Bahrain', 'Malaysia', 'UK', 'USA', 'Canada', 'Australia', 'Italy', 'France', 'Germany', 'Singapore', 'Japan', 'South Korea', 'India', 'Pakistan', 'Nepal', 'Bhutan', 'Maldives', 'Sri Lanka'].sort().map(c => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="add_batch_type" className="text-base font-semibold">ব্যাচ টাইপ *</Label>
+                  <Select value={formData.batch_type} onValueChange={(value) => setFormData({ ...formData, batch_type: value })}>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="offline">Offline</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="add_fee_type" className="text-base font-semibold">মাসিক ফি ধরণ (Monthly Fee Type)</Label>
+                  <Select
+                    value={formData.fee_type_id}
+                    onValueChange={(value) => setFormData({ ...formData, fee_type_id: value })}
+                  >
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="ফি ধরণ নির্বাচন করুন (e.g. General)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {feeConfigs.filter(f => f.frequency === 'monthly' && f.is_active !== false).map((config) => (
+                        <SelectItem key={config.id} value={config.id}>
+                          {isMadrasahSimpleUI && config.fee_type === 'Tuition Fees' ? 'মাসিক বেতন' : config.fee_type} {config.marhala_name ? `(${config.marhala_name})` : ''} - ৳{config.amount}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+
+
+                <div>
+                  <Label htmlFor="add_email" className="text-base font-semibold">ইমেইল</Label>
+                  <Input
+                    id="add_email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="example@email.com"
+                    className="text-lg py-3"
                   />
                 </div>
                 {/* Academic Hierarchy - Marhala → Department → Semester */}
@@ -2202,6 +2398,20 @@ const StudentList = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="add_blood_group" className="text-base font-semibold">রক্তের গ্রুপ</Label>
+                  <Select value={formData.blood_group} onValueChange={(value) => setFormData({ ...formData, blood_group: value })}>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="রক্তের গ্রুপ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => (
+                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="add_dob" className="text-base font-semibold">জন্ম তারিখ *</Label>
                   <Input
                     id="add_dob"
@@ -2213,77 +2423,7 @@ const StudentList = () => {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="add_address_main" className="text-base font-semibold">ঠিকানা *</Label>
-                  <Input
-                    id="add_address_main"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="গ্রাম, থানা, জেলা"
-                    className="text-lg py-3"
-                    required
-                  />
-                </div>
 
-                <div>
-                  <Label htmlFor="add_mother_name" className="text-base font-semibold">মাতার নাম *</Label>
-                  <Input
-                    id="add_mother_name"
-                    value={formData.mother_name}
-                    onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
-                    placeholder="মাতার নাম লিখুন"
-                    className="text-lg py-3"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="add_email" className="text-base font-semibold">ইমেইল</Label>
-                  <Input
-                    id="add_email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="example@email.com"
-                    className="text-lg py-3"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="add_father_whatsapp" className="text-base font-semibold">পিতার হোয়াটসঅ্যাপ</Label>
-                  <Input
-                    id="add_father_whatsapp"
-                    value={formData.father_whatsapp}
-                    onChange={(e) => setFormData({ ...formData, father_whatsapp: e.target.value })}
-                    placeholder="হোয়াটসঅ্যাপ নম্বর"
-                    className="text-lg py-3"
-                  />
-                </div>
-
-                {/* Photo Upload - Required */}
-                <div className="flex flex-col items-center space-y-2 p-4 border rounded-lg bg-gray-50">
-                  <Label className="text-base font-semibold">ছবি *</Label>
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Student" className="w-24 h-24 rounded-full object-cover border-4 border-emerald-200" />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
-                      <Camera className="h-8 w-8 text-gray-400" />
-                    </div>
-                  )}
-                  <Label htmlFor="student-photo-simple" className="cursor-pointer px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
-                    {photoPreview ? 'ছবি পরিবর্তন করুন' : 'ছবি আপলোড করুন'}
-                    <Input
-                      id="student-photo-simple"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                  </Label>
-                  {!photoPreview && (
-                    <p className="text-xs text-red-500">ছবি আপলোড করা আবশ্যক</p>
-                  )}
-                </div>
               </div>
             ) : (
               <div className="text-center text-muted-foreground py-4">
@@ -2725,29 +2865,7 @@ const StudentList = () => {
             {isMadrasahSimpleUI ? (
               <div className="space-y-4">
                 {/* Photo Section */}
-                <div className="flex flex-col items-center space-y-2 pb-4 border-b">
-                  {photoPreview || editingStudent?.photo_url ? (
-                    <img
-                      src={photoPreview || (editingStudent?.photo_url ? `${BASE_URL}${editingStudent.photo_url}` : '')}
-                      alt="Student"
-                      className="w-20 h-20 rounded-full object-cover border-4 border-emerald-100"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
-                      <Camera className="h-6 w-6 text-gray-400" />
-                    </div>
-                  )}
-                  <Label htmlFor="edit-student-photo-simple" className="cursor-pointer text-emerald-600 text-sm">
-                    {photoPreview || editingStudent?.photo_url ? 'ছবি পরিবর্তন' : 'ছবি আপলোড'}
-                    <Input
-                      id="edit-student-photo-simple"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                  </Label>
-                </div>
+
 
                 <div>
                   <Label htmlFor="edit_name" className="text-base font-semibold">ছাত্রের নাম *</Label>
@@ -2872,31 +2990,111 @@ const StudentList = () => {
                     onChange={(e) => setFormData({ ...formData, roll_no: e.target.value })}
                     placeholder="রোল নম্বর"
                     className="text-lg py-3"
-                    required
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="edit_mother_name" className="text-base font-semibold">মাতার নাম *</Label>
+                  <Label htmlFor="edit_guardian_phone_simple" className="text-base font-semibold">অভিভাবকের ফোন *</Label>
                   <Input
-                    id="edit_mother_name"
-                    value={formData.mother_name}
-                    onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
-                    placeholder="মাতার নাম"
+                    id="edit_guardian_phone_simple"
+                    value={formData.guardian_phone}
+                    onChange={(e) => setFormData({ ...formData, guardian_phone: e.target.value })}
+                    placeholder="০১XXXXXXXXX"
                     className="text-lg py-3"
                     required
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="edit_address" className="text-base font-semibold">ঠিকানা *</Label>
+                  <Label htmlFor="edit_whatsapp_number" className="text-base font-semibold">হোয়াটসঅ্যাপ নম্বর</Label>
                   <Input
-                    id="edit_address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="গ্রাম, থানা, জেলা"
+                    id="edit_whatsapp_number"
+                    value={formData.whatsapp_number}
+                    onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
+                    placeholder="88017..."
                     className="text-lg py-3"
-                    required
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="edit_resident_status" className="text-base font-semibold">আবাসিক অবস্থা *</Label>
+                  <Select value={formData.resident_status} onValueChange={(value) => setFormData({ ...formData, resident_status: value })}>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="native">দেশী (Native)</SelectItem>
+                      <SelectItem value="expatriate">প্রবাসী (Expatriate)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.resident_status === 'expatriate' && (
+                  <div>
+                    <Label htmlFor="edit_country" className="text-base font-semibold">দেশ *</Label>
+                    <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
+                      <SelectTrigger className="text-lg py-3">
+                        <SelectValue placeholder="দেশ নির্বাচন করুন" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Oman', 'Bahrain', 'Malaysia', 'UK', 'USA', 'Canada', 'Australia', 'Italy', 'France', 'Germany', 'Singapore', 'Japan', 'South Korea', 'India', 'Pakistan', 'Nepal', 'Bhutan', 'Maldives', 'Sri Lanka'].sort().map(c => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="edit_batch_type" className="text-base font-semibold">ব্যাচ টাইপ *</Label>
+                  <Select value={formData.batch_type} onValueChange={(value) => setFormData({ ...formData, batch_type: value })}>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="offline">Offline</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit_fee_type" className="text-base font-semibold">মাসিক ফি ধরণ (Monthly Fee Type)</Label>
+                  <Select
+                    value={formData.fee_type_id}
+                    onValueChange={(value) => setFormData({ ...formData, fee_type_id: value })}
+                  >
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="ফি ধরণ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+
+                      {feeConfigs.filter(f => f.frequency === 'monthly' && f.is_active !== false).map((config) => (
+                        <SelectItem key={config.id} value={config.id}>
+                          {isMadrasahSimpleUI && config.fee_type === 'Tuition Fees' ? 'মাসিক বেতন' : config.fee_type} {config.marhala_name ? `(${config.marhala_name})` : ''} - ৳{config.amount}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+
+
+                <div>
+                  <Label htmlFor="edit_blood_group" className="text-base font-semibold">রক্তের গ্রুপ</Label>
+                  <Select value={formData.blood_group} onValueChange={(value) => setFormData({ ...formData, blood_group: value })}>
+                    <SelectTrigger className="text-lg py-3">
+                      <SelectValue placeholder="রক্তের গ্রুপ নির্বাচন করুন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => (
+                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="edit_date_of_birth" className="text-base font-semibold">জন্ম তারিখ *</Label>
                   <Input
@@ -2908,6 +3106,7 @@ const StudentList = () => {
                     required
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="edit_gender" className="text-base font-semibold">লিঙ্গ *</Label>
                   <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })} required>
@@ -2920,6 +3119,7 @@ const StudentList = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div>
                   <Label htmlFor="edit_email" className="text-base font-semibold">ইমেইল</Label>
                   <Input
@@ -2931,16 +3131,7 @@ const StudentList = () => {
                     className="text-lg py-3"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="edit_father_whatsapp" className="text-base font-semibold">পিতার হোয়াটসঅ্যাপ</Label>
-                  <Input
-                    id="edit_father_whatsapp"
-                    value={formData.father_whatsapp}
-                    onChange={(e) => setFormData({ ...formData, father_whatsapp: e.target.value })}
-                    placeholder="হোয়াটসঅ্যাপ নম্বর"
-                    className="text-lg py-3"
-                  />
-                </div>
+
               </div>
             ) : (
               /* Full Edit Form for non-Madrasah */
@@ -3158,7 +3349,7 @@ const StudentList = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 };
 

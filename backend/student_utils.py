@@ -244,11 +244,20 @@ async def get_student_fee_structure(db, tenant_id: str, student: Dict[str, Any])
     
     # If student has semester_id, try semester-specific fees first
     if semester_id:
+        def not_set(field):
+            return {"$or": [{field: {"$exists": False}}, {field: None}, {field: ""}]}
+
         fee_query["$or"] = [
             {"semester_id": semester_id},
-            {"department_id": department_id, "semester_id": {"$exists": False}},
-            {"marhala_id": marhala_id, "department_id": {"$exists": False}, "semester_id": {"$exists": False}},
-            {"marhala_id": {"$exists": False}, "department_id": {"$exists": False}, "semester_id": {"$exists": False}}
+            {"$and": [{"department_id": department_id}, not_set("semester_id")]},
+            {"$and": [{"marhala_id": marhala_id}, not_set("department_id"), not_set("semester_id")]},
+            {"$and": [not_set("marhala_id"), not_set("department_id"), not_set("semester_id")]}
+        ]
+    elif class_id:
+        # Fallback for class-based fees if not using the full hierarchy
+        fee_query["$or"] = [
+            {"class_id": class_id},
+            {"class_id": {"$in": [None, ""]}}
         ]
     
     # Get all active fee types for this tenant
